@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Inter as FontSans } from "next/font/google";
+import { Layout } from "@/layouts";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "error";
@@ -29,11 +30,11 @@ export default function RootLayout({
       <head />
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased",
+          "min-h-dvh bg-background font-sans antialiased",
           fontSans.variable
         )}
       >
-        {children}
+        <Layout>{children}</Layout>
       </body>
     </html>
   );
