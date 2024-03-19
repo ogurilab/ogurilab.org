@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Drawer } from "vaul";
+import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Icon } from "@/icons";
 import { navigation } from "@/layouts/nav";
 
@@ -23,16 +24,18 @@ function NavItem({
 
   return (
     <li>
-      <Link
-        className={clsx(
-          "relative -m-2 block px-3 py-2 transition",
-          active ? "text-primary" : "text-muted-foreground hover:text-primary"
-        )}
-        href={href}
-        onClick={onClick}
-      >
-        {children}
-      </Link>
+      <FadeIn>
+        <Link
+          className={clsx(
+            "relative -m-2 block px-3 py-2 transition",
+            active ? "text-primary" : "text-muted-foreground hover:text-primary"
+          )}
+          href={href}
+          onClick={onClick}
+        >
+          {children}
+        </Link>
+      </FadeIn>
     </li>
   );
 }
@@ -53,37 +56,41 @@ export function NavDrawer({ className }: { className?: string }) {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
-        <Drawer.Content className="fixed inset-x-0 top-0 z-50 mb-24 flex h-auto flex-col rounded-b-xl border bg-background ring-0">
-          <div className="grid gap-1.5 p-4 sm:text-left">
-            <Drawer.Title className="text-lg font-semibold leading-none tracking-tight">
-              <Link
-                className="flex items-center space-x-2"
-                href="/"
-                onClick={() => setOpen(false)}
-              >
-                <Icon className="rounded-md" height={40} width={40} />
-                <span>Digital Culture Lab.</span>
-              </Link>
-              <Drawer.Close className="absolute right-4 top-7">
-                <X className="size-6" />
-              </Drawer.Close>
-            </Drawer.Title>
-          </div>
-          <nav>
-            <ul className="mt-6 space-y-4 px-4 text-sm font-medium">
-              {navigation.map((item) => (
-                <NavItem
-                  key={item.href}
-                  href={item.href}
+        <FadeInWithStagger>
+          <Drawer.Content className="fixed inset-x-0 top-0 z-50 mb-24 flex h-auto flex-col rounded-b-xl border bg-background ring-0">
+            <FadeIn className="grid gap-1.5 p-4 sm:text-left">
+              <Drawer.Title className="text-lg font-semibold leading-none tracking-tight">
+                <Link
+                  className="flex items-center space-x-2"
+                  href="/"
                   onClick={() => setOpen(false)}
                 >
-                  {item.label}
-                </NavItem>
-              ))}
-            </ul>
-          </nav>
-          <div className="mx-auto mb-4 mt-6 h-2 w-[100px] rounded-full bg-muted" />
-        </Drawer.Content>
+                  <Icon className="rounded-md" height={40} width={40} />
+                  <span>Digital Culture Lab.</span>
+                </Link>
+                <Drawer.Close className="absolute right-4 top-7">
+                  <X className="size-6" />
+                </Drawer.Close>
+              </Drawer.Title>
+            </FadeIn>
+
+            <nav>
+              <ul className="mt-6 space-y-4 px-4 text-sm font-medium">
+                {navigation.map((item) => (
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </NavItem>
+                ))}
+              </ul>
+            </nav>
+
+            <div className="mx-auto mb-4 mt-6 h-2 w-[100px] rounded-full bg-muted" />
+          </Drawer.Content>
+        </FadeInWithStagger>
       </Drawer.Portal>
     </Drawer.Root>
   );
