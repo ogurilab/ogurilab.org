@@ -3,33 +3,41 @@ import { NavItem } from "@/layouts/nav/nav-item";
 
 export const navigation = [
   {
-    href: "/",
-    label: "Home",
-  },
-  {
     href: "/about",
     label: "About",
+    ja: "dclabについて",
+  },
+  {
+    href: "/join",
+    label: "Join",
+    ja: "学生の方へ",
   },
   {
     href: "/news",
     label: "News",
+    ja: "ニュース",
   },
   {
     href: "/members",
     label: "Members",
+    ja: "メンバー",
   },
+
   {
-    href: "/projects",
-    label: "Projects",
+    href: "/research",
+    label: "Research",
+    ja: "研究・制作",
   },
   {
     href: "/publications",
     label: "Publications",
+    ja: "活動実績",
   },
 
   {
     href: "/contact",
     label: "Contact",
+    ja: "お問い合わせ",
   },
 ];
 

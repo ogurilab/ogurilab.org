@@ -56,7 +56,9 @@ export function NavDrawer({ className }: { className?: string }) {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
-        <FadeInWithStagger>
+        <FadeInWithStagger
+          animationViewport={{ once: true, margin: "0px 0px 0px" }}
+        >
           <Drawer.Content className="fixed inset-x-0 top-0 z-50 mb-24 flex h-auto flex-col rounded-b-xl border bg-background text-primary ring-0">
             <FadeIn className="grid gap-1.5 p-4 sm:text-left">
               <Drawer.Title className="text-lg font-semibold leading-none tracking-tight">
