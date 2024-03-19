@@ -6,7 +6,10 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const nextConfig = {
   reactStrictMode: true,
   output: "export",
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/dclab' : '',
+  images: {
+    loader: "custom",
+    loaderFile:"./image-loader.ts"
+  },
 };
 
 module.exports = withBundleAnalyzer(nextConfig)
