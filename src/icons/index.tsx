@@ -1,7 +1,8 @@
 import React from "react";
+import { Image } from "@/components/ui/image";
 
-type IconProps = Omit<React.ComponentProps<"img">, "src" | "alt">;
+type IconProps = Omit<React.ComponentProps<typeof Image>, "src" | "alt">;
 
 export function Icon(props: IconProps) {
-  return <img {...props} alt="dlab" src="/icon.png" />;
+  return <Image priority {...props} alt="dlab" src="/icon.png" />;
 }

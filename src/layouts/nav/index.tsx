@@ -38,7 +38,7 @@ export function Navigation({
 }: React.ComponentPropsWithoutRef<"nav">) {
   return (
     <nav {...props}>
-      <ul className="flex rounded-full bg-background/90 px-3 text-sm font-medium  shadow-lg shadow-primary/5 ring-1 ring-border  backdrop-blur ">
+      <ul className="flex  rounded-full bg-background/90 px-3 text-sm font-medium  shadow-lg shadow-primary/5 ring-1 ring-border  backdrop-blur ">
         {navigation.map((item) => (
           <NavItem key={item.href} href={item.href}>
             {item.label}
