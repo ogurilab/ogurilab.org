@@ -1,4 +1,5 @@
 import withBundleAnalyzer from "@next/bundle-analyzer";
+import { createContentlayerPlugin } from "next-contentlayer";
 
 import remarkGfm from "remark-gfm";
 import createMDX from "@next/mdx";
@@ -22,4 +23,4 @@ const withMDX = createMDX({
 
 export default withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
-})(withMDX(nextConfig));
+})(createContentlayerPlugin(nextConfig)(withMDX(nextConfig)));

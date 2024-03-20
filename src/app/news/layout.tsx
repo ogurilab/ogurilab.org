@@ -7,10 +7,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div>
       <Pattern />
       <MDXHeader>
-        <MDXTitle>Members</MDXTitle>
+        <MDXTitle>News</MDXTitle>
         <MDXDescription>
-          本ページでは、小栗研究室に所属するメンバーと卒業生を紹介しています。
-          名前あるいはアバターをクリックすると、各メンバーの外部サイトに遷移します。
+          本ページでは、小栗研究室で行われた活動やイベントについて紹介しています。
+          タイトルあるいはサムネイルをクリックすると、各々の外部サイトに遷移します。
         </MDXDescription>
       </MDXHeader>
       <div className="leading-7">{children}</div>
