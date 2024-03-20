@@ -5,15 +5,13 @@ import { allNews } from "contentlayer/generated";
 
 export default function Page() {
   const newsList = allNews.sort((a, b) => {
-    // .dateにYYYY-MM-DDの形式で日付が格納されているため、文字列をDate型に変換して比較
-    // 最新の記事が上に来るように降順でソート
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
   return (
     <div>
       <FadeInWithStagger className="grid grid-cols-2 gap-x-8 gap-y-20 lg:grid-cols-3">
-        {newsList.map((news) => (
+        {newsList.map((news, i) => (
           <FadeIn>
             <article
               key={news.title}
@@ -27,9 +25,10 @@ export default function Page() {
                   target="_blank"
                 >
                   <Image
-                    alt={news.title}
+                    alt={`${news.date}のニュース`}
                     className="w-full object-cover object-center transition-opacity group-hover:opacity-75"
                     height={200}
+                    priority={i < 3}
                     src={`/news/${news.image}`}
                     width={300}
                   />
@@ -50,7 +49,7 @@ export default function Page() {
                   </span>
                 </div>
                 <div className="group relative">
-                  <h3 className="mt-3 text-base font-semibold leading-7 tracking-tight">
+                  <h2 className="mt-3 text-base font-semibold leading-7 tracking-tight">
                     <a
                       className="underline-offset-4 hover:underline"
                       href={news.href}
@@ -59,7 +58,7 @@ export default function Page() {
                     >
                       {news.title}
                     </a>
-                  </h3>
+                  </h2>
                 </div>
               </div>
             </article>
