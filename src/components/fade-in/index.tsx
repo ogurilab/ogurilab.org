@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import React, {
   ComponentPropsWithoutRef,
   createContext,
+  forwardRef,
   useContext,
 } from "react";
 
@@ -41,19 +42,21 @@ export function FadeIn(props: ComponentPropsWithoutRef<typeof motion.div>) {
   );
 }
 
-export function FadeInWithStagger({
-  slow = false,
-  speed,
-  animationViewport = viewport,
-  ...props
-}: ComponentPropsWithoutRef<typeof motion.div> & {
+interface FadeInWithStaggerProps
+  extends ComponentPropsWithoutRef<typeof motion.div> {
   slow?: boolean;
   speed?: number;
   animationViewport?: typeof viewport;
-}) {
+}
+
+export const FadeInWithStagger = forwardRef<
+  HTMLDivElement,
+  FadeInWithStaggerProps
+>(({ slow = false, speed, animationViewport = viewport, ...props }, ref) => {
   return (
     <StaggerContext.Provider value>
       <motion.div
+        ref={ref}
         initial="hidden"
         transition={{
           staggerChildren: speed ?? (slow ? 0.2 : 0.1),
@@ -64,4 +67,4 @@ export function FadeInWithStagger({
       />
     </StaggerContext.Provider>
   );
-}
+});
