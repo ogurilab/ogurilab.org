@@ -8,7 +8,7 @@ import { ThemeToggleButton } from "@/layouts/themes/toggle-button";
 export function Header() {
   return (
     <header>
-      <Link className="-mt-2 flex items-center" href="/">
+      <Link className="-mt-2 flex w-max items-center" href="/">
         <Icon className="rounded-md" height={44} width={44} />
         <span className="sr-only">Digital Culture Lab.</span>
       </Link>
