@@ -56,10 +56,11 @@ export function NavDrawer({ className }: { className?: string }) {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
-        <FadeInWithStagger
-          animationViewport={{ once: true, margin: "0px 0px 0px" }}
-        >
-          <Drawer.Content className="fixed inset-x-0 top-0 z-50 mb-24 flex h-auto flex-col rounded-b-xl border bg-background text-primary ring-0">
+
+        <Drawer.Content className="fixed inset-x-0 top-0 z-50 mb-24 flex h-auto flex-col rounded-b-xl border bg-background text-primary ring-0">
+          <FadeInWithStagger
+            animationViewport={{ once: true, margin: "0px 0px 0px" }}
+          >
             <FadeIn className="grid gap-1.5 p-4 sm:text-left">
               <Drawer.Title className="text-lg font-semibold leading-none tracking-tight">
                 <Link
@@ -91,8 +92,8 @@ export function NavDrawer({ className }: { className?: string }) {
             </nav>
 
             <div className="mx-auto mb-4 mt-6 h-2 w-[100px] rounded-full bg-muted" />
-          </Drawer.Content>
-        </FadeInWithStagger>
+          </FadeInWithStagger>
+        </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
   );

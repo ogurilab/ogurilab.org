@@ -13,6 +13,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
 import { cn } from "@/lib/utils";
 
 const components = {
@@ -78,7 +79,7 @@ const components = {
   ),
   a: ({ className, ...props }: React.HTMLAttributes<HTMLAnchorElement>) => (
     <a
-      className={cn("font-medium underline underline-offset-4", className)}
+      className={cn("underline underline-offset-4", className)}
       {...props}
       rel="noreferrer"
       target="_blank"
@@ -155,7 +156,7 @@ const components = {
   ),
   Link: ({ className, ...props }: React.ComponentProps<typeof Link>) => (
     <Link
-      className={cn("font-medium underline underline-offset-4", className)}
+      className={cn("underline underline-offset-4", className)}
       {...props}
     />
   ),
