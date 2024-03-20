@@ -3,7 +3,7 @@ next-env.d.ts
 node_modules
 pnpm-lock.yaml
 public
-next.config.js
+next.config.mjs
 postcss.config.js
 assets
 out
