@@ -1,0 +1,138 @@
+{
+  "teacher": [
+    {
+      "name": "小栗真弥",
+      "info": "講師",
+      "href": "https://www.google.com/url?q=https%3A%2F%2Fshinyaoguri.com&sa=D&sntz=1&usg=AOvVaw1SFlAl1oUkvhbKxs9oXArI",
+      "image": "/teacher/oguri.jpg"
+    }
+  ],
+
+  "b4": [
+    {
+      "name": "石川結衣",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/石川結衣",
+      "image": "/b4/ishikawa.jpg"
+    },
+    {
+      "name": "大森玲於",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/大森玲於",
+      "image": "/b4/omori.jpg"
+    },
+    {
+      "name": "小野田一輝",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/小野田一輝",
+      "image": "/b4/onoda.jpg"
+    },
+    {
+      "name": "倉橋渉太",
+      "info": "",
+      "href": "https://www.kurahashi.me/",
+      "image": "/b4/kurahashi.jpg"
+    },
+    {
+      "name": "服部翼",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/服部翼",
+      "image": "/b4/hattori.jpg"
+    },
+    {
+      "name": "三浦笙哉",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/三浦笙哉",
+      "image": "/b4/miura.jpg"
+    },
+    {
+      "name": "安藤魁星",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/安藤魁星",
+      "image": "/b4/ando.jpg"
+    },
+    {
+      "name": "西山海",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/西山海",
+      "image": "/b4/nishiyama.jpg"
+    },
+    {
+      "name": "牧航太",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/牧航太",
+      "image": "/b4/maki.jpg"
+    },
+    {
+      "name": "松永光栞",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/松永光栞",
+      "image": "/b4/matsunaga.jpg"
+    },
+    {
+      "name": "的場漱誠",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/的場漱誠",
+      "image": "/b4/matoba.jpg"
+    },
+    {
+      "name": "矢澤孝汰",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/矢澤孝汰",
+      "image": "/b4/yazawa.jpg"
+    },
+    {
+      "name": "山本稀恩",
+      "info": "休学中",
+      "href": "https://scrapbox.io/dclab/山本稀恩",
+      "image": "/graduate/yamamoto.jpg"
+    }
+  ],
+
+  "b3": [],
+
+  "graduate": [
+    {
+      "name": "青山瑠壱",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/青山瑠壱",
+      "image": "/graduate/aoyama.jpg"
+    },
+    {
+      "name": "神谷彩名",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/神谷彩名",
+      "image": "/graduate/kamiya.jpg"
+    },
+    {
+      "name": "竹中隼",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/竹中隼",
+      "image": "/graduate/takenaka.jpg"
+    },
+    {
+      "name": "西澤悠貴",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/西澤悠貴",
+      "image": "/graduate/nishizawa.jpg"
+    },
+    {
+      "name": "丹羽渚",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/丹羽渚",
+      "image": "/graduate/niwa.jpg"
+    },
+    {
+      "name": "古池優大",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/古池優大",
+      "image": "/graduate/koike.jpg"
+    },
+    {
+      "name": "八木春樹",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/八木春樹",
+      "image": "/graduate/yagi.jpg"
+    }
+  ]
+}
