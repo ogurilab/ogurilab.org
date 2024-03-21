@@ -25,7 +25,7 @@ export function NavItem({
     <FadeIn className={className}>
       <Link
         className={clsx(
-          "relative block p-3 transition",
+          "relative block px-2 py-3  transition-[padding] lg:px-3",
           active ? "text-primary" : "text-muted-foreground hover:text-primary"
         )}
         href={href}
