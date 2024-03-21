@@ -10,7 +10,10 @@ export default function Page() {
 
   return (
     <div>
-      <FadeInWithStagger className="grid grid-cols-2 gap-x-8 gap-y-20 lg:grid-cols-3">
+      <FadeInWithStagger
+        className="grid grid-cols-2 gap-x-8 gap-y-20 lg:grid-cols-3"
+        speed={0.05}
+      >
         {newsList.map((news, i) => (
           <FadeIn>
             <article
