@@ -30,7 +30,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/app/news/page.mdx",
-    "src/app/publications/page.mdx"
+    "src/app/publications/page.mdx",
+    "src/app/research/page.mdx"
   ],
   "exclude": ["node_modules"]
 }
