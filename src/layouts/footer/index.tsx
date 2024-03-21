@@ -41,7 +41,6 @@ export function Footer() {
                 key={item.label}
                 activeLine={false}
                 className="text-sm"
-                fadein
                 href={item.href}
               >
                 {item.ja}
