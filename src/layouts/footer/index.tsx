@@ -35,7 +35,7 @@ export function Footer() {
     <footer className="border-t border-border">
       <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
         <nav aria-label="Footer">
-          <FadeInWithStagger className="-mb-6  columns-2 items-center justify-between md:flex md:justify-center">
+          <FadeInWithStagger className="-mb-6 grid grid-cols-2 grid-rows-4 items-center justify-between md:flex md:grid-cols-1 md:grid-rows-1 md:justify-center">
             {navigation.map((item) => (
               <NavItem
                 key={item.label}

@@ -60,6 +60,7 @@ export function NavDrawer({ className }: { className?: string }) {
         <Drawer.Content className="fixed inset-x-0 top-0 z-50 mb-24 flex h-auto flex-col rounded-b-xl border bg-background text-primary ring-0">
           <FadeInWithStagger
             animationViewport={{ once: true, margin: "0px 0px 0px" }}
+            speed={0.05}
           >
             <FadeIn className="grid gap-1.5 p-4 sm:text-left">
               <Drawer.Title className="text-lg font-semibold leading-none tracking-tight">

@@ -15,7 +15,7 @@ export function Header() {
       <Navigation className="fixed inset-x-0 top-8 z-50 mx-auto hidden w-max md:block" />
       <ThemeToggleButton className="fixed right-8 top-8 h-11 w-max bg-background/90" />
 
-      <NavDrawer className="fixed right-24 top-8 h-11 bg-background md:hidden" />
+      <NavDrawer className="fixed right-24 top-8 z-50 h-11 bg-background md:hidden" />
     </header>
   );
 }

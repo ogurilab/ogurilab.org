@@ -43,7 +43,7 @@ export default function Page() {
                 共同研究・受託研究・研究技術相談・学術コンサルティング等の案内
               </a>
             </p>
-            <div className="flex space-x-8">
+            <div className="flex space-x-4">
               <p className="flex items-center text-sm leading-7">
                 <MailIcon className="mr-2 size-5" />
                 <span className="">shinyaoguri[at]ogurilab.org</span>

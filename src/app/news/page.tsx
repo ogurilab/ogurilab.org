@@ -26,7 +26,7 @@ export default function Page() {
                 >
                   <Image
                     alt={`${news.date}のニュース`}
-                    className="w-full object-cover object-center transition-opacity group-hover:opacity-75"
+                    className="size-full object-cover object-center transition-opacity group-hover:opacity-75"
                     height={200}
                     priority={i < 3}
                     src={`/news/${news.image}`}
@@ -36,7 +36,7 @@ export default function Page() {
                 </a>
               </figure>
               <div className="flex-1">
-                <div className="mt-4 flex items-center gap-x-4 text-xs">
+                <div className="mt-4 flex flex-col gap-1 gap-x-4 text-xs sm:flex-row sm:items-center">
                   <time className="text-muted-foreground" dateTime={news.date}>
                     {new Date(news.date).toLocaleDateString("ja-JP", {
                       year: "numeric",
@@ -44,7 +44,7 @@ export default function Page() {
                       day: "numeric",
                     })}
                   </time>
-                  <span className="relative z-10 rounded-full border border-border bg-secondary px-4 py-1 text-xs font-medium">
+                  <span className="relative z-10 w-max rounded-full border border-border bg-secondary px-4 py-1 text-xs font-medium">
                     {news.category}
                   </span>
                 </div>
