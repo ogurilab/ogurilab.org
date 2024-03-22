@@ -26,7 +26,7 @@ export const MDXDescription = React.forwardRef<
     <p
       {...props}
       ref={ref}
-      className={cn("text-muted-foreground text-sm leading-7", className)}
+      className={cn("text-muted-foreground text-base leading-7", className)}
     />
   );
 });

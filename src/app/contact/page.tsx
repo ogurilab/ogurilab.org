@@ -72,19 +72,18 @@ export default function Page() {
             14号館7階709号室で研究室の活動を行っています。興味のある方は、気軽に遊びに来てください。
           </p>
 
-          <p
+          <Link
             className={cn(
               buttonVariants({
                 variant: "outline",
               }),
-              "mx-auto mt-8 flex w-max items-center  justify-center rounded-full border border-border px-4 py-2"
+              "mx-auto mt-8 flex w-max items-center  justify-center rounded-full px-4 border border-border py-2"
             )}
+            href="/join"
           >
             <Sparkles className="mr-2 size-5 fill-yellow-400 text-yellow-400" />
-            <Link className="text-sm font-semibold" href="/join">
-              Join Us もっと知る
-            </Link>
-          </p>
+            <span className="text-sm font-semibold">Join Us もっと知る</span>
+          </Link>
         </FadeIn>
         <FadeIn>
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">

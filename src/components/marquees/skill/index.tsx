@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 type SkillMarqueeProps = {
   className?: string;
+  showDescription?: boolean;
 };
 
 const skills = [
@@ -56,7 +57,7 @@ const skills = [
   },
   {
     id: "Web html",
-    name: "Web 開発 HTML/CSS",
+    name: "Web 開発 HTML",
     icon: <HTMLIcon height={60} width={60} />,
   },
   {
@@ -91,15 +92,20 @@ const skills = [
   },
 ];
 
-export function SkillMarquee({ className }: SkillMarqueeProps) {
+export function SkillMarquee({
+  className,
+  showDescription = true,
+}: SkillMarqueeProps) {
   const firstRow = skills.slice(0, skills.length / 2);
   const secondRow = skills.slice(skills.length / 2);
 
   return (
     <div className={cn("overflow-x-hidden pt-8", className)}>
-      <p className="mb-2 text-sm font-semibold text-primary">
-        開発に使っている技術やツール
-      </p>
+      {showDescription && (
+        <p className="mb-2 text-sm font-semibold text-primary">
+          開発に使っている技術やツール
+        </p>
+      )}
       <Marquee
         className="[--gap:2rem]"
         id="skill-marquee"
