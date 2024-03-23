@@ -21,7 +21,7 @@ export function OurNews() {
         <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
           News
         </h2>
-        <p className="mt-2 text-lg leading-8 text-muted-foreground">
+        <p className="mt-2 text-base leading-8 text-muted-foreground">
           最新の活動や研究成果をお知らせします
         </p>
       </div>

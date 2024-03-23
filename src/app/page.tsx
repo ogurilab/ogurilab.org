@@ -14,13 +14,12 @@ export default function Home() {
           <div className="lg:flex ">
             <FadeInWithStagger className="mx-auto grid max-w-2xl grid-cols-1 gap-x-12 gap-y-16 lg:mx-0 lg:min-w-full lg:max-w-none lg:flex-none lg:gap-y-8">
               <FadeIn className="lg:col-end-1 lg:w-full lg:max-w-lg lg:pb-8">
-                <h2 className="relative gap-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                <h2 className="relative gap-4 text-2xl font-bold tracking-tight sm:text-4xl">
                   <span>
-                    Digital Culture Laboratory <br />
-                    Aichi Institute of Technology
+                    Digital Culture Laboratory Aichi Institute of Technology
                   </span>
                 </h2>
-                <p className="mt-6 leading-8 text-muted-foreground">
+                <p className="mt-6 text-base leading-8 text-muted-foreground">
                   愛知工業大学情報科学部
                   デジタルカルチャー研究室（小栗真弥研究室）のWebページです。2022年4月にスタートした新しい研究室です。伝統文化や文化財を活用するためのデジタルコンテンツ開発や、地域課題解決のためのデータの利活用、分析などキーワードにして研究開発を行っています。
                 </p>
@@ -50,10 +49,12 @@ export default function Home() {
                 </FadeIn>
                 <div className="contents lg:col-span-2 lg:col-end-2 lg:ml-auto lg:flex lg:w-[37rem] lg:items-start lg:justify-end lg:gap-x-8">
                   <FadeIn className="order-first flex w-64 flex-none justify-end self-end lg:w-auto">
-                    <img
+                    <Image
                       alt=""
                       className="aspect-[4/3] w-96 max-w-none flex-none rounded-2xl bg-gray-50 object-cover"
+                      height={842}
                       src="/tokyo.jpeg"
+                      width={1152}
                     />
                   </FadeIn>
                   <FadeIn className="flex w-96 flex-auto justify-end lg:w-auto lg:flex-none">
@@ -86,7 +87,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
               Laboratory
             </h2>
-            <p className="mt-2 text-lg leading-8 text-muted-foreground">
+            <p className="mt-2 text-base leading-8 text-muted-foreground">
               私達の研究・制作・学術活動の成果。私達について知ってください。
             </p>
             <div className="mt-6 space-y-16">
@@ -113,7 +114,7 @@ export default function Home() {
               <p className="flex flex-col text-muted-foreground">
                 <span>
                   Digital Culture
-                  Laboratoryに興味を持った方、共同研究や取材・出展の依頼，研究室見学や相談事などございましたら気軽にご連絡ください。
+                  Laboratoryに興味を持った方、共同研究や取材・出展の依頼、研究室見学や相談事などございましたら気軽にご連絡ください。
                 </span>
                 <Link
                   className="mx-auto mt-6 inline-block text-primary underline underline-offset-4"

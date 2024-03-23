@@ -26,7 +26,7 @@ export default function Page() {
             共同研究・取材・出展依頼などのお問い合わせ
           </h2>
           <p className="max-w-4xl  leading-7 text-muted-foreground">
-            小栗研究室では伝統文化における情報技術の応用や，地域課題解決のためのICT応用の研究をおこなっています．共同研究や取材・出展の依頼などのご要望がありましたら，気軽にご連絡ください。
+            小栗研究室では伝統文化における情報技術の応用や、地域課題解決のためのICT応用の研究をおこなっています．共同研究や取材・出展の依頼などのご要望がありましたら、気軽にご連絡ください。
           </p>
           <p className="mt-2 max-w-4xl  leading-7 text-muted-foreground">
             ご連絡は、以下の愛知工業大学のご案内、または、小栗のメールアドレス、X(Twitter)にてお願いいたします。
@@ -91,7 +91,7 @@ export default function Page() {
             寄付を検討中の方へ
           </h2>
           <p className="max-w-4xl  leading-7 text-muted-foreground">
-            私たちの研究・制作活動にご理解いただき，ご支援いただける方を募集しております。
+            私たちの研究・制作活動にご理解いただき、ご支援いただける方を募集しております。
             <br />
             以下のリンクより詳細をご覧いただけます。
           </p>
@@ -146,7 +146,7 @@ export default function Page() {
             愛知県豊田市八草町八千草1247 愛知工業大学14号館7階709号室 小栗研究室
           </span>
         </p>
-        <p className="mt-4 flex max-w-4xl space-x-8 leading-7">
+        <p className="mt-4 flex max-w-4xl space-x-8 text-sm leading-7 sm:text-base">
           <a
             className="flex items-center leading-7 underline underline-offset-4"
             href="https://maps.app.goo.gl/esM6H4GtPzCDUd3JA"
@@ -180,7 +180,7 @@ export default function Page() {
               <div className="mt-4 flex w-full flex-1 overflow-hidden rounded-lg">
                 <Image
                   alt="愛知工業大学14号館"
-                  className="rounded-lg object-cover"
+                  className="size-full rounded-lg object-cover"
                   height={300}
                   src="/ait.jpg"
                   width={400}

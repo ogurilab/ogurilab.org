@@ -10,7 +10,7 @@ export function OurSkills() {
         </h2>
         <p className="mt-6 leading-7 text-muted-foreground">
           Web開発・ゲーム開発・Line
-          Bot・VRなど，様々な技術を用いて文化を大切にする社会を実現します
+          Bot・VRなど、様々な技術を用いて文化を大切にする社会を実現します
         </p>
         <div className="w-full">
           <SkillMarquee className="pt-16" showDescription={false} />
