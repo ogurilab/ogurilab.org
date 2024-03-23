@@ -1,7 +1,15 @@
+import { Metadata } from "next";
 import React from "react";
 import { Container } from "@/components/container";
 import { FadeInWithStagger } from "@/components/fade-in";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
+
+import { basicMetadata } from "@/meta";
+
+export const metadata: Metadata = {
+  ...basicMetadata,
+  title: "Publications",
+};
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
