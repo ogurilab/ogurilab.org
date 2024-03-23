@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { Container } from "@/components/container";
 import { Image } from "@/components/ui/image";
 import { getMembersJSON } from "@/docs/members";
 
@@ -10,7 +11,7 @@ export async function OurMembers() {
   const team = [...teacher, ...b4];
 
   return (
-    <div className="mx-auto  max-w-7xl px-6 lg:px-8">
+    <Container>
       <div className="mx-auto max-w-2xl lg:mx-0">
         <h2 className="mt-6 scroll-m-20 text-2xl font-extrabold tracking-tight sm:text-3xl">
           Our Members
@@ -51,6 +52,6 @@ export async function OurMembers() {
           <ChevronRight className="ml-1 inline-block size-4" />
         </Link>
       </p>
-    </div>
+    </Container>
   );
 }

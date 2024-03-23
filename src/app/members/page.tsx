@@ -1,4 +1,5 @@
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
 import { Member, getMembersJSON } from "@/docs/members";
@@ -65,7 +66,7 @@ export default async function Page() {
   const { teacher, b3, b4, graduate } = await getMembersJSON();
 
   return (
-    <div>
+    <Container>
       <div className="space-y-16">
         <div>
           <h2 className="scroll-m-20 pb-2 text-center text-xl font-semibold tracking-tight sm:text-2xl">
@@ -92,6 +93,6 @@ export default async function Page() {
           <PeopleList people={graduate} />
         </div>
       </div>
-    </div>
+    </Container>
   );
 }

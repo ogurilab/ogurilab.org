@@ -15,7 +15,7 @@ const blogPosts = allNews
 
 export function OurNews() {
   return (
-    <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl">
       <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-none">
         <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
           News

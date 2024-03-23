@@ -5,7 +5,6 @@ import { OurNews } from "@/app/about/_components/news";
 import { OurSkills } from "@/app/about/_components/skills";
 import { OurVision } from "@/app/about/_components/vision";
 import { FadeIn } from "@/components/fade-in";
-import { Image } from "@/components/ui/image";
 
 export default async function Page() {
   return (
@@ -18,7 +17,7 @@ export default async function Page() {
         <OurVision />
       </FadeIn>
 
-      <FadeIn>
+      {/* <FadeIn>
         <div className=" xl:mx-auto xl:max-w-7xl xl:px-8">
           <Image
             alt="新規歓迎会"
@@ -28,7 +27,7 @@ export default async function Page() {
             width={1920}
           />
         </div>
-      </FadeIn>
+      </FadeIn> */}
 
       <FadeIn>
         <OurSkills />

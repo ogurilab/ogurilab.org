@@ -36,6 +36,13 @@ export const MDXHeader = React.forwardRef<
   React.HTMLProps<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   return (
-    <div {...props} ref={ref} className={cn("mb-10 space-y-2", className)} />
+    <div
+      {...props}
+      ref={ref}
+      className={cn(
+        "mb-10 space-y-2 mx-auto max-w-2xl lg:mx-0 lg:max-w-none",
+        className
+      )}
+    />
   );
 });

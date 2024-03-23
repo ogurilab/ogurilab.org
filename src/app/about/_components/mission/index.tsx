@@ -5,7 +5,7 @@ export function OurMission() {
   return (
     <div className="relative isolate -z-10">
       <div className="overflow-hidden">
-        <div className="mx-auto max-w-7xl px-6  lg:px-8">
+        <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl gap-x-14 lg:mx-0 lg:flex lg:max-w-none lg:items-center">
             <div className="w-full max-w-xl lg:shrink-0 xl:max-w-2xl">
               <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
@@ -20,7 +20,7 @@ export function OurMission() {
               <div className="ml-auto w-44 flex-none space-y-8 pt-32 sm:ml-0 sm:pt-80 lg:order-last lg:pt-36 xl:order-none xl:pt-80">
                 <div className="relative">
                   <Image
-                    alt="タコパの風景"
+                    alt="BBQ"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover shadow-lg"
                     height={300}
                     src="/missions/bbq.jpg"
@@ -42,7 +42,7 @@ export function OurMission() {
                 </div>
                 <div className="relative">
                   <Image
-                    alt="BBQ"
+                    alt="タコパの写真"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover shadow-lg"
                     height={300}
                     src="/missions/takopa.jpg"

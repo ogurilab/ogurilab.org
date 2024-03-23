@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeIn } from "@/components/fade-in";
 import { SkillMarquee } from "@/components/marquees/skill";
 import {
@@ -42,7 +43,7 @@ const faq = [
 
 export default function Page() {
   return (
-    <div>
+    <Container>
       <div className="space-y-16">
         <FadeIn>
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
@@ -90,7 +91,7 @@ export default function Page() {
           </div>
         </FadeIn>
 
-        <FadeIn className="flex flex-col justify-between gap-6 sm:flex-row">
+        <FadeIn className="flex flex-col justify-between gap-6 lg:flex-row">
           <div className="flex-1">
             <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
               期待する態度
@@ -137,6 +138,6 @@ export default function Page() {
           </Accordion>
         </FadeIn>
       </div>
-    </div>
+    </Container>
   );
 }

@@ -3,8 +3,8 @@ import { SkillMarquee } from "@/components/marquees/skill";
 
 export function OurSkills() {
   return (
-    <div className="relative isolate">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <div className="mx-auto">
+      <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-none">
         <h2 className="mt-6 scroll-m-20 text-2xl font-extrabold tracking-tight sm:text-3xl">
           Our Skills
         </h2>

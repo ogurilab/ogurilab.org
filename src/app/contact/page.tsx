@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { PinContainer } from "@/components/ui/3d-pin";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 export default function Page() {
   return (
-    <div>
+    <Container>
       <FadeInWithStagger className="space-y-16">
         <FadeIn>
           <h2 className="scroll-m-20  pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">
@@ -189,6 +190,6 @@ export default function Page() {
           </PinContainer>
         </div>
       </FadeIn>
-    </div>
+    </Container>
   );
 }
