@@ -48,7 +48,7 @@ export default function Page() {
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
             Digital Culture Lab の紹介
           </h2>
-          <p className="text-sm leading-7 text-muted-foreground">
+          <p className="leading-7 text-muted-foreground">
             <span className="font-semibold text-primary">
               デジタルカルチャー研究室（小栗研究室）
             </span>
@@ -78,7 +78,7 @@ export default function Page() {
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
             こんな人が来たら幸せになれるはず
           </h2>
-          <div className="text-sm leading-7 text-muted-foreground">
+          <div className="leading-7 text-muted-foreground">
             <ol className="list-inside list-decimal">
               <li>
                 与えられたテーマではなく新しいテーマを一緒に考えて挑戦したい人
@@ -95,7 +95,7 @@ export default function Page() {
             <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
               期待する態度
             </h2>
-            <div className=" text-sm leading-7 text-muted-foreground">
+            <div className="leading-7 text-muted-foreground">
               <ol className="list-inside list-decimal">
                 <li>誠実な行動</li>
                 <li>なぜやるのかを考え抜く</li>
@@ -129,7 +129,7 @@ export default function Page() {
                 >
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-sm leading-7 text-muted-foreground">
+                <AccordionContent className="leading-7 text-muted-foreground">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
