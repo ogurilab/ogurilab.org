@@ -1,4 +1,5 @@
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
 import { allNews } from "contentlayer/generated";
@@ -9,7 +10,7 @@ export default function Page() {
   });
 
   return (
-    <div>
+    <Container>
       <FadeInWithStagger
         className="grid grid-cols-2 gap-x-8 gap-y-20 lg:grid-cols-3"
         speed={0.05}
@@ -68,6 +69,6 @@ export default function Page() {
           </FadeIn>
         ))}
       </FadeInWithStagger>
-    </div>
+    </Container>
   );
 }

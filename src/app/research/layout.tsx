@@ -1,4 +1,5 @@
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeInWithStagger } from "@/components/fade-in";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
 import { Pattern } from "@/components/patterns";
@@ -18,7 +19,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           また、東京ゲームショウなどのイベントにも積極的に参加しています。
         </MDXDescription>
       </MDXHeader>
-      <FadeInWithStagger className="leading-7">{children}</FadeInWithStagger>
+      <Container>
+        <FadeInWithStagger className="leading-7">{children}</FadeInWithStagger>
+      </Container>
     </div>
   );
 }

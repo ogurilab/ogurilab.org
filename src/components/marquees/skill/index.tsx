@@ -122,7 +122,7 @@ export function SkillMarquee({
         ))}
       </Marquee>
       <Marquee
-        className="mt-4 [--gap:2rem]"
+        className="mt-10 [--gap:2rem]"
         id="skill-marquee-second"
         pauseOnHover
         repeat={3}

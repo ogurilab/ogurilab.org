@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeIn } from "@/components/fade-in";
 import { SkillMarquee } from "@/components/marquees/skill";
 import {
@@ -42,13 +43,13 @@ const faq = [
 
 export default function Page() {
   return (
-    <div>
+    <Container>
       <div className="space-y-16">
         <FadeIn>
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
             Digital Culture Lab の紹介
           </h2>
-          <p className="text-sm leading-7 text-muted-foreground">
+          <p className="leading-7 text-muted-foreground">
             <span className="font-semibold text-primary">
               デジタルカルチャー研究室（小栗研究室）
             </span>
@@ -78,7 +79,7 @@ export default function Page() {
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
             こんな人が来たら幸せになれるはず
           </h2>
-          <div className="text-sm leading-7 text-muted-foreground">
+          <div className="leading-7 text-muted-foreground">
             <ol className="list-inside list-decimal">
               <li>
                 与えられたテーマではなく新しいテーマを一緒に考えて挑戦したい人
@@ -90,12 +91,12 @@ export default function Page() {
           </div>
         </FadeIn>
 
-        <FadeIn className="flex flex-col justify-between gap-6 sm:flex-row">
+        <FadeIn className="flex flex-col justify-between gap-6 lg:flex-row">
           <div className="flex-1">
             <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
               期待する態度
             </h2>
-            <div className=" text-sm leading-7 text-muted-foreground">
+            <div className="leading-7 text-muted-foreground">
               <ol className="list-inside list-decimal">
                 <li>誠実な行動</li>
                 <li>なぜやるのかを考え抜く</li>
@@ -129,7 +130,7 @@ export default function Page() {
                 >
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-sm leading-7 text-muted-foreground">
+                <AccordionContent className="leading-7 text-muted-foreground">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -137,6 +138,6 @@ export default function Page() {
           </Accordion>
         </FadeIn>
       </div>
-    </div>
+    </Container>
   );
 }

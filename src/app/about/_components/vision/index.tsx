@@ -2,7 +2,7 @@ import React from "react";
 
 export function OurVision() {
   return (
-    <div className="mx-auto -mt-12 max-w-7xl px-6 sm:mt-0 lg:px-8 xl:-mt-8">
+    <div className="mx-auto -mt-12 max-w-7xl  sm:mt-0 xl:-mt-8">
       <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-none">
         <h2 className="mt-6 scroll-m-20 text-2xl font-extrabold tracking-tight sm:text-3xl">
           Our Vision

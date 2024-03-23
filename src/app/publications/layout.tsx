@@ -1,4 +1,5 @@
 import React from "react";
+import { Container } from "@/components/container";
 import { FadeInWithStagger } from "@/components/fade-in";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
 import { Pattern } from "@/components/patterns";
@@ -13,7 +14,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           本ページでは、小栗研究室の学術活動の成果を紹介しています。小栗先生をはじめとする研究室メンバーによる最新の研究論文、技術記事、国際会議での発表、受賞歴など、私たちの研究の進展と貢献を広く共有する場としています。
         </MDXDescription>
       </MDXHeader>
-      <FadeInWithStagger className="leading-7">{children}</FadeInWithStagger>
+      <Container>
+        <FadeInWithStagger className="leading-7">{children}</FadeInWithStagger>
+      </Container>
     </div>
   );
 }
