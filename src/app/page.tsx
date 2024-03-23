@@ -5,7 +5,6 @@ import { OurSkills } from "@/app/about/_components/skills";
 import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
-import { Icon } from "@/icons";
 
 export default function Home() {
   return (
@@ -16,11 +15,6 @@ export default function Home() {
             <FadeInWithStagger className="mx-auto grid max-w-2xl grid-cols-1 gap-x-12 gap-y-16 lg:mx-0 lg:min-w-full lg:max-w-none lg:flex-none lg:gap-y-8">
               <FadeIn className="lg:col-end-1 lg:w-full lg:max-w-lg lg:pb-8">
                 <h2 className="relative gap-4 text-3xl font-bold tracking-tight sm:text-4xl">
-                  <Icon
-                    className="mb-2 mr-4 inline-block rounded-md"
-                    height={48}
-                    width={48}
-                  />
                   <span>
                     Digital Culture Laboratory <br />
                     Aichi Institute of Technology

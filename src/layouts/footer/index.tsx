@@ -1,5 +1,5 @@
 import React from "react";
-import { FadeInWithStagger } from "@/components/fade-in";
+import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { FacebookIcon } from "@/icons/facebook-icon";
 import { GithubIcon } from "@/icons/github-icon";
 import { ScrapboxIcon } from "@/icons/scrapbox-icon";
@@ -79,9 +79,12 @@ export function Footer() {
           <p className="px-2 text-sm font-bold tracking-wider md:text-center lg:px-3">
             外部リンク
           </p>
-          <ul className="grid grid-cols-2 grid-rows-4 items-center justify-between md:flex md:grid-cols-1 md:grid-rows-1 md:justify-center">
+          <FadeInWithStagger className="grid grid-cols-2 grid-rows-4 items-center justify-between md:flex md:grid-cols-1 md:grid-rows-1 md:justify-center">
             {outreLinks.map((item) => (
-              <li key={item.name} className="relative block p-3 px-2 lg:px-3">
+              <FadeIn
+                key={item.name}
+                className="relative block p-3 px-2 lg:px-3"
+              >
                 <a
                   className="text-sm text-muted-foreground underline-offset-4 hover:underline"
                   href={item.href}
@@ -90,9 +93,9 @@ export function Footer() {
                 >
                   {item.name}
                 </a>
-              </li>
+              </FadeIn>
             ))}
-          </ul>
+          </FadeInWithStagger>
         </div>
         <div className="mt-10 flex justify-center space-x-10">
           {social.map((item) => (
