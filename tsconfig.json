@@ -29,9 +29,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/app/news/page.mdx",
-    "src/app/publications/page.mdx",
-    "src/app/research/page.mdx"
+    "src/app/(page)/news/page.mdx",
+    "src/app/(page)/publications/page.mdx",
+    "src/app/(page)/research/page.mdx"
   ],
   "exclude": ["node_modules"]
 }
