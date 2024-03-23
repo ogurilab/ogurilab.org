@@ -1,13 +1,11 @@
 import Link from "next/link";
 import React from "react";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
-import { Pattern } from "@/components/patterns";
 import { XIcon } from "@/icons/x-icon";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <Pattern />
       <MDXHeader>
         <MDXTitle>Join the Lab</MDXTitle>
         <MDXDescription>

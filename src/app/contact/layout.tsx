@@ -1,12 +1,10 @@
 import { ChevronDown } from "lucide-react";
 import React from "react";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
-import { Pattern } from "@/components/patterns";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <Pattern />
       <MDXHeader>
         <MDXTitle>Contact and Access</MDXTitle>
         <MDXDescription>

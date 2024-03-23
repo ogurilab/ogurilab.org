@@ -2,12 +2,10 @@ import React from "react";
 import { Container } from "@/components/container";
 import { FadeInWithStagger } from "@/components/fade-in";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
-import { Pattern } from "@/components/patterns";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <Pattern />
       <MDXHeader>
         <MDXTitle>Research</MDXTitle>
         <MDXDescription>
