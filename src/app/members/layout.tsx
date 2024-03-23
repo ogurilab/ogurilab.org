@@ -1,5 +1,13 @@
+import { Metadata } from "next";
 import React from "react";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
+
+import { basicMetadata } from "@/meta";
+
+export const metadata: Metadata = {
+  ...basicMetadata,
+  title: "Members",
+};
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

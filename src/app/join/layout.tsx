@@ -1,7 +1,15 @@
+import { Metadata } from "next";
 import Link from "next/link";
 import React from "react";
 import { MDXDescription, MDXHeader, MDXTitle } from "@/components/mdx";
 import { XIcon } from "@/icons/x-icon";
+
+import { basicMetadata } from "@/meta";
+
+export const metadata: Metadata = {
+  ...basicMetadata,
+  title: "Join",
+};
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
