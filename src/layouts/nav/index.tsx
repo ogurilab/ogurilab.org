@@ -4,6 +4,11 @@ import { NavItem } from "@/layouts/nav/nav-item";
 
 export const navigation = [
   {
+    href: "/",
+    label: "Home",
+    ja: "ホーム",
+  },
+  {
     href: "/about",
     label: "About",
     ja: "dclabについて",
