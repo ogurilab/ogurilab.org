@@ -17,18 +17,6 @@ export default async function Page() {
         <OurVision />
       </FadeIn>
 
-      {/* <FadeIn>
-        <div className=" xl:mx-auto xl:max-w-7xl xl:px-8">
-          <Image
-            alt="新規歓迎会"
-            className="aspect-[5/2] w-full rounded-3xl object-cover"
-            height={960}
-            src="/sinkan.jpg"
-            width={1920}
-          />
-        </div>
-      </FadeIn> */}
-
       <FadeIn>
         <OurSkills />
       </FadeIn>

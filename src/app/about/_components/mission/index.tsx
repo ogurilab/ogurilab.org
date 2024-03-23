@@ -1,6 +1,7 @@
 import React from "react";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
+import { Icon } from "@/icons";
 
 export function OurMission() {
   return (
@@ -9,6 +10,18 @@ export function OurMission() {
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl gap-x-14 lg:mx-0 lg:flex lg:max-w-none lg:items-center">
             <div className="w-full max-w-xl lg:shrink-0 xl:max-w-2xl">
+              <div className="relative mb-6 flex items-center  gap-4 overflow-hidden  lg:-mt-10 lg:mb-10">
+                <div className="relative size-12 sm:size-14">
+                  <Icon
+                    className="size-full h-12 rounded-md object-cover sm:h-14"
+                    fill
+                    sizes="(min-width: 1024px) 64px, 48px"
+                  />
+                </div>
+                <span className="text-2xl font-bold tracking-tight text-primary sm:text-4xl">
+                  Digital Culture Lab.
+                </span>
+              </div>
               <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
                 文化を大切にする社会を実現する
               </h1>
