@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { basicMetadata } from "@/meta";
 
 export const dynamic = "error";
+export const runtime = "edge";
 
 const fontSans = FontSans({
   subsets: ["latin"],

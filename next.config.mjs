@@ -7,12 +7,7 @@ import createMDX from "@next/mdx";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: "export",
   pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
-  images: {
-    loader: "custom",
-    loaderFile: "./image-loader.ts",
-  },
 };
 
 const withMDX = createMDX({
