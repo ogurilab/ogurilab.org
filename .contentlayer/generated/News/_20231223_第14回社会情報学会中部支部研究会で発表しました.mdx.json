@@ -1,0 +1,20 @@
+{
+  "title": "第14回社会情報学会中部支部研究会で発表しました",
+  "href": "https://scrapbox.io/dclab/%E7%AC%AC14%E5%9B%9E%E7%A4%BE%E4%BC%9A%E6%83%85%E5%A0%B1%E5%AD%A6%E4%BC%9A%E4%B8%AD%E9%83%A8%E6%94%AF%E9%83%A8%E7%A0%94%E7%A9%B6%E4%BC%9A%E3%81%A7%E7%99%BA%E8%A1%A8%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F",
+  "category": "対外発表",
+  "date": "2023-12-23",
+  "image": "2023-12-23.jpg",
+  "body": {
+    "raw": "",
+    "code": "var Component=(()=>{var i=Object.create;var A=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var x=Object.getOwnPropertyNames;var u=Object.getPrototypeOf,C=Object.prototype.hasOwnProperty;var f=(t,E)=>()=>(E||t((E={exports:{}}).exports,E),E.exports),g=(t,E)=>{for(var e in E)A(t,e,{get:E[e],enumerable:!0})},a=(t,E,e,o)=>{if(E&&typeof E==\"object\"||typeof E==\"function\")for(let r of x(E))!C.call(t,r)&&r!==e&&A(t,r,{get:()=>E[r],enumerable:!(o=m(E,r))||o.enumerable});return t};var p=(t,E,e)=>(e=t!=null?i(u(t)):{},a(E||!t||!t.__esModule?A(e,\"default\",{value:t,enumerable:!0}):e,t)),d=t=>a(A({},\"__esModule\",{value:!0}),t);var s=f((b,c)=>{c.exports=_jsx_runtime});var D={};g(D,{default:()=>l,frontmatter:()=>j});var n=p(s()),j={title:\"\\u7B2C14\\u56DE\\u793E\\u4F1A\\u60C5\\u5831\\u5B66\\u4F1A\\u4E2D\\u90E8\\u652F\\u90E8\\u7814\\u7A76\\u4F1A\\u3067\\u767A\\u8868\\u3057\\u307E\\u3057\\u305F\",href:\"https://scrapbox.io/dclab/%E7%AC%AC14%E5%9B%9E%E7%A4%BE%E4%BC%9A%E6%83%85%E5%A0%B1%E5%AD%A6%E4%BC%9A%E4%B8%AD%E9%83%A8%E6%94%AF%E9%83%A8%E7%A0%94%E7%A9%B6%E4%BC%9A%E3%81%A7%E7%99%BA%E8%A1%A8%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F\",category:\"\\u5BFE\\u5916\\u767A\\u8868\",date:\"2023-12-23\",image:\"2023-12-23.jpg\"};function B(t){return(0,n.jsx)(n.Fragment,{})}function _(t={}){let{wrapper:E}=t.components||{};return E?(0,n.jsx)(E,Object.assign({},t,{children:(0,n.jsx)(B,t)})):B(t)}var l=_;return d(D);})();\n;return Component;"
+  },
+  "_id": "20231223_第14回社会情報学会中部支部研究会で発表しました.mdx",
+  "_raw": {
+    "sourceFilePath": "20231223_第14回社会情報学会中部支部研究会で発表しました.mdx",
+    "sourceFileName": "20231223_第14回社会情報学会中部支部研究会で発表しました.mdx",
+    "sourceFileDir": ".",
+    "contentType": "mdx",
+    "flattenedPath": "20231223_第14回社会情報学会中部支部研究会で発表しました"
+  },
+  "type": "News"
+}
