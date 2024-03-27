@@ -10,8 +10,7 @@ const nextConfig = {
   output: "export",
   pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
   images: {
-    loader: "custom",
-    loaderFile: "./image-loader.ts",
+    unoptimized: true,
   },
 };
 
