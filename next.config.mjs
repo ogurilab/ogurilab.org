@@ -4,6 +4,8 @@ import { createContentlayerPlugin } from "next-contentlayer";
 import remarkGfm from "remark-gfm";
 import createMDX from "@next/mdx";
 
+const isProd = process.env.NODE_ENV === "production";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
