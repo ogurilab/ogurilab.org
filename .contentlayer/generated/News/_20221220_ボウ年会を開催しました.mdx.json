@@ -1,0 +1,20 @@
+{
+  "title": "ボウ年会を開催しました",
+  "href": "https://scrapbox.io/dclab/%E3%83%9C%E3%82%A6%E5%B9%B4%E4%BC%9A%E3%82%92%E9%96%8B%E5%82%AC%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%882022-12-20%EF%BC%89",
+  "category": "イベント",
+  "date": "2022-12-20",
+  "image": "2022-12-20.png",
+  "body": {
+    "raw": "",
+    "code": "var Component=(()=>{var x=Object.create;var a=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var B=Object.getOwnPropertyNames;var C=Object.getPrototypeOf,f=Object.prototype.hasOwnProperty;var g=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports),p=(t,e)=>{for(var n in e)a(t,n,{get:e[n],enumerable:!0})},c=(t,e,n,E)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let o of B(e))!f.call(t,o)&&o!==n&&a(t,o,{get:()=>e[o],enumerable:!(E=u(e,o))||E.enumerable});return t};var d=(t,e,n)=>(n=t!=null?x(C(t)):{},c(e||!t||!t.__esModule?a(n,\"default\",{value:t,enumerable:!0}):n,t)),F=t=>c(a({},\"__esModule\",{value:!0}),t);var i=g((A,s)=>{s.exports=_jsx_runtime});var b={};p(b,{default:()=>l,frontmatter:()=>_});var r=d(i()),_={title:\"\\u30DC\\u30A6\\u5E74\\u4F1A\\u3092\\u958B\\u50AC\\u3057\\u307E\\u3057\\u305F\",href:\"https://scrapbox.io/dclab/%E3%83%9C%E3%82%A6%E5%B9%B4%E4%BC%9A%E3%82%92%E9%96%8B%E5%82%AC%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%882022-12-20%EF%BC%89\",category:\"\\u30A4\\u30D9\\u30F3\\u30C8\",date:\"2022-12-20\",image:\"2022-12-20.png\"};function m(t){return(0,r.jsx)(r.Fragment,{})}function j(t={}){let{wrapper:e}=t.components||{};return e?(0,r.jsx)(e,Object.assign({},t,{children:(0,r.jsx)(m,t)})):m(t)}var l=j;return F(b);})();\n;return Component;"
+  },
+  "_id": "20221220_ボウ年会を開催しました.mdx",
+  "_raw": {
+    "sourceFilePath": "20221220_ボウ年会を開催しました.mdx",
+    "sourceFileName": "20221220_ボウ年会を開催しました.mdx",
+    "sourceFileDir": ".",
+    "contentType": "mdx",
+    "flattenedPath": "20221220_ボウ年会を開催しました"
+  },
+  "type": "News"
+}

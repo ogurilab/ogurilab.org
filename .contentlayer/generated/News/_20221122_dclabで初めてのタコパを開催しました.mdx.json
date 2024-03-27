@@ -1,0 +1,20 @@
+{
+  "title": "dclabで初めてのタコパを開催しました",
+  "href": "https://scrapbox.io/dclab/dclab%E3%81%A7%E5%88%9D%E3%82%81%E3%81%A6%E3%81%AE%E3%82%BF%E3%82%B3%E3%83%91%E3%82%92%E9%96%8B%E5%82%AC%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%882022-11-22%EF%BC%89",
+  "category": "イベント",
+  "date": "2022-11-22",
+  "image": "2022-11-22.jpg",
+  "body": {
+    "raw": "",
+    "code": "var Component=(()=>{var x=Object.create;var a=Object.defineProperty;var d=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var f=Object.getPrototypeOf,g=Object.prototype.hasOwnProperty;var l=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports),p=(t,e)=>{for(var n in e)a(t,n,{get:e[n],enumerable:!0})},c=(t,e,n,o)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let E of u(e))!g.call(t,E)&&E!==n&&a(t,E,{get:()=>e[E],enumerable:!(o=d(e,E))||o.enumerable});return t};var B=(t,e,n)=>(n=t!=null?x(f(t)):{},c(e||!t||!t.__esModule?a(n,\"default\",{value:t,enumerable:!0}):n,t)),F=t=>c(a({},\"__esModule\",{value:!0}),t);var i=l((h,s)=>{s.exports=_jsx_runtime});var _={};p(_,{default:()=>C,frontmatter:()=>b});var r=B(i()),b={title:\"dclab\\u3067\\u521D\\u3081\\u3066\\u306E\\u30BF\\u30B3\\u30D1\\u3092\\u958B\\u50AC\\u3057\\u307E\\u3057\\u305F\",href:\"https://scrapbox.io/dclab/dclab%E3%81%A7%E5%88%9D%E3%82%81%E3%81%A6%E3%81%AE%E3%82%BF%E3%82%B3%E3%83%91%E3%82%92%E9%96%8B%E5%82%AC%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%882022-11-22%EF%BC%89\",category:\"\\u30A4\\u30D9\\u30F3\\u30C8\",date:\"2022-11-22\",image:\"2022-11-22.jpg\"};function m(t){return(0,r.jsx)(r.Fragment,{})}function j(t={}){let{wrapper:e}=t.components||{};return e?(0,r.jsx)(e,Object.assign({},t,{children:(0,r.jsx)(m,t)})):m(t)}var C=j;return F(_);})();\n;return Component;"
+  },
+  "_id": "20221122_dclabで初めてのタコパを開催しました.mdx",
+  "_raw": {
+    "sourceFilePath": "20221122_dclabで初めてのタコパを開催しました.mdx",
+    "sourceFileName": "20221122_dclabで初めてのタコパを開催しました.mdx",
+    "sourceFileDir": ".",
+    "contentType": "mdx",
+    "flattenedPath": "20221122_dclabで初めてのタコパを開催しました"
+  },
+  "type": "News"
+}
