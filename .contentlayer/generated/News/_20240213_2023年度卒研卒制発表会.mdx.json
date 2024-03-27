@@ -1,0 +1,20 @@
+{
+  "title": "2023年度卒研卒制発表会",
+  "href": "https://scrapbox.io/dclab/2023%E5%B9%B4%E5%BA%A6%E5%8D%92%E7%A0%94%E5%8D%92%E5%88%B6%E7%99%BA%E8%A1%A8%E4%BC%9A%EF%BC%882024-02-13%EF%BC%89",
+  "category": "イベント",
+  "date": "2024-02-13",
+  "image": "2024-02-13.jpg",
+  "body": {
+    "raw": "",
+    "code": "var Component=(()=>{var x=Object.create;var a=Object.defineProperty;var B=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var A=Object.getPrototypeOf,f=Object.prototype.hasOwnProperty;var g=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports),p=(t,e)=>{for(var n in e)a(t,n,{get:e[n],enumerable:!0})},s=(t,e,n,c)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let o of u(e))!f.call(t,o)&&o!==n&&a(t,o,{get:()=>e[o],enumerable:!(c=B(e,o))||c.enumerable});return t};var d=(t,e,n)=>(n=t!=null?x(A(t)):{},s(e||!t||!t.__esModule?a(n,\"default\",{value:t,enumerable:!0}):n,t)),j=t=>s(a({},\"__esModule\",{value:!0}),t);var i=g((b,E)=>{E.exports=_jsx_runtime});var D={};p(D,{default:()=>l,frontmatter:()=>C});var r=d(i()),C={title:\"2023\\u5E74\\u5EA6\\u5352\\u7814\\u5352\\u5236\\u767A\\u8868\\u4F1A\",href:\"https://scrapbox.io/dclab/2023%E5%B9%B4%E5%BA%A6%E5%8D%92%E7%A0%94%E5%8D%92%E5%88%B6%E7%99%BA%E8%A1%A8%E4%BC%9A%EF%BC%882024-02-13%EF%BC%89\",category:\"\\u30A4\\u30D9\\u30F3\\u30C8\",date:\"2024-02-13\",image:\"2024-02-13.jpg\"};function m(t){return(0,r.jsx)(r.Fragment,{})}function _(t={}){let{wrapper:e}=t.components||{};return e?(0,r.jsx)(e,Object.assign({},t,{children:(0,r.jsx)(m,t)})):m(t)}var l=_;return j(D);})();\n;return Component;"
+  },
+  "_id": "20240213_2023年度卒研卒制発表会.mdx",
+  "_raw": {
+    "sourceFilePath": "20240213_2023年度卒研卒制発表会.mdx",
+    "sourceFileName": "20240213_2023年度卒研卒制発表会.mdx",
+    "sourceFileDir": ".",
+    "contentType": "mdx",
+    "flattenedPath": "20240213_2023年度卒研卒制発表会"
+  },
+  "type": "News"
+}

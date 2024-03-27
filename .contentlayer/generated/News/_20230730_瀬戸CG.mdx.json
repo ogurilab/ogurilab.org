@@ -1,0 +1,20 @@
+{
+  "title": "瀬戸CG",
+  "href": "https://scrapbox.io/dclab/%E7%80%AC%E6%88%B8CG_Kid%27s%E3%81%AE%E3%82%B9%E3%82%BF%E3%83%83%E3%83%95%E3%81%A8%E3%81%97%E3%81%A6%E5%8D%94%E5%8A%9B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%882023-07-30%EF%BC%89",
+  "category": "イベント",
+  "date": "2023-07-30",
+  "image": "2023-07-30.jpg",
+  "body": {
+    "raw": "",
+    "code": "var Component=(()=>{var x=Object.create;var o=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var B=Object.getOwnPropertyNames;var C=Object.getPrototypeOf,d=Object.prototype.hasOwnProperty;var f=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports),g=(t,e)=>{for(var n in e)o(t,n,{get:e[n],enumerable:!0})},s=(t,e,n,a)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of B(e))!d.call(t,r)&&r!==n&&o(t,r,{get:()=>e[r],enumerable:!(a=u(e,r))||a.enumerable});return t};var p=(t,e,n)=>(n=t!=null?x(C(t)):{},s(e||!t||!t.__esModule?o(n,\"default\",{value:t,enumerable:!0}):n,t)),F=t=>s(o({},\"__esModule\",{value:!0}),t);var i=f((h,c)=>{c.exports=_jsx_runtime});var l={};g(l,{default:()=>A,frontmatter:()=>_});var E=p(i()),_={title:\"\\u702C\\u6238CG\",href:\"https://scrapbox.io/dclab/%E7%80%AC%E6%88%B8CG_Kid%27s%E3%81%AE%E3%82%B9%E3%82%BF%E3%83%83%E3%83%95%E3%81%A8%E3%81%97%E3%81%A6%E5%8D%94%E5%8A%9B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%EF%BC%882023-07-30%EF%BC%89\",category:\"\\u30A4\\u30D9\\u30F3\\u30C8\",date:\"2023-07-30\",image:\"2023-07-30.jpg\"};function m(t){return(0,E.jsx)(E.Fragment,{})}function j(t={}){let{wrapper:e}=t.components||{};return e?(0,E.jsx)(e,Object.assign({},t,{children:(0,E.jsx)(m,t)})):m(t)}var A=j;return F(l);})();\n;return Component;"
+  },
+  "_id": "20230730_瀬戸CG.mdx",
+  "_raw": {
+    "sourceFilePath": "20230730_瀬戸CG.mdx",
+    "sourceFileName": "20230730_瀬戸CG.mdx",
+    "sourceFileDir": ".",
+    "contentType": "mdx",
+    "flattenedPath": "20230730_瀬戸CG"
+  },
+  "type": "News"
+}
