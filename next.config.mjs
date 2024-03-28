@@ -12,6 +12,8 @@ const nextConfig = {
   output: "export",
   pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
   images: {
+    loader: "custom",
+    loaderFile: "./src/loader.ts",
     unoptimized: true,
   },
   assetPrefix: isProd
