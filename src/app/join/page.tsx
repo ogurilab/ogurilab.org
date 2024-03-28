@@ -112,7 +112,7 @@ export default function Page() {
               className="size-full rounded-xl object-cover"
               height={384}
               quality={90}
-              src="/sinkan.jpg"
+              src="/sinkan.webp"
               width={512}
             />
           </div>

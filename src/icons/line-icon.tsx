@@ -7,5 +7,5 @@ type LineIconProps = Omit<
 >;
 
 export function LineIcon(props: LineIconProps) {
-  return <Image {...props} alt="LINE" src="/line.png" />;
+  return <Image {...props} alt="LINE" src="/line.webp" />;
 }

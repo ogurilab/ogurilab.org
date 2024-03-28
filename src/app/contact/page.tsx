@@ -182,7 +182,7 @@ export default function Page() {
                   alt="愛知工業大学14号館"
                   className="size-full rounded-lg object-cover"
                   height={300}
-                  src="/dclab.png"
+                  src="/dclab.webp"
                   width={400}
                 />
               </div>

@@ -32,7 +32,7 @@ export const news = defineDocumentType(() => ({
     image: {
       type: "string",
       description:
-        "画像 public/news に画像を配置し、その画像名(example.jpg)を指定",
+        "画像 public/news に画像を配置し、その画像名(example.webp)を指定",
       required: true,
     },
   },
