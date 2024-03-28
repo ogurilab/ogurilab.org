@@ -7,7 +7,7 @@ export function ScrapboxIcon({ className }: { className?: string }) {
       alt="scrapbox icon"
       className={className}
       height={24}
-      src="/scrapbox.png"
+      src="/scrapbox.webp"
       width={24}
     />
   );

@@ -37,7 +37,7 @@ export function OurMission() {
                     alt="東京ゲームショウ"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover object-right shadow-lg"
                     height={300}
-                    src="/missions/game-show.png"
+                    src="/missions/game-show.webp"
                     width={180}
                   />
                   <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-primary/10" />
@@ -49,7 +49,7 @@ export function OurMission() {
                     alt="獅子奮迅"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover object-right shadow-lg"
                     height={300}
-                    src="/missions/shishi.jpg"
+                    src="/missions/shishi.webp"
                     width={180}
                   />
                   <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-primary/10" />
@@ -59,7 +59,7 @@ export function OurMission() {
                     alt="古都のゲーム"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover object-left shadow-lg"
                     height={300}
-                    src="/missions/koto.jpg"
+                    src="/missions/koto.webp"
                     width={180}
                   />
                   <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-primary/10" />
@@ -71,7 +71,7 @@ export function OurMission() {
                     alt="獅子奮迅"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover object-left shadow-lg"
                     height={300}
-                    src="/missions/shishi-2.png"
+                    src="/missions/shishi-2.webp"
                     width={180}
                   />
                   <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-primary/10" />
@@ -81,7 +81,7 @@ export function OurMission() {
                     alt="タコパ"
                     className="aspect-[2/3] w-full rounded-xl bg-primary/5 object-cover shadow-lg"
                     height={300}
-                    src="/missions/takopa.jpg"
+                    src="/missions/takopa.webp"
                     width={180}
                   />
                   <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-primary/10" />
