@@ -14,7 +14,6 @@ const nextConfig = {
   images: {
     loader: "custom",
     loaderFile: "./src/loader.ts",
-    unoptimized: true,
   },
   assetPrefix: isProd
     ? "https://feature-proxy-assets.ogurilab-org.pages.dev"

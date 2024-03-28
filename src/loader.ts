@@ -6,6 +6,6 @@ type ImageProps = {
 
 const domain = "https://feature-proxy-assets.ogurilab-org.pages.dev";
 
-export default function ImageLoader({ src }: ImageProps) {
-  return domain + src;
+export default function ImageLoader({ src, width, quality }: ImageProps) {
+  return `${domain + src}?w=${width}&q=${quality}`;
 }
