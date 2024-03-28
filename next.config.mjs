@@ -14,7 +14,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  assetPrefix: isProd ? "https://ogurilab.org" : "",
+  assetPrefix: isProd ? "https://develop.ogurilab-org.pages.dev" : "",
 };
 
 const withMDX = createMDX({
