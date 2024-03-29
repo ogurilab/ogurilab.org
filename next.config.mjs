@@ -1,10 +1,7 @@
 import withBundleAnalyzer from "@next/bundle-analyzer";
-import { createContentlayerPlugin } from "next-contentlayer";
 
 import remarkGfm from "remark-gfm";
 import createMDX from "@next/mdx";
-
-const isProd = process.env.NODE_ENV === "production";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -13,6 +10,11 @@ const nextConfig = {
   pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
   images: {
     unoptimized: true,
+  },
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
   },
 };
 
@@ -24,4 +26,4 @@ const withMDX = createMDX({
 
 export default withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
-})(createContentlayerPlugin(nextConfig)(withMDX(nextConfig)));
+})(withMDX(nextConfig));
