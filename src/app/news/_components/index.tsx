@@ -7,7 +7,7 @@ import React from "react";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
 import { fetchNews } from "@/lib/fetch";
-import { timestampToDate } from "@/lib/utils";
+import { getGyazoImage, timestampToDate } from "@/lib/utils";
 
 type NewsProps = {
   data: Awaited<ReturnType<typeof fetchNews>>;
@@ -66,11 +66,8 @@ export function News({ data }: NewsProps) {
                     alt={`${news.title}`}
                     className="size-full object-cover object-center transition-opacity group-hover:opacity-75"
                     height={200}
-                    loading={i < 3 ? "eager" : "lazy"}
                     priority={i < 3}
-                    src={
-                      news.image ? `${news.image}?width=300` : "/fallback.webp"
-                    }
+                    src={getGyazoImage(news.image)}
                     width={300}
                   />
                   <span className="sr-only">{news.title}</span>

@@ -4,7 +4,7 @@ import React from "react";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
 import { fetchNews } from "@/lib/fetch";
-import { timestampToDate } from "@/lib/utils";
+import { getGyazoImage, timestampToDate } from "@/lib/utils";
 
 export async function OurNews() {
   const { pages } = await fetchNews(3);
@@ -28,7 +28,7 @@ export async function OurNews() {
                 className="absolute inset-0 -z-10 size-full object-cover"
                 fill
                 sizes="(min-width: 1024px) 400px, 100vw"
-                src={news.image ?? "/fallback.webp"}
+                src={getGyazoImage(news.image)}
               />
               <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/40" />
               <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-inset ring-gray-900/10" />

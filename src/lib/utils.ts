@@ -10,3 +10,19 @@ export function timestampToDate(timestamp: number) {
 
   return date;
 }
+
+export const getGyazoImage = (src: string | null, size = 300) => {
+  if (!src) return "/fallback.webp";
+
+  if (src.includes("/raw")) {
+    return `${src.replace("/raw", "")}/max_size/${size}`;
+  }
+
+  const ext = src.split(".").pop();
+
+  if (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "svg") {
+    return src;
+  }
+
+  return "/fallback.webp";
+};
