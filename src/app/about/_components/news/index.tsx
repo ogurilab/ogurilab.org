@@ -46,7 +46,12 @@ export async function OurNews() {
                 </time>
               </div>
               <h3 className="mt-3 text-lg font-semibold leading-6 text-white">
-                <a href={news.id} rel="noopener noreferrer" target="_blank">
+                <a
+                  className="line-clamp-1"
+                  href={news.id}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
                   <span className="absolute inset-0" />
                   {news.title}
                 </a>

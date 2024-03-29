@@ -53,7 +53,7 @@ export function News({ data }: NewsProps) {
         speed={0.05}
       >
         {currentPages.map((news, i) => (
-          <FadeIn key={news.title}>
+          <FadeIn key={news.title} className="overflow-hidden">
             <article className="flex flex-col items-start justify-between">
               <figure className="h-52 w-full overflow-hidden rounded-2xl border border-border">
                 <a
@@ -87,9 +87,9 @@ export function News({ data }: NewsProps) {
                   </time>
                 </div>
                 <div className="group relative">
-                  <h2 className="mt-3 text-base font-semibold leading-7 tracking-tight">
+                  <h2 className="mt-3  text-base font-semibold leading-7 tracking-tight">
                     <a
-                      className="underline-offset-4 hover:underline"
+                      className="line-clamp-3 underline-offset-4 hover:underline "
                       href={`https://scrapbox.io/dclab/${news.title}`}
                       rel="noopener noreferrer"
                       target="_blank"
