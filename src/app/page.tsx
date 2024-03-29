@@ -1,9 +1,11 @@
+import clsx from "clsx";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { OurNews } from "@/app/about/_components/news";
 import { OurSkills } from "@/app/about/_components/skills";
 import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
+import { buttonVariants } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 
 export default function Home() {
@@ -29,7 +31,12 @@ export default function Home() {
                     Lab.は情報メディア技術を使って、「文化を大切にする社会の実現」に貢献します．
                   </span>
                   <Link
-                    className="mx-auto mt-4 flex items-center text-primary underline underline-offset-4"
+                    className={clsx(
+                      buttonVariants({
+                        variant: "outline",
+                      }),
+                      "mx-auto mt-4 text-primary"
+                    )}
                     href="/about"
                   >
                     研究室について詳しくみる
@@ -96,7 +103,12 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center gap-y-4 space-x-4 sm:flex-row">
                 <p>
                   <Link
-                    className="underline underline-offset-4"
+                    className={clsx(
+                      buttonVariants({
+                        variant: "outline",
+                      }),
+                      "mx-auto text-primary"
+                    )}
                     href="/publications"
                   >
                     私達の学術活動の成果をみる
@@ -105,7 +117,12 @@ export default function Home() {
                 </p>
                 <p>
                   <Link
-                    className="underline underline-offset-4"
+                    className={clsx(
+                      buttonVariants({
+                        variant: "outline",
+                      }),
+                      "mx-auto text-primary"
+                    )}
                     href="/research"
                   >
                     私達の研究室の研究・制作をみる
@@ -119,7 +136,12 @@ export default function Home() {
                   Laboratoryに興味を持った方、共同研究や取材・出展の依頼、研究室見学や相談事などございましたら気軽にご連絡ください。
                 </span>
                 <Link
-                  className="mx-auto mt-6 inline-block text-primary underline underline-offset-4"
+                  className={clsx(
+                    buttonVariants({
+                      variant: "outline",
+                    }),
+                    "mx-auto mt-6 text-primary"
+                  )}
                   href="/contact"
                 >
                   Contactへ
@@ -133,10 +155,15 @@ export default function Home() {
                   14号館7階709号室で研究室の活動を行っています。興味のある方は、気軽に遊びに来てください。
                 </span>
                 <Link
-                  className="mx-auto  mt-6 inline-block text-primary underline underline-offset-4"
+                  className={clsx(
+                    buttonVariants({
+                      variant: "outline",
+                    }),
+                    "mx-auto mt-6 text-primary"
+                  )}
                   href="/join"
                 >
-                  Joinへ
+                  学生の方へ
                   <ChevronRight className="ml-1 inline-block size-4" />
                 </Link>
               </p>
