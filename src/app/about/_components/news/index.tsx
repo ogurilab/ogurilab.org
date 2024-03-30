@@ -48,7 +48,7 @@ export async function OurNews() {
               <h3 className="mt-3 text-lg font-semibold leading-6 text-white">
                 <a
                   className="line-clamp-1"
-                  href={news.id}
+                  href={`https://scrapbox.io/dclab/${news.title}`}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
