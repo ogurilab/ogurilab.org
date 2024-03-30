@@ -18,7 +18,8 @@ export default function Home() {
               <FadeIn className="lg:col-end-1 lg:w-full lg:max-w-lg lg:pb-8">
                 <h2 className="relative gap-4 text-2xl font-bold tracking-tight sm:text-4xl">
                   <span>
-                    Digital Culture Laboratory Aichi Institute of Technology
+                    Digital Culture Laboratory <br /> Aichi Institute of
+                    Technology
                   </span>
                 </h2>
                 <p className="mt-6 text-base leading-8 text-muted-foreground">
