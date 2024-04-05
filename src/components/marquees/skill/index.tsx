@@ -47,7 +47,7 @@ const skills = [
   },
   {
     id: "Web  react ",
-    name: "Web 開発 React.js",
+    name: "Web 開発 React",
     icon: <ReactIcon height={60} width={60} />,
   },
   {
