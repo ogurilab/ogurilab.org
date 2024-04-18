@@ -13,20 +13,18 @@ export type Pages = {
 };
 
 type Res = {
-  skip: number;
-  limit: number;
-  count: number;
-  pages: Pages[];
+  relatedPages: {
+    links1hop: Pages[];
+  };
 };
 
-export const fetchNews = async (limit: number, offset = 3) => {
-  const res = await fetch(
-    `https://scrapbox.io/api/pages/dclab?limit=${limit}&skip=${offset}`,
-    {
-      cache: "force-cache",
-    }
-  );
+const sortCreatedAt = (a: Pages, b: Pages) => b.created - a.created;
+
+export const fetchNews = async () => {
+  const res = await fetch("https://scrapbox.io/api/pages/dclab/news", {
+    cache: "force-cache",
+  });
   const data = (await res.json()) as Res;
 
-  return data;
+  return data.relatedPages.links1hop.sort(sortCreatedAt);
 };
