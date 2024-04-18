@@ -13,14 +13,11 @@ type NewsProps = {
   data: Awaited<ReturnType<typeof fetchNews>>;
 };
 
-const splitData = (
-  { pages, count }: NewsProps["data"],
-  page: number,
-  limit: number
-) => {
+const splitData = (pages: NewsProps["data"], page: number, limit: number) => {
   const offset = (page - 1) * limit;
   const currentPages = pages.slice(offset, offset + limit);
-  const hasNext = offset + limit < count;
+
+  const hasNext = pages.length > offset + limit;
 
   return { currentPages, hasNext };
 };

@@ -4,7 +4,7 @@ import { Container } from "@/components/container";
 import { fetchNews } from "@/lib/fetch";
 
 export default async function Page() {
-  const news = await fetchNews(200, 0);
+  const news = await fetchNews();
 
   return (
     <Container>
