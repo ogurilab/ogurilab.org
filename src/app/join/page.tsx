@@ -106,7 +106,7 @@ export default function Page() {
               </ol>
             </div>
           </div>
-          <div className="h-56 overflow-hidden rounded-xl md:min-w-96 ">
+          <div className="h-56 overflow-hidden rounded-xl md:w-96 ">
             <Image
               alt="新歓"
               className="size-full rounded-xl object-cover"
