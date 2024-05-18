@@ -12,7 +12,7 @@ export async function OurNews() {
   return (
     <div className="mx-auto max-w-7xl">
       <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-none">
-        <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+        <h2 className="mt-6 scroll-m-20 text-3xl font-extrabold tracking-tight sm:text-4xl">
           News
         </h2>
         <p className="mt-2 text-base leading-8 text-muted-foreground">
