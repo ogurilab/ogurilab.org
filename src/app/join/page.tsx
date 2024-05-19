@@ -23,7 +23,7 @@ const faq = [
         </span>
         <br />
         <span>
-          <span className="inline-block w-32">学生研究室</span> 14号館708
+          <span className="inline-block w-32">学生研究室</span> 14号館710
         </span>
       </p>
     ),
