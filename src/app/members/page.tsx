@@ -1,4 +1,5 @@
 import React from "react";
+import { Background } from "@/components/background";
 import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
@@ -80,7 +81,8 @@ export default async function Page() {
           </h2>
           <PeopleList people={b4} />
         </div>
-        <div>
+        <div className="relative">
+          <Background />
           <h2 className="scroll-m-20 pb-2 text-center text-xl font-semibold tracking-tight sm:text-2xl">
             B3 / 学部3年生
           </h2>

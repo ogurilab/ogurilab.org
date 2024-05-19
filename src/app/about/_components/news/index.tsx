@@ -33,7 +33,7 @@ export async function OurNews() {
               <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/40" />
               <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
 
-              <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-muted dark:text-muted-foreground">
                 <time
                   className="mr-8"
                   dateTime={timestampToDate(news.created).toISOString()}
