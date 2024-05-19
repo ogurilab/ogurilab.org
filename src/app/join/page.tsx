@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { Background } from "@/components/background";
 import { Container } from "@/components/container";
 import { FadeIn } from "@/components/fade-in";
 import { SkillMarquee } from "@/components/marquees/skill";
@@ -101,7 +102,10 @@ export default function Page() {
           </div>
         </FadeIn>
 
-        <FadeIn className="flex flex-col justify-between gap-6 lg:flex-row">
+        <FadeIn className="relative flex flex-col justify-between gap-6 lg:flex-row">
+          <div className="opacity-70">
+            <Background />
+          </div>
           <div className="flex-1">
             <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
               期待する態度

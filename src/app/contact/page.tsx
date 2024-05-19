@@ -9,8 +9,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { Background } from "@/components/background";
 import { Container } from "@/components/container";
-import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
+import { FadeIn } from "@/components/fade-in";
 import { PinContainer } from "@/components/ui/3d-pin";
 import { buttonVariants } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
@@ -20,7 +21,7 @@ import { cn } from "@/lib/utils";
 export default function Page() {
   return (
     <Container>
-      <FadeInWithStagger className="space-y-16">
+      <div className="space-y-16">
         <FadeIn>
           <h2 className="scroll-m-20  pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">
             共同研究・取材・出展依頼などのお問い合わせ
@@ -98,7 +99,7 @@ export default function Page() {
           <p className="mt-2 max-w-4xl text-sm leading-7">
             <a
               className="flex items-center underline underline-offset-4"
-              href="https://www.ait.ac.jp/cooperation/tie-ups/project-menu/scholarships/"
+              href="https://www.rait.ac.jp/cooperation/tie-ups/project-menu/scholarships/"
               rel="noreferrer"
               target="_blank"
             >
@@ -107,7 +108,8 @@ export default function Page() {
             </a>
           </p>
         </FadeIn>
-        <FadeIn>
+        <FadeIn className="relative">
+          <Background />
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">
             学生に差し入れしてくれる方へ
           </h2>
@@ -128,7 +130,7 @@ export default function Page() {
             </a>
           </p>
         </FadeIn>
-      </FadeInWithStagger>
+      </div>
 
       <FadeIn className="mt-16 border-t border-border py-8">
         <h2
