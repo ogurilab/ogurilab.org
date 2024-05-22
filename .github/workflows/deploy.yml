@@ -46,7 +46,7 @@ jobs:
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          projectName: ogurilab.org
+          projectName: ogurilab-org
           directory: out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: main
