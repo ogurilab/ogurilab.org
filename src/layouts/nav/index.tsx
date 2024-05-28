@@ -23,12 +23,6 @@ export const navigation = [
     label: "Members",
     ja: "メンバー",
   },
-
-  {
-    href: "/research",
-    label: "Research",
-    ja: "研究・制作",
-  },
   {
     href: "/publications",
     label: "Publications",
