@@ -3,7 +3,7 @@ import Link from "next/link";
 import React from "react";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
-import { fetchNews } from "@/lib/fetch";
+import { fetchNews, tags } from "@/lib/fetch";
 import { getGyazoImage, timestampToDate } from "@/lib/utils";
 
 export async function OurNews() {
@@ -20,45 +20,58 @@ export async function OurNews() {
         </p>
       </div>
       <FadeInWithStagger className="mx-auto mt-6 grid max-w-2xl auto-rows-fr grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-        {pages.slice(0, 3).map((news) => (
-          <FadeIn key={news.id}>
-            <article className="relative isolate flex h-full flex-col justify-end overflow-hidden rounded-2xl bg-primary px-8 pb-8 pt-80 sm:pt-48 lg:pt-80">
-              <Image
-                alt={news.title}
-                className="absolute inset-0 -z-10 size-full object-cover"
-                fill
-                sizes="(min-width: 1024px) 400px, 100vw"
-                src={getGyazoImage(news.image)}
-              />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/40" />
-              <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
+        {pages.slice(0, 3).map((news) => {
+          const probableTag = tags.find((tag) => news.linksLc.includes(tag));
 
-              <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-muted dark:text-muted-foreground">
-                <time
-                  className="mr-8"
-                  dateTime={timestampToDate(news.created).toISOString()}
-                >
-                  {timestampToDate(news.created).toLocaleDateString("ja-JP", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>
-              </div>
-              <h3 className="mt-3 text-lg font-semibold leading-6 text-white">
-                <a
-                  className="line-clamp-1"
-                  href={`https://scrapbox.io/dclab/${news.title}`}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <span className="absolute inset-0" />
+          const tag = probableTag ?? news.linksLc.at(-1) ?? "その他";
+
+          return (
+            <FadeIn key={news.id}>
+              <article className="relative isolate flex h-full flex-col justify-end overflow-hidden rounded-2xl bg-primary px-8 pb-8 pt-80 sm:pt-48 lg:pt-80">
+                <Image
+                  alt={news.title}
+                  className="absolute inset-0 -z-10 size-full object-cover"
+                  fill
+                  sizes="(min-width: 1024px) 400px, 100vw"
+                  src={getGyazoImage(news.image)}
+                />
+                <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/20" />
+                <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
+
+                <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-muted dark:text-muted-foreground">
+                  <div className="flex gap-1 text-xs">
+                    <time
+                      dateTime={timestampToDate(news.created).toISOString()}
+                    >
+                      {timestampToDate(news.created).toLocaleDateString(
+                        "ja-JP",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </time>
+                    /<span>{tag}</span>
+                  </div>
+                </div>
+                <h3 className="mt-3 text-lg font-semibold leading-6 text-white">
+                  <a
+                    className="line-clamp-1"
+                    href={`https://scrapbox.io/dclab/${news.title}`}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <span className="absolute inset-0" />
+                    <span className="sr-only">{news.title}</span>
+                  </a>
+
                   {news.title}
-                </a>
-              </h3>
-            </article>
-          </FadeIn>
-        ))}
+                </h3>
+              </article>
+            </FadeIn>
+          );
+        })}
       </FadeInWithStagger>
       <p className="mt-8 text-center">
         <Link
