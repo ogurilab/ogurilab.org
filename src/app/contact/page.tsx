@@ -64,29 +64,7 @@ export default function Page() {
             </div>
           </div>
         </FadeIn>
-        <FadeIn>
-          <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">
-            学生の方へ
-          </h2>
-          <p className="max-w-4xl  leading-7 text-muted-foreground">
-            研究室に興味のある学生さん、配属を希望される学生さんへ。
-            <br />
-            14号館7階709号室で研究室の活動を行っています。興味のある方は、気軽に遊びに来てください。
-          </p>
 
-          <Link
-            className={cn(
-              buttonVariants({
-                variant: "outline",
-              }),
-              "mx-auto mt-8 flex w-max items-center  justify-center rounded-full px-4 border border-border py-2"
-            )}
-            href="/join"
-          >
-            <Sparkles className="mr-2 size-5 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-semibold">Join Us もっと知る</span>
-          </Link>
-        </FadeIn>
         <FadeIn>
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">
             寄付を検討中の方へ
@@ -191,6 +169,29 @@ export default function Page() {
             </div>
           </PinContainer>
         </div>
+      </FadeIn>
+      <FadeIn className="mt-16">
+        <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl ">
+          学生の方へ
+        </h2>
+        <p className="max-w-4xl  leading-7 text-muted-foreground">
+          研究室に興味のある学生さん、配属を希望される学生さんへ。
+          <br />
+          14号館7階709号室で研究室の活動を行っています。興味のある方は、気軽に遊びに来てください。
+        </p>
+
+        <Link
+          className={cn(
+            buttonVariants({
+              variant: "outline",
+            }),
+            "mx-auto mt-8 flex w-max items-center  justify-center rounded-full px-4 border border-border py-2"
+          )}
+          href="/join"
+        >
+          <Sparkles className="mr-2 size-5 fill-yellow-400 text-yellow-400" />
+          <span className="text-sm font-semibold">Join Us もっと知る</span>
+        </Link>
       </FadeIn>
     </Container>
   );
