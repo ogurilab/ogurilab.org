@@ -14,11 +14,6 @@ export const navigation = [
     ja: "dclabについて",
   },
   {
-    href: "/join",
-    label: "Join",
-    ja: "学生の方へ",
-  },
-  {
     href: "/news",
     label: "News",
     ja: "ニュース",
@@ -27,12 +22,6 @@ export const navigation = [
     href: "/members",
     label: "Members",
     ja: "メンバー",
-  },
-
-  {
-    href: "/research",
-    label: "Research",
-    ja: "研究・制作",
   },
   {
     href: "/publications",

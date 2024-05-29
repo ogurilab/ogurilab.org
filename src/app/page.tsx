@@ -3,10 +3,12 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { OurNews } from "@/app/about/_components/news";
 import { OurSkills } from "@/app/about/_components/skills";
+import { Background } from "@/components/background";
 import { Container } from "@/components/container";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { buttonVariants } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   return (
@@ -34,7 +36,7 @@ export default function Home() {
                   <Link
                     className={clsx(
                       buttonVariants({
-                        variant: "outline",
+                        variant: "default",
                       }),
                       "mx-auto mt-4 text-primary"
                     )}
@@ -61,7 +63,7 @@ export default function Home() {
                       alt="東京ゲームショウ"
                       className="aspect-[4/3] w-96 max-w-none flex-none rounded-2xl bg-gray-50 object-cover"
                       height={842}
-                      src="/tokyo.webp"
+                      src="/missions/game-show.webp"
                       width={1152}
                     />
                   </FadeIn>
@@ -92,85 +94,92 @@ export default function Home() {
           <OurNews />
         </FadeIn>
 
-        <FadeIn>
-          <Container>
-            <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
-              Laboratory
-            </h2>
-            <p className="mt-2 text-base leading-8 text-muted-foreground">
-              私達の研究・制作・学術活動の成果。私達について知ってください。
-            </p>
-            <div className="mt-6 space-y-16">
-              <div className="flex flex-col items-center justify-center gap-y-4 space-x-4 sm:flex-row">
-                <p>
+        <div className="relative">
+          <Background />
+          <FadeIn>
+            <Container>
+              <h2 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+                Laboratory
+              </h2>
+              <p className="mt-2 text-base leading-8 text-muted-foreground">
+                私達の研究・制作・学術活動の成果。私達について知ってください。
+              </p>
+              <div className="mt-6 space-y-16">
+                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <p>
+                    <Link
+                      className={cn(
+                        buttonVariants({
+                          variant: "outline",
+                        }),
+                        "mx-auto w-72 bg-background/60 text-primary"
+                      )}
+                      href="/publications"
+                    >
+                      <span className="flex-1 text-center">
+                        私達の学術活動の成果をみる
+                      </span>
+                      <ChevronRight className="ml-1 inline-block size-4" />
+                    </Link>
+                  </p>
+                  <p>
+                    <Link
+                      className={cn(
+                        buttonVariants({
+                          variant: "outline",
+                        }),
+                        "mx-auto w-72 bg-background/60 text-primary"
+                      )}
+                      href="/research"
+                    >
+                      <span className="flex-1 text-center">
+                        私達の研究室の研究・制作をみる
+                      </span>
+                      <ChevronRight className="ml-1 inline-block size-4" />
+                    </Link>
+                  </p>
+                </div>
+                <p className="flex flex-col text-muted-foreground">
+                  <span>
+                    Digital Culture
+                    Laboratoryに興味を持った方、共同研究や取材・出展の依頼、研究室見学や相談事などございましたら気軽にご連絡ください。
+                  </span>
                   <Link
-                    className={clsx(
+                    className={cn(
                       buttonVariants({
                         variant: "outline",
                       }),
-                      "mx-auto text-primary"
+                      "mx-auto mt-6 text-primary bg-background/60"
                     )}
-                    href="/publications"
+                    href="/contact"
                   >
-                    私達の学術活動の成果をみる
-                    <ChevronRight className="ml-1 inline-block size-4" />
+                    お問い合わせへ
+                    <ChevronRight className="ml-1  inline-block size-4" />
                   </Link>
                 </p>
-                <p>
+                <OurSkills />
+                <p className="flex flex-col text-muted-foreground">
+                  <span>
+                    研究室に興味のある学生さん、配属を希望される学生さんへ。
+                    14号館7階709号室で研究室の活動を行っています。興味のある方は、気軽に遊びに来てください。
+                  </span>
                   <Link
-                    className={clsx(
+                    className={cn(
                       buttonVariants({
                         variant: "outline",
                       }),
-                      "mx-auto text-primary"
+                      "mx-auto mt-6 text-primary bg-background/60"
                     )}
-                    href="/research"
+                    href="/join"
                   >
-                    私達の研究室の研究・制作をみる
+                    研究室配属について
                     <ChevronRight className="ml-1 inline-block size-4" />
                   </Link>
                 </p>
               </div>
-              <p className="flex flex-col text-muted-foreground">
-                <span>
-                  Digital Culture
-                  Laboratoryに興味を持った方、共同研究や取材・出展の依頼、研究室見学や相談事などございましたら気軽にご連絡ください。
-                </span>
-                <Link
-                  className={clsx(
-                    buttonVariants({
-                      variant: "outline",
-                    }),
-                    "mx-auto mt-6 text-primary"
-                  )}
-                  href="/contact"
-                >
-                  Contactへ
-                  <ChevronRight className="ml-1  inline-block size-4" />
-                </Link>
-              </p>
-              <OurSkills />
-              <p className="flex flex-col text-muted-foreground">
-                <span>
-                  研究室に興味のある学生さん、配属を希望される学生さんへ。
-                  14号館7階709号室で研究室の活動を行っています。興味のある方は、気軽に遊びに来てください。
-                </span>
-                <Link
-                  className={clsx(
-                    buttonVariants({
-                      variant: "outline",
-                    }),
-                    "mx-auto mt-6 text-primary"
-                  )}
-                  href="/join"
-                >
-                  学生の方へ
-                  <ChevronRight className="ml-1 inline-block size-4" />
-                </Link>
-              </p>
-            </div>
-          </Container>
-        </FadeIn>
+            </Container>
+          </FadeIn>
+        </div>
       </div>
     </div>
   );

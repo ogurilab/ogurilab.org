@@ -14,7 +14,7 @@ export async function OurMembers() {
   return (
     <Container>
       <div className="mx-auto max-w-2xl lg:mx-0">
-        <h2 className="mt-6 scroll-m-20 text-2xl font-extrabold tracking-tight sm:text-3xl">
+        <h2 className="mt-6 scroll-m-20 text-3xl font-extrabold tracking-tight sm:text-4xl">
           Our Members
         </h2>
       </div>

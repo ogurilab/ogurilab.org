@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { Background } from "@/components/background";
 import { Container } from "@/components/container";
 import { FadeIn } from "@/components/fade-in";
 import { SkillMarquee } from "@/components/marquees/skill";
@@ -15,7 +16,17 @@ const faq = [
   {
     id: "where",
     question: "研究室はどこにありますか？",
-    answer: "14号館7階709号室です",
+    answer: (
+      <p>
+        <span>
+          <span className="inline-block w-32">小栗先生の研究室</span> 14号館709
+        </span>
+        <br />
+        <span>
+          <span className="inline-block w-32">学生研究室</span> 14号館710
+        </span>
+      </p>
+    ),
   },
   {
     id: "when",
@@ -49,7 +60,7 @@ export default function Page() {
           <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
             Digital Culture Lab の紹介
           </h2>
-          <p className="leading-7 text-muted-foreground">
+          <p className="max-w-4xl leading-7 text-muted-foreground">
             <span className="font-semibold text-primary">
               デジタルカルチャー研究室（小栗研究室）
             </span>
@@ -91,7 +102,10 @@ export default function Page() {
           </div>
         </FadeIn>
 
-        <FadeIn className="flex flex-col justify-between gap-6 lg:flex-row">
+        <FadeIn className="relative flex flex-col justify-between gap-6 lg:flex-row">
+          <div className="opacity-70">
+            <Background />
+          </div>
           <div className="flex-1">
             <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
               期待する態度
@@ -117,26 +131,30 @@ export default function Page() {
             />
           </div>
         </FadeIn>
-        <FadeIn>
-          <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
-            よくある質問
-          </h2>
+        <div>
+          <FadeIn>
+            <h2 className="scroll-m-20 pb-2 text-xl font-semibold tracking-tight sm:text-2xl">
+              よくある質問
+            </h2>
+          </FadeIn>
           <Accordion className="mt-4" type="multiple">
             {faq.map((item) => (
               <AccordionItem key={item.id} value={item.id}>
-                <AccordionTrigger
-                  className="font-semibold text-primary"
-                  value={item.id}
-                >
-                  {item.question}
-                </AccordionTrigger>
-                <AccordionContent className="leading-7 text-muted-foreground">
-                  {item.answer}
-                </AccordionContent>
+                <FadeIn>
+                  <AccordionTrigger
+                    className="font-semibold text-primary"
+                    value={item.id}
+                  >
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="leading-7 text-muted-foreground">
+                    {item.answer}
+                  </AccordionContent>
+                </FadeIn>
               </AccordionItem>
             ))}
           </Accordion>
-        </FadeIn>
+        </div>
       </div>
     </Container>
   );

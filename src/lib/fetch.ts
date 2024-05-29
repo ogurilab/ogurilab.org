@@ -10,6 +10,7 @@ export type Pages = {
   pin: number;
   views: number;
   created: number;
+  linksLc: string[];
 };
 
 type Res = {
@@ -19,6 +20,16 @@ type Res = {
 };
 
 const sortCreatedAt = (a: Pages, b: Pages) => b.created - a.created;
+
+export const tags = [
+  "ニュース",
+  "対外発表",
+  "イベント",
+  "出展",
+  "メディア",
+  "受賞",
+  "対外発表・受賞",
+];
 
 export const fetchNews = async () => {
   const res = await fetch("https://scrapbox.io/api/pages/dclab/news", {
