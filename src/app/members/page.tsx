@@ -98,8 +98,8 @@ export default async function Page() {
           </h2>
           <div className="mt-8 flex flex-col gap-16">
             {sortedGraduate.map(([year, people]) => (
-              <div>
-                <h3 className="scroll-m-20 pb-2 text-center tracking-tight text-muted-foreground sm:ml-6 sm:text-left sm:text-lg">
+              <div key={`graduate-${year}`}>
+                <h3 className="scroll-m-20 pb-2 text-center text-lg font-semibold tracking-tight sm:ml-6 sm:text-left sm:text-xl">
                   {year}年度卒業生
                 </h3>
                 <PeopleList people={people} />
