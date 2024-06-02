@@ -100,7 +100,7 @@ export default async function Page() {
             {sortedGraduate.map(([year, people]) => (
               <div key={`graduate-${year}`}>
                 <h3 className="scroll-m-20 pb-2 text-center text-lg font-semibold tracking-tight sm:ml-6 sm:text-left sm:text-xl">
-                  {year}年度卒業生
+                  {Number(year) - 1}年度卒業生
                 </h3>
                 <PeopleList people={people} />
               </div>
