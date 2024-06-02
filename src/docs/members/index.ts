@@ -8,11 +8,15 @@ export type Member = {
   image: string;
 };
 
-const memberKeys = ["teacher", "b4", "b3", "graduate"] as const;
+type GraduateMember = {
+  [key: number]: Member[];
+};
+
+const memberKeys = ["teacher", "b4", "b3"] as const;
 
 export type Members = {
   [key in (typeof memberKeys)[number]]: Member[];
-};
+} & { graduate: GraduateMember };
 
 export const getMembersJSON = async () => {
   const filepath = path.join(

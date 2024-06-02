@@ -66,6 +66,10 @@ function PeopleList({ people }: { people: Member[] }) {
 export default async function Page() {
   const { teacher, b3, b4, graduate } = await getMembersJSON();
 
+  const sortedGraduate = Object.entries(graduate).sort(
+    ([a], [b]) => parseInt(b, 10) - parseInt(a, 10)
+  );
+
   return (
     <Container>
       <div className="space-y-16">
@@ -92,7 +96,16 @@ export default async function Page() {
           <h2 className="scroll-m-20 pb-2 text-center text-xl font-semibold tracking-tight sm:text-2xl">
             Alumni / 卒業生
           </h2>
-          <PeopleList people={graduate} />
+          <div className="mt-8 flex flex-col gap-16">
+            {sortedGraduate.map(([year, people]) => (
+              <div>
+                <h3 className="scroll-m-20 pb-2 text-center tracking-tight text-muted-foreground sm:ml-6 sm:text-left sm:text-lg">
+                  {year}年度卒業生
+                </h3>
+                <PeopleList people={people} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Container>

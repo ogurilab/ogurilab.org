@@ -170,48 +170,50 @@
     }
   ],
 
-  "graduate": [
-    {
-      "name": "青山瑠壱",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/青山瑠壱",
-      "image": "/graduate/aoyama.webp"
-    },
-    {
-      "name": "神谷彩名",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/神谷彩名",
-      "image": "/graduate/kamiya.webp"
-    },
-    {
-      "name": "竹中隼",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/竹中隼",
-      "image": "/graduate/takenaka.webp"
-    },
-    {
-      "name": "西澤悠貴",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/西澤悠貴",
-      "image": "/graduate/nishizawa.webp"
-    },
-    {
-      "name": "丹羽渚",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/丹羽渚",
-      "image": "/graduate/niwa.webp"
-    },
-    {
-      "name": "古池優大",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/古池優大",
-      "image": "/graduate/koike.webp"
-    },
-    {
-      "name": "八木春樹",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/八木春樹",
-      "image": "/graduate/yagi.webp"
-    }
-  ]
+  "graduate": {
+    "2024": [
+      {
+        "name": "青山瑠壱",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/青山瑠壱",
+        "image": "/graduate/aoyama.webp"
+      },
+      {
+        "name": "神谷彩名",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/神谷彩名",
+        "image": "/graduate/kamiya.webp"
+      },
+      {
+        "name": "竹中隼",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/竹中隼",
+        "image": "/graduate/takenaka.webp"
+      },
+      {
+        "name": "西澤悠貴",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/西澤悠貴",
+        "image": "/graduate/nishizawa.webp"
+      },
+      {
+        "name": "丹羽渚",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/丹羽渚",
+        "image": "/graduate/niwa.webp"
+      },
+      {
+        "name": "古池優大",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/古池優大",
+        "image": "/graduate/koike.webp"
+      },
+      {
+        "name": "八木春樹",
+        "info": "2024卒 / 学士",
+        "href": "https://scrapbox.io/dclab/八木春樹",
+        "image": "/graduate/yagi.webp"
+      }
+    ]
+  }
 }
