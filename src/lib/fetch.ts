@@ -55,11 +55,22 @@ export const tags = [
   "対外発表・受賞",
 ];
 
-export const fetchNews = async () => {
+export const fetchNews = async (): Promise<(Pages & { date: Date })[]> => {
   const res = await fetch("https://scrapbox.io/api/pages/dclab/news", {
     cache: "force-cache",
   });
   const data = (await res.json()) as Res;
 
-  return data.relatedPages.links1hop.sort(sortCreatedAt);
+  const sorted = data.relatedPages.links1hop.sort(sortCreatedAt);
+
+  const news = sorted.map((page) => {
+    const date = getDateString(page.linksLc);
+
+    return {
+      ...page,
+      date: date ? new Date(date) : new Date(page.created * 1000),
+    };
+  });
+
+  return news;
 };

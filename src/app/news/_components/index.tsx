@@ -7,7 +7,7 @@ import React from "react";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
 import { fetchNews, tags } from "@/lib/fetch";
-import { getGyazoImage, timestampToDate } from "@/lib/utils";
+import { getGyazoImage } from "@/lib/utils";
 
 type NewsProps = {
   data: Awaited<ReturnType<typeof fetchNews>>;
@@ -77,17 +77,12 @@ export function News({ data }: NewsProps) {
                 </figure>
                 <div className="flex-1">
                   <div className="mt-4 flex gap-1 text-xs">
-                    <time
-                      dateTime={timestampToDate(news.created).toISOString()}
-                    >
-                      {timestampToDate(news.created).toLocaleDateString(
-                        "ja-JP",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
+                    <time dateTime={news.date.toISOString()}>
+                      {news.date.toLocaleDateString("ja-JP", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </time>
                     /
                     <a
