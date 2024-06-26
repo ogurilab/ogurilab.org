@@ -19,24 +19,17 @@ type Res = {
   };
 };
 
-const regex = /^\d{4}-\d{2}-\d{2}$/;
+const regex = /\d{4}-\d{2}-\d{2}/;
 
-export const getDateString = (linksLc: string[]) => {
-  let date;
+export const getDateString = (title: string) => {
+  const match = title.match(regex);
 
-  for (const link of linksLc) {
-    if (regex.test(link)) {
-      date = link;
-      break;
-    }
-  }
-
-  return date;
+  return match ? match[0] : null;
 };
 
 const sortCreatedAt = (a: Pages, b: Pages) => {
-  const dateA = getDateString(a.linksLc);
-  const dateB = getDateString(b.linksLc);
+  const dateA = getDateString(a.title);
+  const dateB = getDateString(b.title);
 
   if (dateA && dateB) {
     return dateB.localeCompare(dateA);
@@ -64,7 +57,7 @@ export const fetchNews = async (): Promise<(Pages & { date: Date })[]> => {
   const sorted = data.relatedPages.links1hop.sort(sortCreatedAt);
 
   const news = sorted.map((page) => {
-    const date = getDateString(page.linksLc);
+    const date = getDateString(page.title);
 
     return {
       ...page,
