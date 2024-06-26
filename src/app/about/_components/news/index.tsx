@@ -4,7 +4,7 @@ import React from "react";
 import { FadeIn, FadeInWithStagger } from "@/components/fade-in";
 import { Image } from "@/components/ui/image";
 import { fetchNews, tags } from "@/lib/fetch";
-import { getGyazoImage, timestampToDate } from "@/lib/utils";
+import { getGyazoImage } from "@/lib/utils";
 
 export async function OurNews() {
   const pages = await fetchNews();
@@ -40,17 +40,12 @@ export async function OurNews() {
 
                 <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-muted dark:text-muted-foreground">
                   <div className="flex gap-1 text-xs">
-                    <time
-                      dateTime={timestampToDate(news.created).toISOString()}
-                    >
-                      {timestampToDate(news.created).toLocaleDateString(
-                        "ja-JP",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
+                    <time dateTime={news.date.toISOString()}>
+                      {news.date.toLocaleDateString("ja-JP", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </time>
                     /<span>{tag}</span>
                   </div>
