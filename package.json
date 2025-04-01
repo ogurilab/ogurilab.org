@@ -9,8 +9,7 @@
     "format": "prettier --write . && eslint --fix .",
     "lint": "next lint",
     "analyze": "ANALYZE=true pnpm build",
-    "preview": "next build && npx serve@latest out",
-    "prepare": "husky"
+    "preview": "next build && npx serve@latest out"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.0.1",
