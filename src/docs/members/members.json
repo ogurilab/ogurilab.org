@@ -10,87 +10,6 @@
 
   "b4": [
     {
-      "name": "石川結衣",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/石川結衣",
-      "image": "/b4/ishikawa.webp"
-    },
-    {
-      "name": "大森玲於",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/大森玲於",
-      "image": "/b4/omori.webp"
-    },
-    {
-      "name": "小野田一輝",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/小野田一輝",
-      "image": "/b4/onoda.webp"
-    },
-    {
-      "name": "倉橋渉太",
-      "info": "",
-      "href": "https://www.kurahashi.me/",
-      "image": "/b4/kurahashi.webp"
-    },
-    {
-      "name": "服部翼",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/服部翼",
-      "image": "/b4/hattori.webp"
-    },
-    {
-      "name": "三浦笙哉",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/三浦笙哉",
-      "image": "/b4/miura.webp"
-    },
-    {
-      "name": "安藤魁星",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/安藤魁星",
-      "image": "/b4/ando.webp"
-    },
-    {
-      "name": "西山海",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/西山海",
-      "image": "/b4/nishiyama.webp"
-    },
-    {
-      "name": "牧航太",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/牧航太",
-      "image": "/b4/maki.webp"
-    },
-    {
-      "name": "松永光栞",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/松永光栞",
-      "image": "/b4/matsunaga.webp"
-    },
-    {
-      "name": "的場漱誠",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/的場漱誠",
-      "image": "/b4/matoba.webp"
-    },
-    {
-      "name": "矢澤孝汰",
-      "info": "",
-      "href": "https://scrapbox.io/dclab/矢澤孝汰",
-      "image": "/b4/yazawa.webp"
-    },
-    {
-      "name": "山本稀恩",
-      "info": "休学中",
-      "href": "https://scrapbox.io/dclab/山本稀恩",
-      "image": "/graduate/yamamoto.webp"
-    }
-  ],
-
-  "b3": [
-    {
       "name": "宿野沙貴",
       "info": "",
       "href": "https://scrapbox.io/dclab/宿野沙貴",
@@ -170,7 +89,89 @@
     }
   ],
 
+  "b3": [],
+
   "graduate": {
+    "2025": [
+      {
+        "name": "石川結衣",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/石川結衣",
+        "image": "/b4/ishikawa.webp"
+      },
+      {
+        "name": "大森玲於",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/大森玲於",
+        "image": "/b4/omori.webp"
+      },
+      {
+        "name": "小野田一輝",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/小野田一輝",
+        "image": "/b4/onoda.webp"
+      },
+      {
+        "name": "倉橋渉太",
+        "info": "",
+        "href": "https://www.kurahashi.me/",
+        "image": "/b4/kurahashi.webp"
+      },
+      {
+        "name": "服部翼",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/服部翼",
+        "image": "/b4/hattori.webp"
+      },
+      {
+        "name": "三浦笙哉",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/三浦笙哉",
+        "image": "/b4/miura.webp"
+      },
+      {
+        "name": "安藤魁星",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/安藤魁星",
+        "image": "/b4/ando.webp"
+      },
+      {
+        "name": "西山海",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/西山海",
+        "image": "/b4/nishiyama.webp"
+      },
+      {
+        "name": "牧航太",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/牧航太",
+        "image": "/b4/maki.webp"
+      },
+      {
+        "name": "松永光栞",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/松永光栞",
+        "image": "/b4/matsunaga.webp"
+      },
+      {
+        "name": "的場漱誠",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/的場漱誠",
+        "image": "/b4/matoba.webp"
+      },
+      {
+        "name": "矢澤孝汰",
+        "info": "",
+        "href": "https://scrapbox.io/dclab/矢澤孝汰",
+        "image": "/b4/yazawa.webp"
+      },
+      {
+        "name": "山本稀恩",
+        "info": "休学中",
+        "href": "https://scrapbox.io/dclab/山本稀恩",
+        "image": "/graduate/yamamoto.webp"
+      }
+    ],
     "2024": [
       {
         "name": "青山瑠壱",
