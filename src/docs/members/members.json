@@ -95,7 +95,80 @@
     }
   ],
 
-  "b3": [],
+  "b3": [
+    {
+      "name": "鈴木将馬",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/鈴木将馬",
+      "image": ""
+    },
+    {
+      "name": "葉山由太郎",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/葉山由太郎",
+      "image": ""
+    },
+    {
+      "name": "尾藤健",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/尾藤健",
+      "image": ""
+    },
+    {
+      "name": "日吉駿斗",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/日吉駿斗",
+      "image": ""
+    },
+    {
+      "name": "平川直人",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/平川直人",
+      "image": ""
+    },
+    {
+      "name": "斎藤拓矢",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/斎藤拓矢",
+      "image": ""
+    },
+    {
+      "name": "佐々木悠人",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/佐々木悠人",
+      "image": ""
+    },
+    {
+      "name": "塩口和香奈",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/塩口和香奈",
+      "image": ""
+    },
+    {
+      "name": "濱野郁乃子",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/濱野郁乃子",
+      "image": ""
+    },
+    {
+      "name": "草野豪心",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/草野豪心",
+      "image": ""
+    },
+    {
+      "name": "岩永怜旺",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/岩永怜旺",
+      "image": ""
+    },
+    {
+      "name": "横田峻祐",
+      "info": "",
+      "href": "https://scrapbox.io/dclab/横田峻祐",
+      "image": ""
+    }
+  ],
 
   "graduate": {
     "2025": [
