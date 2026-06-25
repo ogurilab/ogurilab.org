@@ -1,0 +1,55 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-lab/options";
+import site from "virtual:cosense-site-kit/site";
+import Layout from "../components/Layout.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { newsSummary, formatNewsDate } from "../lib/news";
+
+const structure = await loadStructure();
+const homeTarget = structure.home?.page ?? options.homePage;
+const all = await getCollection("pages");
+const homeEntry = homeTarget
+  ? all.find((e) => e.data.title === homeTarget || e.data.slug === homeTarget)
+  : undefined;
+
+const siteTitle = options.siteTitle ?? site?.title ?? "Home";
+const siteDescription = options.siteDescription ?? site?.description;
+
+// Recent news (most recent N tagged with the news tag).
+const newsTag = structure.posts?.tag ?? options.newsTag;
+const news = all
+  .filter((e) => e.data.tags.includes(newsTag))
+  .map((e) => newsSummary(e))
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+  .slice(0, structure.posts?.limit ?? 5);
+---
+<Layout title={siteTitle} description={siteDescription} wide hideToc>
+  {homeEntry ? (
+    <section data-pagefind-body>
+      <PageContent blocks={homeEntry.data.blocks} />
+    </section>
+  ) : (
+    <header class="page-header">
+      <h1>{siteTitle}</h1>
+      {siteDescription && <p class="summary" style="font-size: 1rem">{siteDescription}</p>}
+    </header>
+  )}
+
+  {news.length > 0 && (
+    <section class="home-section">
+      <h2 class="section-heading">Recent news</h2>
+      <ul class="news-list">
+        {news.map((n) => (
+          <li>
+            <time class="news-date" datetime={n.date?.toISOString()}>
+              {formatNewsDate(n.date)}
+            </time>
+            <a class="news-link" href={path(n.slug)}>{n.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</Layout>

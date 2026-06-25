@@ -8,8 +8,10 @@ on:
         required: true
 
   schedule:
-    # 毎週水曜日の13:00に実行
-    - cron: "0 4 * * 3"
+    # 毎日 01:17 / 13:17 UTC に Cosense から再フェッチして再デプロイ
+    # (schedule はデフォルトブランチ main でのみ発火する)
+    - cron: "17 1,13 * * *"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,26 +22,31 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
           fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "24.x"
+          cache: npm
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        id: pnpm-install
+      - name: Restore Cosense cache
+        uses: actions/cache@v4
         with:
-          version: 8
-          run_install: false
+          path: .cosense-cache
+          key: cosense-cache-${{ github.ref }}
+          restore-keys: |
+            cosense-cache-
 
       - name: Install dependencies
-        run: pnpm install
-        shell: bash
+        run: npm ci
 
-      - name: build
-        run: pnpm build
+      - name: Fetch Cosense pages
+        run: npx cosense-site fetch
+
+      - name: Build
+        run: npx astro build
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@1
@@ -47,6 +54,6 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           projectName: ogurilab-org
-          directory: out
+          directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: main

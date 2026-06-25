@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { pagePaths } from "@cosense-site-kit/theme-utils";
+import options from "virtual:cosense-theme-lab/options";
+import Page from "./page.astro";
+import Members from "./members.astro";
+import Publications from "./publications.astro";
+import NewsPost from "./news-post.astro";
+
+// Template registry. Map a Cosense page's resolved `template` value (from
+// #template/<name> tag or .site `templates:` mapping) to its renderer.
+const TEMPLATES: Record<string, typeof Page> = {
+  page: Page,
+  members: Members,
+  publications: Publications,
+};
+
+export async function getStaticPaths() {
+  return pagePaths();
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
+const data = entry.data as { template: string; tags: string[] };
+
+// Tag-driven override takes precedence over explicit template assignment:
+// a #news page is a news entry. Everything else uses its assigned template.
+let Template: typeof Page;
+if (data.tags.includes(options.newsTag)) Template = NewsPost;
+else Template = TEMPLATES[data.template] ?? Page;
+---
+<Template entry={entry} />
