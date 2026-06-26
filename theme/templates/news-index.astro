@@ -1,21 +1,50 @@
 ---
 import { getCollection } from "astro:content";
+import type { GetStaticPaths, PaginateFunction } from "astro";
 import options from "virtual:cosense-theme-lab/options";
 import Layout from "../components/Layout.astro";
+import Pagination from "../components/Pagination.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { newsSummary, formatNewsDate } from "../lib/news";
 
-const structure = await loadStructure();
-const tag = structure.posts?.tag ?? options.newsTag;
+// Paginated News archive. Every #news page is listed, `newsPageSize` per page:
+// page 1 is /news, later pages /news/2, /news/3, … (`posts.limit` only caps the
+// home page's "recent news" preview, not this list). The route always emits at
+// least page 1 — a stub when no posts exist — so /news never 404s.
+export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+  const structure = await loadStructure();
+  const tag = structure.posts?.tag ?? options.newsTag;
+  const all = await getCollection("pages");
+  const items = all
+    .filter((e) => e.data.tags.includes(tag))
+    .map((e) => newsSummary(e))
+    .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
 
-// The dedicated News index is the full archive — it lists every #news page.
-// `posts.limit` only caps the "recent news" preview on the home page; applying
-// it here would hide older posts (the page is meant to show them all).
-const all = await getCollection("pages");
-const items = all
-  .filter((e) => e.data.tags.includes(tag))
-  .map((e) => newsSummary(e))
-  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+  if (items.length === 0) {
+    return [{ params: { page: undefined }, props: { items: [], tag, pageInfo: null } }];
+  }
+
+  return (paginate as PaginateFunction)(items, { pageSize: options.newsPageSize }).map((route) => ({
+    params: route.params,
+    props: {
+      items: route.props.page.data,
+      tag,
+      pageInfo: {
+        current: route.props.page.currentPage,
+        last: route.props.page.lastPage,
+        prevUrl: route.props.page.url.prev,
+        nextUrl: route.props.page.url.next,
+      },
+    },
+  }));
+};
+
+type NewsItem = ReturnType<typeof newsSummary>;
+const { items, tag, pageInfo } = Astro.props as {
+  items: NewsItem[];
+  tag: string;
+  pageInfo: { current: number; last: number; prevUrl?: string; nextUrl?: string } | null;
+};
 ---
 <Layout title="News" description="ニュース・お知らせ" wide hideToc>
   <header class="page-header">
@@ -26,6 +55,7 @@ const items = all
       ニュースは <code>#{tag}</code> タグ付きのページとして公開してください。
     </p>
   ) : (
+    <>
     <ul class="news-feed">
       {items.map((n) => {
         // Drop the news tag itself — every card would carry it, so it's noise.
@@ -67,6 +97,8 @@ const items = all
         );
       })}
     </ul>
+    {pageInfo && <Pagination {...pageInfo} />}
+    </>
   )}
 </Layout>
 

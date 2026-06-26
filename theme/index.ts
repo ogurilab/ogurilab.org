@@ -26,6 +26,12 @@ export interface ThemeLabOptions {
    * Default: "news".
    */
   newsTag?: string;
+  /**
+   * How many posts the News index shows per page before paginating
+   * (/news, /news/2, …). Default: 12. The home page's "recent news" preview
+   * is controlled separately by `.site` `posts.limit`.
+   */
+  newsPageSize?: number;
   /** Affiliation line shown in the footer / header (e.g. "Aichi Institute of Technology"). */
   affiliation?: string;
   /** Copyright owner shown in the footer. Defaults to siteTitle. */
@@ -72,6 +78,7 @@ export interface ThemeLabRuntimeOptions {
   nav: ThemeLabNavItem[];
   homePage?: string;
   newsTag: string;
+  newsPageSize: number;
   affiliation?: string;
   copyrightHolder?: string;
   copyrightUrl?: string;
@@ -95,6 +102,7 @@ export function resolveThemeOptions(opts: ThemeLabOptions = {}): ThemeLabRuntime
     nav: opts.nav ?? base.nav ?? [],
     homePage: opts.homePage ?? base.homePage,
     newsTag: opts.newsTag ?? base.newsTag ?? "news",
+    newsPageSize: opts.newsPageSize ?? base.newsPageSize ?? 12,
     affiliation: opts.affiliation ?? base.affiliation,
     copyrightHolder: opts.copyrightHolder ?? base.copyrightHolder,
     copyrightUrl: opts.copyrightUrl ?? base.copyrightUrl,
@@ -132,8 +140,9 @@ export default function themeLab(opts: ThemeLabOptions = {}): AstroIntegration {
 
         // Fixed-route templates: each owns a known URL.
         injectRoute({ pattern: "/", entrypoint: here("templates/home.astro") });
+        // Paginated News index: page 1 is /news, later pages are /news/2, …
         injectRoute({
-          pattern: "/news",
+          pattern: "/news/[...page]",
           entrypoint: here("templates/news-index.astro"),
         });
         injectRoute({
