@@ -25,6 +25,9 @@ const memberGroupSchema = z.object({
 
 export const membersSchema = z
   .object({
+    // Optional display title. Lets the page show a different heading than the
+    // Cosense page title (e.g. page named "Members Data", shown as "Members").
+    title: z.string().optional(),
     // Either a flat list (when groups aren't needed) or grouped.
     members: z.array(memberSchema).optional(),
     groups: z.array(memberGroupSchema).optional(),

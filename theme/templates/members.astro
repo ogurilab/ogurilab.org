@@ -11,6 +11,9 @@ const { entry } = Astro.props;
 const page = entry.data;
 const data = extractMembers(page.blocks);
 const groups = data ? asGroups(data) : [];
+// Let members.yaml override the displayed heading / <title> without renaming
+// the Cosense page (e.g. page "Members Data" shown as "Members").
+const displayTitle = data?.title ?? page.title;
 
 // When a (published) Cosense page is titled exactly like the member, link the
 // card to it and use the first image in its body (core's resolved `image`
@@ -28,10 +31,10 @@ for (const e of all) {
   }
 }
 ---
-<Layout title={page.title} description={page.summary} image={page.image} wide hideToc>
+<Layout title={displayTitle} description={page.summary} image={page.image} wide hideToc>
   <article data-pagefind-body>
     <header class="page-header">
-      <h1>{page.title}</h1>
+      <h1>{displayTitle}</h1>
     </header>
 
     {data ? (
