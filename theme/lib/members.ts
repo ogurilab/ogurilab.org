@@ -50,7 +50,13 @@ export function extractMembers(blocks: CosenseBlock[]): MembersData | null {
   if (!block) return null;
   try {
     const raw = parseYaml(block.value);
-    return membersSchema.parse(raw);
+    // An empty YAML value parses to null (`bio:` with nothing after it →
+    // `bio: null`). Zod's `.optional()` only tolerates `undefined`, so a single
+    // blank optional field (e.g. an empty `bio:`) would fail validation and —
+    // because the whole block is parsed at once — discard every member. Strip
+    // empties first so blank fields fall back to "absent". Mirrors the
+    // framework's own `dropEmptyValues` handling for .site site.yaml.
+    return membersSchema.parse(dropEmptyValues(raw));
   } catch (err) {
     console.warn(
       `[theme-lab] failed to parse code:members.yaml — ${
@@ -59,6 +65,27 @@ export function extractMembers(blocks: CosenseBlock[]): MembersData | null {
     );
     return null;
   }
+}
+
+// Recursively strip "empty" values (null/undefined) an author leaves in YAML
+// so optional fields fall back to absent instead of failing validation:
+//   - object keys whose value is null/undefined are dropped (`bio:` → absent);
+//   - null/undefined entries inside arrays are removed.
+// Empty strings and empty arrays are left intact — they're real values the
+// schema can accept (or reject) on their own merits.
+function dropEmptyValues(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.filter((v) => v !== null && v !== undefined).map(dropEmptyValues);
+  }
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === null || v === undefined) continue;
+      out[key] = dropEmptyValues(v);
+    }
+    return out;
+  }
+  return value;
 }
 
 // Returns groups as-is, or wraps a flat `members:` list in a single
