@@ -7,14 +7,15 @@ import { newsSummary, formatNewsDate } from "../lib/news";
 
 const structure = await loadStructure();
 const tag = structure.posts?.tag ?? options.newsTag;
-const limit = structure.posts?.limit;
 
+// The dedicated News index is the full archive — it lists every #news page.
+// `posts.limit` only caps the "recent news" preview on the home page; applying
+// it here would hide older posts (the page is meant to show them all).
 const all = await getCollection("pages");
-let items = all
+const items = all
   .filter((e) => e.data.tags.includes(tag))
   .map((e) => newsSummary(e))
   .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
-if (limit && limit > 0) items = items.slice(0, limit);
 ---
 <Layout title="News" description="ニュース・お知らせ" wide hideToc>
   <header class="page-header">
