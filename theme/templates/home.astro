@@ -42,11 +42,26 @@ const news = all
       <h2 class="section-heading">Recent news</h2>
       <ul class="news-list">
         {news.map((n) => (
-          <li>
-            <time class="news-date" datetime={n.date?.toISOString()}>
-              {formatNewsDate(n.date)}
-            </time>
-            <a class="news-link" href={path(n.slug)}>{n.title}</a>
+          <li class="news-item">
+            <a class="news-item__link" href={path(n.slug)}>
+              {n.image ? (
+                <span class="news-item__thumb">
+                  <img src={n.image} alt="" loading="lazy" decoding="async" />
+                </span>
+              ) : (
+                <span class="news-item__thumb news-item__thumb--empty" aria-hidden="true">
+                  {n.title.trim().charAt(0)}
+                </span>
+              )}
+              <span class="news-item__body">
+                <span class="news-item__title">{n.title}</span>
+                {n.date && (
+                  <time class="news-item__date" datetime={n.date.toISOString()}>
+                    {formatNewsDate(n.date)}
+                  </time>
+                )}
+              </span>
+            </a>
           </li>
         ))}
       </ul>

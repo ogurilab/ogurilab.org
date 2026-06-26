@@ -803,23 +803,60 @@ html[data-theme="dark"] .page-content .astro-code span {
 /* ===================== News list ===================== */
 
 .news-list { list-style: none; padding: 0; margin: 0; }
-.news-list li {
+.news-list li { border-bottom: 1px solid var(--color-border-soft); }
+/* Home "Recent news" row: thumbnail on the left, title above its date. */
+.news-item__link {
   display: flex;
-  gap: 1.25rem;
+  gap: 1rem;
+  align-items: center;
   padding: 0.875rem 0;
-  border-bottom: 1px solid var(--color-border-soft);
-  align-items: baseline;
+  text-decoration: none;
+  color: inherit;
 }
-.news-date {
+.news-item__thumb {
   flex-shrink: 0;
+  width: 5.5rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--color-bg-soft);
+}
+.news-item__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s var(--ease);
+}
+.news-item__thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.news-item__link:hover .news-item__thumb img { transform: scale(1.05); }
+.news-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.news-item__title {
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.news-item__link:hover .news-item__title { color: var(--color-accent); }
+.news-item__date {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
-  width: 6rem;
 }
-.news-link { color: var(--color-text); font-size: 0.9375rem; text-decoration: none; }
-.news-link:hover { color: var(--color-accent); }
 
 /* News feed (index page): node.com-style card grid — thumbnail on top, text
    below, laid out as a responsive grid. The compact `.news-list` above stays
