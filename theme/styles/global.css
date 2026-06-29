@@ -857,6 +857,21 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
+.news-item__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.125rem;
+}
+.news-item__tag {
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0.3em 0.6em;
+  border-radius: 999px;
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
+  white-space: nowrap;
+}
 
 /* News feed (index page): node.com-style card grid — thumbnail on top, text
    below, laid out as a responsive grid. The compact `.news-list` above stays
