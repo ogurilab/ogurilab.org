@@ -4,52 +4,196 @@ import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
-import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { loadStructure, loadTitleToSlug, navHref, path } from "@cosense-site-kit/theme-utils";
 import { newsSummary, formatNewsDate } from "../lib/news";
+import {
+  dedupePhotos,
+  photosFrom,
+  responsiveImage,
+  withoutImages,
+  type Photo,
+} from "../lib/photos";
 
 const structure = await loadStructure();
-const homeTarget = structure.home?.page ?? options.homePage;
 const all = await getCollection("pages");
-const homeEntry = homeTarget
-  ? all.find((e) => e.data.title === homeTarget || e.data.slug === homeTarget)
-  : undefined;
+const titleToSlug = await loadTitleToSlug();
+
+type Entry = (typeof all)[number];
+const find = (name?: string): Entry | undefined =>
+  name ? all.find((e) => e.data.title === name || e.data.slug === name) : undefined;
+
+const homeEntry = find(structure.home?.page ?? options.homePage);
 
 const siteTitle = options.siteTitle ?? site?.title ?? "Home";
 const siteDescription = options.siteDescription ?? site?.description;
 
-// Recent news (most recent N tagged with the news tag).
+// The site title doubles as the header logo, so it often carries a short brand
+// plus the full name ("dclab | デジタルカルチャー研究室"). Split on the pipe so
+// the hero can show the brand as an eyebrow above a clean <h1>.
+const [brand, ...restTitle] = siteTitle.split("|").map((s) => s.trim());
+const heroTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
+const heroEyebrow = restTitle.length > 0 ? brand : options.affiliation;
+
+// ----- News -------------------------------------------------------------
 const newsTag = structure.posts?.tag ?? options.newsTag;
-const news = all
+const posts = all
   .filter((e) => e.data.tags.includes(newsTag))
   .map((e) => newsSummary(e))
-  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
-  .slice(0, structure.posts?.limit ?? 5);
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+const news = posts.slice(0, structure.posts?.limit ?? 5);
+
+// ----- Photos -----------------------------------------------------------
+// Three sources, in order of intent:
+//   1. images pasted on the home page itself (Gyazo lines in Cosense),
+//   2. a dedicated photo page (default "Gallery", overridable with
+//      `gallery: { page: … }` in the .site YAML),
+//   3. the newest post images — so a site that has curated nothing yet still
+//      looks like a lab rather than a wall of text.
+// The hero takes from the front of that list, the wide band gets the rest.
+const galleryTarget =
+  (structure as { gallery?: { page?: string } }).gallery?.page ?? "Gallery";
+const galleryEntry = find(galleryTarget);
+
+const curated = dedupePhotos([
+  ...(homeEntry ? photosFrom(homeEntry.data.blocks) : []),
+  ...(galleryEntry ? photosFrom(galleryEntry.data.blocks) : []),
+]);
+const fromPosts: Photo[] = posts
+  .filter((p) => p.image)
+  .slice(0, 12)
+  .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title, href: path(p.slug) }));
+const photos = dedupePhotos([...curated, ...fromPosts]);
+
+const heroPhotos = photos.slice(0, 5);
+const bandPhotos = photos.slice(5, 13);
+
+// ----- Featured ---------------------------------------------------------
+// `.site` YAML `featured: [ページ名, …]` — editorial picks, shown as big cards.
+const featured = (structure.featured ?? [])
+  .map(find)
+  .filter((e): e is Entry => Boolean(e))
+  .slice(0, 3);
+
+// ----- Hero actions -----------------------------------------------------
+// Reuse the nav so the buttons follow whatever the .site YAML declares.
+const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
+const navByLabel = (label: string) =>
+  navItems.find((i) => i.label.toLowerCase() === label.toLowerCase());
+const aboutItem = navByLabel("about");
+const contactItem = navByLabel("contact");
 ---
 <Layout title={siteTitle} description={siteDescription} wide hideToc>
-  {homeEntry ? (
-    <section data-pagefind-body>
-      <PageContent blocks={homeEntry.data.blocks} />
+  <section class="hero">
+    <div class="hero__intro" data-pagefind-body>
+      {heroEyebrow && <p class="hero__eyebrow">{heroEyebrow}</p>}
+      <h1 class="hero__title">{heroTitle}</h1>
+      {homeEntry ? (
+        <div class="hero__lead">
+          <PageContent blocks={withoutImages(homeEntry.data.blocks)} />
+        </div>
+      ) : (
+        siteDescription && <p class="hero__lead">{siteDescription}</p>
+      )}
+      {(aboutItem || contactItem) && (
+        <p class="hero__actions">
+          {aboutItem && (
+            <a class="button button--primary" href={navHref(aboutItem, titleToSlug)}>
+              研究室について
+            </a>
+          )}
+          {contactItem && (
+            <a class="button" href={navHref(contactItem, titleToSlug)}>
+              お問い合わせ
+            </a>
+          )}
+        </p>
+      )}
+    </div>
+
+    {heroPhotos.length > 0 && (
+      <div class="hero__photos" aria-hidden={heroPhotos.every((p) => !p.alt) || undefined}>
+        {heroPhotos.map((p, i) => {
+          const img = (
+            <img
+              src={p.src}
+              srcset={p.srcset}
+              sizes="(max-width: 900px) 45vw, 20rem"
+              alt={p.alt}
+              loading={i < 2 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          );
+          return (
+            <figure class="hero__photo" style={`--i:${i}`}>
+              {p.href ? <a href={p.href}>{img}</a> : img}
+            </figure>
+          );
+        })}
+      </div>
+    )}
+  </section>
+
+  {featured.length > 0 && (
+    <section class="home-section">
+      <h2 class="section-heading">Featured</h2>
+      <ul class="feature-grid">
+        {featured.map((e) => {
+          const cover = e.data.image ? responsiveImage(e.data.image) : undefined;
+          return (
+            <li class="feature-card">
+              <a class="feature-card__link" href={path(e.data.slug)}>
+                {/* No cover: a text-only card reads better than a big empty
+                    placeholder block. */}
+                {cover && (
+                  <span class="feature-card__cover">
+                    <img
+                      src={cover.src}
+                      srcset={cover.srcset}
+                      sizes="(max-width: 720px) 90vw, 20rem"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
+                )}
+                <span class="feature-card__body">
+                  <span class="feature-card__title">{e.data.title}</span>
+                  {e.data.summary && (
+                    <span class="feature-card__excerpt">{e.data.summary}</span>
+                  )}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
     </section>
-  ) : (
-    <header class="page-header">
-      <h1>{siteTitle}</h1>
-      {siteDescription && <p class="summary" style="font-size: 1rem">{siteDescription}</p>}
-    </header>
   )}
 
   {news.length > 0 && (
     <section class="home-section">
-      <h2 class="section-heading">Recent news</h2>
+      <div class="section-head">
+        <h2 class="section-heading">Recent news</h2>
+        <a class="section-more" href={path("news")}>すべて見る</a>
+      </div>
       <ul class="news-list">
         {news.map((n) => {
           // Drop the news tag itself — every post carries it, so it's noise.
           const tags = n.tags.filter((t) => t !== newsTag);
+          const thumb = n.image ? responsiveImage(n.image, [240, 480]) : undefined;
           return (
             <li class="news-item">
               <a class="news-item__link" href={path(n.slug)}>
-                {n.image ? (
+                {thumb ? (
                   <span class="news-item__thumb">
-                    <img src={n.image} alt="" loading="lazy" decoding="async" />
+                    <img
+                      src={thumb.src}
+                      srcset={thumb.srcset}
+                      sizes="7rem"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </span>
                 ) : (
                   <span class="news-item__thumb news-item__thumb--empty" aria-hidden="true">
@@ -75,6 +219,38 @@ const news = all
             </li>
           );
         })}
+      </ul>
+    </section>
+  )}
+
+  {bandPhotos.length >= 3 && (
+    <section class="photo-band" aria-label="研究室の風景">
+      <ul class="photo-band__track">
+        {bandPhotos.map((p) => (
+          <li class="photo-band__item">
+            {p.href ? (
+              <a href={p.href}>
+                <img
+                  src={p.src}
+                  srcset={p.srcset}
+                  sizes="18rem"
+                  alt={p.alt}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            ) : (
+              <img
+                src={p.src}
+                srcset={p.srcset}
+                sizes="18rem"
+                alt={p.alt}
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+          </li>
+        ))}
       </ul>
     </section>
   )}

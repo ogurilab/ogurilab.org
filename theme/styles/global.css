@@ -734,7 +734,7 @@ html[data-theme="dark"] .page-content .astro-code span {
 .tag-page-list a:hover { color: var(--color-accent); }
 
 /* Home sections */
-.home-section { margin-top: 3rem; }
+.home-section { margin-top: 4rem; }
 .section-heading {
   font-family: var(--font-sans);
   font-size: 0.8125rem;
@@ -743,6 +743,284 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: var(--color-text-soft);
   font-weight: 600;
   margin: 0 0 1rem;
+}
+/* Heading paired with a "see all" link on the same baseline. */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.section-head .section-heading { margin-bottom: 0; }
+.section-more {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s var(--ease);
+}
+.section-more::after { content: " →"; }
+.section-more:hover { color: var(--color-accent); }
+
+/* ===================== Home: hero ===================== */
+
+/* Text on the left, a staggered photo collage on the right. The photos come
+   from the Cosense home page (Gyazo lines), so the lab can restyle the top of
+   the site by pasting different images — no repo edit. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.85fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  margin-bottom: 1rem;
+}
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+.hero__eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.hero__title {
+  font-family: var(--font-display);
+  /* Capped so a ~12-character Japanese lab name still fits the column on one
+     line; the vw term shrinks it on narrow screens. */
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.25;
+  margin: 0 0 1.25rem;
+  /* Wrap Japanese at phrase boundaries where the browser supports it, so a word
+     like 研究室 never splits across lines. Ignored elsewhere — harmless. */
+  word-break: auto-phrase;
+  text-wrap: balance;
+}
+.hero__lead {
+  color: var(--color-text-soft);
+  font-size: 0.9375rem;
+  line-height: 1.9;
+}
+/* The lead is rendered through PageContent, so neutralise the prose defaults
+   that assume a full article column. */
+.hero__lead .page-content { font-size: inherit; line-height: inherit; }
+.hero__lead .page-content > :first-child { margin-top: 0; }
+.hero__lead .page-content > :last-child { margin-bottom: 0; }
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.75rem 0 0;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+    color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.button:hover {
+  background: var(--color-bg-hover);
+  transform: translateY(-1px);
+}
+.button--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+.button--primary:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: #fff;
+}
+
+.hero__photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+  align-items: start;
+}
+/* Offset the right column so the collage reads as a stack of snapshots rather
+   than a table. margin (not transform) — the entry animation owns transform. */
+.hero__photos > :nth-child(even) { margin-top: 2rem; }
+
+.hero__photo {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--color-bg-soft);
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.1);
+}
+.hero__photo a { display: block; }
+.hero__photo img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease);
+}
+/* Break the rhythm every third frame so the grid isn't uniform. */
+.hero__photo:nth-child(3n) img { aspect-ratio: 1 / 1; }
+.hero__photo:hover img { transform: scale(1.04); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero__photo {
+    animation: hero-photo-in 0.6s var(--ease) both;
+    animation-delay: calc(var(--i, 0) * 80ms);
+  }
+  @keyframes hero-photo-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+}
+
+/* Stacked layout: the collage sits under the text at full width, so switch to
+   three narrower columns — two columns of 4:5 frames would run off the fold. */
+@media (max-width: 900px) {
+  .hero__photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .hero__photos > :nth-child(even) { margin-top: 0; }
+  .hero__photos > :nth-child(3n + 2) { margin-top: 1.5rem; }
+  .hero__photo:nth-child(3n) img { aspect-ratio: 4 / 5; }
+}
+
+@media (max-width: 540px) {
+  .hero__photos { gap: 0.5rem; }
+  .hero__photos > :nth-child(3n + 2) { margin-top: 1rem; }
+}
+
+/* ===================== Home: featured cards ===================== */
+
+.feature-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.5rem;
+}
+.feature-card { display: flex; }
+.feature-card__link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.feature-card__link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgb(15 23 42 / 0.1);
+}
+.feature-card__cover {
+  display: block;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--color-bg-soft);
+}
+.feature-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s var(--ease);
+}
+.feature-card__link:hover .feature-card__cover img { transform: scale(1.05); }
+.feature-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 1.15rem 1.25rem;
+}
+.feature-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  transition: color 0.15s var(--ease);
+}
+.feature-card__link:hover .feature-card__title { color: var(--color-accent); }
+.feature-card__excerpt {
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--color-text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===================== Home: photo band ===================== */
+
+/* A wide, horizontally scrolling strip of lab snapshots. Bleeds into the main
+   column's side padding so it reads as full-width without ever introducing a
+   horizontal scrollbar on <body>. */
+.photo-band {
+  margin: 4.5rem -1.5rem 0;
+}
+.photo-band__track {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 3%,
+    #000 97%,
+    transparent
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+}
+.photo-band__track::-webkit-scrollbar { display: none; }
+.photo-band__item {
+  flex: 0 0 auto;
+  width: 18rem;
+  scroll-snap-align: start;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-bg-soft);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+.photo-band__item img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease);
+}
+.photo-band__item:hover img { transform: scale(1.04); }
+
+@media (max-width: 540px) {
+  .photo-band { margin-inline: -1.25rem; }
+  .photo-band__track { padding-inline: 1.25rem; }
+  .photo-band__item { width: 14rem; }
 }
 
 /* ===================== Members ===================== */
@@ -815,10 +1093,10 @@ html[data-theme="dark"] .page-content .astro-code span {
 }
 .news-item__thumb {
   flex-shrink: 0;
-  width: 5.5rem;
-  aspect-ratio: 16 / 9;
+  width: 7rem;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--color-bg-soft);
 }
 .news-item__thumb img {
