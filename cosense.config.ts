@@ -2,8 +2,8 @@ import { defineCosenseSite } from "@cosense-site-kit/core";
 
 export default defineCosenseSite({
   site: {
-    title: "dclab | デジタルカルチャー研究室",
-    description: "ogurilab — research lab site, powered by Cosense.",
+    title: "デジタルカルチャー研究室",
+    description: "Digital Culture Lab. Aichi Institute of Technology. Oguri Lab.",
     // Served at the root of the custom domain (Cloudflare Pages).
     baseUrl: "https://ogurilab.org",
     base: "/",
