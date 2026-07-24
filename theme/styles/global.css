@@ -318,8 +318,9 @@ h1, h2, h3, h4, h5, h6 {
   padding: 3rem 1.5rem 4rem;
 }
 .site-main.wide { max-width: var(--width-wide); }
-/* Home: the page owns its own measure so the photo mosaic can run edge to edge. */
-.site-main.bare { max-width: none; padding: 0; }
+/* Home: the page owns its own measure, and its main flex-grows so the
+   single-screen portal can fill the viewport below the header. */
+.site-main.bare { max-width: none; padding: 0; display: flex; flex: 1; }
 
 @media (max-width: 540px) {
   .site-main { padding: 2.5rem 1.25rem 4rem; }
@@ -735,58 +736,6 @@ html[data-theme="dark"] .page-content .astro-code span {
 .tag-page-list a { font-weight: 500; text-decoration: none; }
 .tag-page-list a:hover { color: var(--color-accent); }
 
-/* ===================== Home: shared bits ===================== */
-
-/* The home page renders inside a `bare` main, so each section brings its own
-   measure. Everything textual sits in a .shell; the photo mosaic does not. */
-.shell {
-  max-width: var(--width-wide);
-  margin: 0 auto;
-  padding-inline: 1.5rem;
-}
-@media (max-width: 540px) {
-  .shell { padding-inline: 1.25rem; }
-}
-
-/* Text link with a trailing arrow that slides on hover. Used instead of filled
-   buttons — the page leans on typography, not on chrome. */
-.arrow-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text);
-  text-decoration: none;
-  transition: color 0.2s var(--ease);
-}
-.arrow-link::after {
-  content: "→";
-  transition: transform 0.25s var(--ease);
-}
-.arrow-link:hover { color: var(--color-accent); }
-.arrow-link:hover::after { transform: translateX(0.25rem); }
-
-/* Scroll-in reveal. Targets only start hidden once the inline script has set
-   `js-reveal` on <html>, so with JS off the page stays fully readable. */
-.js-reveal [data-reveal] {
-  opacity: 0;
-  transform: translateY(1.25rem);
-  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
-  transition-delay: calc(var(--i, 0) * 55ms);
-}
-.js-reveal [data-reveal].is-visible {
-  opacity: 1;
-  transform: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .js-reveal [data-reveal] {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-
 /* ===================== Pointer flourishes ===================== */
 
 /* Magnetic targets lean toward the pointer; JS sets the inline transform and
@@ -828,262 +777,175 @@ html[data-theme="dark"] .page-content .astro-code span {
   height: 24px;
 }
 
-/* ===================== Home: opening ===================== */
+/* ===================== Home: shader background ===================== */
 
-/* A hero the height of the viewport (capped), with the GPU field behind the
-   text. `overflow: clip` keeps the canvas from spilling; the content sits above
-   a legibility scrim. */
-.opening {
-  position: relative;
-  overflow: clip;
-  display: flex;
-  align-items: center;
-  min-height: min(88vh, 780px);
-  padding-block: clamp(4rem, 10vh, 7rem);
-}
-.opening__content { position: relative; z-index: 2; width: 100%; }
-
-/* Shader canvas layer (components/ShaderHero.astro). Decorative only. */
-.opening__bg {
+/* Full-bleed GPU field behind the portal (components/ShaderHero.astro).
+   Decorative only; the portal keeps its own legibility scrim above it. */
+.shader-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
 }
-.opening__bg canvas {
+.shader-bg canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
 }
-/* Fallback when WebGL is unavailable / Save-Data / context lost: a still
-   gradient that echoes the field, and the (blank) canvas hidden. */
-.opening--static .opening__bg {
+/* Fallback when WebGL is unavailable / Save-Data / context lost. */
+.shader-bg--static {
   background:
     radial-gradient(120% 95% at 12% 18%, var(--color-accent-soft), transparent 55%),
-    radial-gradient(90% 80% at 88% 90%, var(--color-accent-soft), transparent 60%),
+    radial-gradient(90% 80% at 88% 92%, var(--color-accent-soft), transparent 60%),
     var(--color-bg);
 }
-.opening--static .opening__bg canvas { display: none; }
+.shader-bg--static canvas { display: none; }
 
-/* Keep the text side lighter than the field so it always reads. Mostly-left on
-   desktop; bottom-weighted once the layout stacks. */
-.opening__scrim {
+/* ===================== Home: portal (single screen) ===================== */
+
+/* One-viewport gateway — no scroll. The bare main flex-grows to fill the column
+   below the header (footer is hidden on this page), and the portal fills it. */
+.portal {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex: 1;
+  /* Let this flex item shrink to the viewport instead of its content's
+     min-content width (which would overflow and clip on narrow screens). */
+  min-width: 0;
+  min-height: 100%;
+  padding-block: clamp(1.75rem, 4vh, 3.25rem);
+}
+.portal__scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
   background: linear-gradient(
-    100deg,
+    160deg,
     var(--color-bg) 0%,
-    color-mix(in srgb, var(--color-bg) 80%, transparent) 40%,
-    transparent 74%
+    color-mix(in srgb, var(--color-bg) 72%, transparent) 46%,
+    color-mix(in srgb, var(--color-bg) 52%, transparent) 100%
   );
 }
-@media (max-width: 900px) {
-  .opening__scrim {
-    background: linear-gradient(
-      to top,
-      var(--color-bg) 12%,
-      color-mix(in srgb, var(--color-bg) 70%, transparent) 55%,
-      transparent 100%
-    );
-  }
+.portal__inner {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  max-width: var(--width-wide);
+  margin: 0 auto;
+  padding-inline: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(2rem, 7vh, 5rem);
 }
 
-/* Gentle load-in for the opening text (the field fades itself in via the
-   shader's reveal uniform). */
-@media (prefers-reduced-motion: no-preference) {
-  .opening__content > * {
-    animation: opening-in 0.9s var(--ease) both;
-    animation-delay: calc(var(--oi, 0) * 90ms);
-  }
-  .opening__eyebrow { --oi: 0; }
-  .opening__title { --oi: 1; }
-  .opening__lead { --oi: 2; }
-  .opening__links { --oi: 3; }
-  @keyframes opening-in {
-    from { opacity: 0; transform: translateY(1rem); }
-  }
-}
-.opening__eyebrow {
-  margin: 0 0 1.5rem;
+/* Intro */
+.portal__eyebrow {
+  margin: 0 0 1.25rem;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
-.opening__title {
+.portal__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 7vw, 4.25rem);
-  line-height: 1.15;
-  /* Wrap Japanese at phrase boundaries where supported, so 研究室 never splits
-     across lines. Ignored elsewhere — harmless. */
+  font-size: clamp(2.25rem, 6.5vw, 4.5rem);
+  line-height: 1.12;
   word-break: auto-phrase;
   text-wrap: balance;
 }
-/* A narrower measure than the display line above it — that contrast is what
-   makes the opening read as editorial rather than as a hero banner. */
-.opening__lead {
+.portal__mission {
+  margin: clamp(1.25rem, 3vh, 2rem) 0 0;
   max-width: 34rem;
-  margin-top: clamp(1.75rem, 4vw, 2.5rem);
   color: var(--color-text-soft);
-  font-size: 0.9375rem;
-  line-height: 2;
-}
-.opening__lead .page-content { font-size: inherit; line-height: inherit; }
-.opening__lead .page-content > :first-child { margin-top: 0; }
-.opening__lead .page-content > :last-child { margin-bottom: 0; }
-.opening__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  margin: 2.5rem 0 0;
-}
-
-/* ===================== Home: photo mosaic ===================== */
-
-/* Edge-to-edge wall of lab photographs — the one place on the page where images
-   appear. Four columns with one double-size frame every five cells: that cycle
-   covers exactly two rows (4 + 4×1 = 8 cells), so a full cycle never leaves a
-   hole, and `dense` backfills a partial one. Row height is two thirds of a
-   column, making every frame — large or small — a 3:2 landscape. */
-.mosaic__grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: clamp(7rem, 16vw, 17rem);
-  grid-auto-flow: dense;
-  gap: 3px;
-}
-.mosaic__cell {
-  position: relative;
-  overflow: hidden;
-  background: var(--color-bg-soft);
-}
-.mosaic__cell:nth-child(5n + 1) {
-  grid-column: span 2;
-  grid-row: span 2;
-}
-
-/* Too few photos to fill four columns: drop the large frame and give each photo
-   its own column, so the wall ends flush instead of trailing empty tracks. */
-.mosaic__grid[data-count="1"] { grid-template-columns: 1fr; }
-.mosaic__grid[data-count="2"] { grid-template-columns: repeat(2, 1fr); }
-.mosaic__grid[data-count="3"] { grid-template-columns: repeat(3, 1fr); }
-.mosaic__grid:is([data-count="1"], [data-count="2"], [data-count="3"], [data-count="4"]) {
-  grid-auto-rows: auto;
-}
-.mosaic__grid:is([data-count="1"], [data-count="2"], [data-count="3"], [data-count="4"])
-  .mosaic__cell {
-  grid-column: span 1;
-  grid-row: span 1;
-  aspect-ratio: 3 / 2;
-}
-.mosaic__cell > a {
-  display: block;
-  height: 100%;
-}
-.mosaic__cell img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  transition: transform 0.7s var(--ease);
-}
-.mosaic__cell:hover img { transform: scale(1.03); }
-
-/* Captions stay out of the way until hover — the photos should read as a wall
-   first, a list of links second. */
-.mosaic__caption {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  padding: 2.5rem 1rem 0.9rem;
-  font-size: 0.75rem;
-  line-height: 1.45;
-  color: #fff;
-  background: linear-gradient(transparent, rgb(0 0 0 / 0.72));
-  opacity: 0;
-  transition: opacity 0.3s var(--ease);
+  font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+  line-height: 1.9;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.mosaic__cell:hover .mosaic__caption,
-.mosaic__cell:focus-within .mosaic__caption { opacity: 1; }
 
-@media (max-width: 720px) {
-  .mosaic__grid,
-  .mosaic__grid[data-count="3"] {
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 33vw;
-    gap: 2px;
-  }
-}
-
-/* ===================== Home: latest news ===================== */
-
-.latest { padding-block: clamp(4rem, 11vh, 7rem); }
-.latest__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--color-text);
-}
-.latest__heading {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-.latest__list {
+/* Destinations — an index row that hands off to the real pages. */
+.portal__grid {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-.latest__item { border-bottom: 1px solid var(--color-border); }
-/* Date column + title. The hover indent is the only motion — no card, no
-   shadow, no thumbnail (the mosaic above already carries the imagery). */
-.latest__link {
   display: grid;
-  grid-template-columns: 6.5rem 1fr;
-  gap: 1.5rem;
-  align-items: baseline;
-  padding: 1.5rem 0;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border-block: 1px solid var(--color-border);
+}
+.portal__cell { background: transparent; }
+.portal__dest {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 1.5rem 1.25rem 1.4rem;
   color: inherit;
   text-decoration: none;
-  transition: padding-left 0.25s var(--ease), color 0.2s var(--ease);
+  background: color-mix(in srgb, var(--color-bg) 60%, transparent);
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
 }
-.latest__link:hover {
-  padding-left: 0.75rem;
-  color: var(--color-accent);
+.portal__dest:hover,
+.portal__dest:focus-visible {
+  background: var(--color-accent);
+  color: #fff;
+  outline: none;
 }
-.latest__date {
+.portal__no {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  color: var(--color-accent);
   font-variant-numeric: tabular-nums;
+  transition: color 0.3s var(--ease);
 }
-.latest__title {
-  font-size: 1rem;
-  line-height: 1.65;
+.portal__dest:hover .portal__no,
+.portal__dest:focus-visible .portal__no {
+  color: color-mix(in srgb, #fff 80%, transparent);
+}
+.portal__label {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.2;
+}
+.portal__sub {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  transition: color 0.3s var(--ease);
+}
+.portal__dest:hover .portal__sub,
+.portal__dest:focus-visible .portal__sub {
+  color: color-mix(in srgb, #fff 82%, transparent);
+}
+.portal__arrow {
+  position: absolute;
+  top: 1.45rem;
+  right: 1.25rem;
+  opacity: 0;
+  transform: translateX(-0.35rem);
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.portal__dest:hover .portal__arrow,
+.portal__dest:focus-visible .portal__arrow {
+  opacity: 1;
+  transform: none;
 }
 
 @media (max-width: 640px) {
-  .latest__link {
-    grid-template-columns: 1fr;
-    gap: 0.4rem;
-    padding-block: 1.25rem;
-  }
+  .portal__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal__dest { padding: 1.1rem 1rem; gap: 0.25rem; }
+  .portal__label { font-size: 1.125rem; }
+  .portal__mission { -webkit-line-clamp: 2; }
 }
 
 /* ===================== Members ===================== */

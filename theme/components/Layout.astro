@@ -25,6 +25,8 @@ interface Props {
   bare?: boolean;
   /** Hide the floating right-side TOC (use on home / list pages). */
   hideToc?: boolean;
+  /** Hide the site footer (use on the single-screen home portal). */
+  hideFooter?: boolean;
   /** OG/Twitter card image (absolute or site-relative). Falls back to favicon. */
   image?: string;
   /** OpenGraph type. "article" for content pages, "website" for indexes. */
@@ -37,6 +39,7 @@ const {
   wide = false,
   bare = false,
   hideToc = false,
+  hideFooter = false,
   image,
   ogType = "website",
 } = Astro.props;
@@ -134,7 +137,7 @@ const htmlStyle = [
     <main class:list={["site-main", { wide, bare }]}>
       <slot />
     </main>
-    <Footer />
+    {!hideFooter && <Footer />}
     {!hideToc && <TableOfContents />}
     <CodeBlockEnhancer />
     <LinkPreview />

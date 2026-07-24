@@ -6,10 +6,10 @@
 // which keeps its own legibility scrim.
 //
 // Degrades cleanly: no WebGL / Save-Data / a lost context all fall back to the
-// CSS gradient in `.opening--static`; prefers-reduced-motion renders a single
+// CSS gradient in `.shader-bg--static`; prefers-reduced-motion renders a single
 // still frame instead of animating.
 ---
-<div class="opening__bg" aria-hidden="true">
+<div class="shader-bg" aria-hidden="true">
   <canvas data-shader-hero></canvas>
 </div>
 
@@ -112,11 +112,12 @@
   function initShaderHero(): void {
     const canvas = document.querySelector<HTMLCanvasElement>("canvas[data-shader-hero]");
     if (!canvas || canvas.dataset.inited) return;
-    const hero = (canvas.closest<HTMLElement>(".opening") ?? canvas.parentElement)!;
+    // Size and orient to the wrapper, which the host section stretches to fill.
+    const hero = canvas.parentElement as HTMLElement;
 
     const conn = (navigator as { connection?: { saveData?: boolean } }).connection;
     if (conn?.saveData) {
-      hero.classList.add("opening--static");
+      hero.classList.add("shader-bg--static");
       return;
     }
 
@@ -130,7 +131,7 @@
       gl = null;
     }
     if (!gl) {
-      hero.classList.add("opening--static");
+      hero.classList.add("shader-bg--static");
       return;
     }
     canvas.dataset.inited = "1";
@@ -146,14 +147,14 @@
     const fs = compile(ctx.FRAGMENT_SHADER, FRAG);
     const prog = ctx.createProgram()!;
     if (!vs || !fs) {
-      hero.classList.add("opening--static");
+      hero.classList.add("shader-bg--static");
       return;
     }
     ctx.attachShader(prog, vs);
     ctx.attachShader(prog, fs);
     ctx.linkProgram(prog);
     if (!ctx.getProgramParameter(prog, ctx.LINK_STATUS)) {
-      hero.classList.add("opening--static");
+      hero.classList.add("shader-bg--static");
       return;
     }
     ctx.useProgram(prog);
@@ -269,7 +270,7 @@
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault();
       stop();
-      hero.classList.add("opening--static");
+      hero.classList.add("shader-bg--static");
     });
 
     // Tear down before a View-Transitions swap so nothing leaks across pages.

@@ -1,19 +1,18 @@
 ---
-import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
+import { getCollection } from "astro:content";
 import Layout from "../components/Layout.astro";
 import ShaderHero from "../components/ShaderHero.astro";
-import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import { loadStructure, loadTitleToSlug, navHref, path } from "@cosense-site-kit/theme-utils";
-import { newsSummary, formatNewsDate } from "../lib/news";
-import { dedupePhotos, photosFrom, responsiveImage, withoutImages, type Photo } from "../lib/photos";
+import { firstParagraph } from "../lib/content";
 
-// The home page is deliberately three moves and no more: a statement, a wall of
-// photographs, and a list of what happened lately. Anything that would repeat
-// one of those (a second card grid, a second photo rail) belongs on its own page.
+// A single-screen portal: no scroll. The individual pages already carry the
+// depth (About, News, Members, Publications, Contact, Join), so the home page's
+// only job is to state who the lab is and hand visitors off to those pages.
 
 const structure = await loadStructure();
+const cfg = structure as typeof structure & { join?: { page?: string } };
 const all = await getCollection("pages");
 const titleToSlug = await loadTitleToSlug();
 
@@ -21,170 +20,79 @@ type Entry = (typeof all)[number];
 const find = (name?: string): Entry | undefined =>
   name ? all.find((e) => e.data.title === name || e.data.slug === name) : undefined;
 
-const homeEntry = find(structure.home?.page ?? options.homePage);
-
 const siteTitle = options.siteTitle ?? site?.title ?? "Home";
 const siteDescription = options.siteDescription ?? site?.description;
 
-// The site title doubles as the header logo, so it often carries a short brand
-// plus the full name ("dclab | デジタルカルチャー研究室"). Split on the pipe so
-// the opening can show the brand as an eyebrow above a clean <h1>.
+// The site title doubles as the header logo ("dclab | デジタルカルチャー研究室").
+// Split on the pipe: brand → eyebrow, full name → the display title.
 const [brand, ...restTitle] = siteTitle.split("|").map((s) => s.trim());
-const openingTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
-const openingEyebrow = options.affiliation ?? (restTitle.length > 0 ? brand : undefined);
+const displayTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
+const eyebrow = options.affiliation ?? (restTitle.length > 0 ? brand : undefined);
 
-// ----- News -------------------------------------------------------------
-const newsTag = structure.posts?.tag ?? options.newsTag;
-const posts = all
-  .filter((e) => e.data.tags.includes(newsTag))
-  .map((e) => newsSummary(e))
-  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
-const news = posts.slice(0, structure.posts?.limit ?? 5);
+// One-line mission, taken from the Welcome/home page's last paragraph (its punchy
+// statement), falling back to the first paragraph or the site description.
+const homeEntry = find(structure.home?.page ?? options.homePage);
+const paragraphs = (homeEntry?.data.blocks ?? [])
+  .filter((b) => b.type === "paragraph")
+  .map((b) => firstParagraph([b]))
+  .filter(Boolean);
+const mission = paragraphs.at(-1) ?? siteDescription ?? "";
 
-// ----- Photographs ------------------------------------------------------
-// Every photo on this page comes from Cosense, in order of intent:
-//   1. images pasted on the home page itself (Gyazo lines),
-//   2. a dedicated photo page (default "Gallery", overridable with
-//      `gallery: { page: … }` in the .site YAML),
-//   3. the newest post images — so a site that has curated nothing yet still
-//      shows the lab rather than a wall of text.
-const galleryTarget = (structure as { gallery?: { page?: string } }).gallery?.page ?? "Gallery";
-const galleryEntry = find(galleryTarget);
-
-const curated = dedupePhotos([
-  ...(homeEntry ? photosFrom(homeEntry.data.blocks) : []),
-  ...(galleryEntry ? photosFrom(galleryEntry.data.blocks) : []),
-]);
-const fromPosts: Photo[] = posts
-  .filter((p) => p.image)
-  .slice(0, 8)
-  .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title, href: path(p.slug) }));
-// Post images are a stopgap, not a mix-in: they are whatever a news post
-// happened to open with (often a slide), and squaring those off next to real
-// photographs looks careless. Once the lab has curated a wall of its own, use
-// only that.
-const photos =
-  curated.length >= 3 ? curated.slice(0, 12) : dedupePhotos([...curated, ...fromPosts]).slice(0, 6);
-
-// ----- Opening links ----------------------------------------------------
-// Reuse the nav so these follow whatever the .site YAML declares.
+// Destinations: the site nav, plus Join when that page exists. Each gets a short
+// Japanese sublabel for warmth; unknown labels just show the label alone.
 const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
-const navByLabel = (label: string) =>
-  navItems.find((i) => i.label.toLowerCase() === label.toLowerCase());
-const aboutItem = navByLabel("about");
-const contactItem = navByLabel("contact");
+const joinEntry = find(cfg.join?.page ?? "Join") ?? find("学生の方へ");
+
+const SUBLABEL: Record<string, string> = {
+  about: "研究室について",
+  news: "最近の活動",
+  members: "メンバー",
+  publications: "業績・論文",
+  contact: "お問い合わせ・共同研究",
+  join: "学生の方へ",
+};
+
+interface Dest {
+  label: string;
+  sub?: string;
+  href: string;
+}
+const destinations: Dest[] = navItems.map((item) => ({
+  label: item.label,
+  sub: SUBLABEL[item.label.toLowerCase()],
+  href: navHref(item, titleToSlug),
+}));
+// Add Join if it isn't already in the nav.
+if (joinEntry && !destinations.some((d) => d.label.toLowerCase() === "join")) {
+  destinations.push({ label: "Join", sub: SUBLABEL.join, href: path(joinEntry.data.slug) });
+}
 ---
-<Layout title={siteTitle} description={siteDescription} bare hideToc>
-  {/* Set before the sections parse so reveal targets start hidden without a
-      flash; without JS the class never lands and everything stays visible. */}
-  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
-
-  <section class="opening" data-pagefind-body>
+<Layout title={siteTitle} description={siteDescription} bare hideToc hideFooter>
+  <section class="portal" data-pagefind-body>
     <ShaderHero />
-    <div class="opening__scrim" aria-hidden="true"></div>
-    <div class="shell opening__content">
-      {openingEyebrow && <p class="opening__eyebrow">{openingEyebrow}</p>}
-      <h1 class="opening__title">{openingTitle}</h1>
-      {homeEntry ? (
-        <div class="opening__lead">
-          <PageContent blocks={withoutImages(homeEntry.data.blocks)} />
-        </div>
-      ) : (
-        siteDescription && <p class="opening__lead">{siteDescription}</p>
-      )}
-      {(aboutItem || contactItem) && (
-        <p class="opening__links">
-          {aboutItem && (
-            <a class="arrow-link" data-magnetic href={navHref(aboutItem, titleToSlug)}>
-              研究室について
-            </a>
-          )}
-          {contactItem && (
-            <a class="arrow-link" data-magnetic href={navHref(contactItem, titleToSlug)}>
-              お問い合わせ
-            </a>
-          )}
-        </p>
-      )}
-    </div>
-  </section>
+    <div class="portal__scrim" aria-hidden="true"></div>
 
-  {photos.length > 0 && (
-    <section class="mosaic" aria-label="研究室の風景">
-      <ul class="mosaic__grid" data-count={photos.length}>
-        {photos.map((p, i) => {
-          const frame = (
-            <Fragment>
-              <img
-                src={p.src}
-                srcset={p.srcset}
-                sizes="(max-width: 720px) 50vw, 25vw"
-                alt={p.alt}
-                loading={i < 4 ? "eager" : "lazy"}
-                decoding="async"
-              />
-              {p.alt && <span class="mosaic__caption">{p.alt}</span>}
-            </Fragment>
-          );
-          return (
-            <li class="mosaic__cell" data-reveal style={`--i:${i}`}>
-              {p.href ? <a href={p.href}>{frame}</a> : frame}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  )}
+    <div class="portal__inner">
+      <header class="portal__intro">
+        {eyebrow && <p class="portal__eyebrow">{eyebrow}</p>}
+        <h1 class="portal__title">{displayTitle}</h1>
+        {mission && <p class="portal__mission">{mission}</p>}
+      </header>
 
-  {news.length > 0 && (
-    <section class="latest">
-      <div class="shell">
-        <div class="latest__head">
-          <h2 class="latest__heading">News</h2>
-          <a class="arrow-link" data-magnetic href={path("news")}>すべて見る</a>
-        </div>
-        <ul class="latest__list">
-          {news.map((n) => (
-            <li class="latest__item" data-reveal>
-              <a class="latest__link" href={path(n.slug)}>
-                {n.date && (
-                  <time class="latest__date" datetime={n.date.toISOString()}>
-                    {formatNewsDate(n.date)}
-                  </time>
-                )}
-                <span class="latest__title">{n.title}</span>
+      <nav class="portal__nav" aria-label="サイト案内">
+        <ul class="portal__grid">
+          {destinations.map((d, i) => (
+            <li class="portal__cell">
+              <a class="portal__dest" data-magnetic="0.15" href={d.href}>
+                <span class="portal__no">{String(i + 1).padStart(2, "0")}</span>
+                <span class="portal__label">{d.label}</span>
+                {d.sub && <span class="portal__sub">{d.sub}</span>}
+                <span class="portal__arrow" aria-hidden="true">→</span>
               </a>
             </li>
           ))}
         </ul>
-      </div>
-    </section>
-  )}
+      </nav>
+    </div>
+  </section>
 </Layout>
-
-<script>
-  // Fade sections in as they enter the viewport. Everything is already visible
-  // without JS (the `js-reveal` class above is what hides them), and reduced
-  // motion skips straight to the visible state.
-  const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
-  const show = (el: Element) => el.classList.add("is-visible");
-
-  if (
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-    !("IntersectionObserver" in window)
-  ) {
-    targets.forEach(show);
-  } else {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          show(entry.target);
-          io.unobserve(entry.target);
-        }
-      },
-      { rootMargin: "0px 0px -8% 0px" },
-    );
-    targets.forEach((el) => io.observe(el));
-  }
-</script>
