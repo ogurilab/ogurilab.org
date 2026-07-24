@@ -3,7 +3,7 @@ import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-lab/options";
 import Layout from "../components/Layout.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
-import { dedupePhotos, photosFrom, type Photo } from "../lib/photos";
+import { newsImages } from "../lib/gallery";
 import { aspectRatios } from "../lib/gyazo";
 
 // The gallery: every image used across the lab's news / blog posts, newest
@@ -13,22 +13,7 @@ import { aspectRatios } from "../lib/gyazo";
 const structure = await loadStructure();
 const newsTag = structure.posts?.tag ?? options.newsTag;
 const all = await getCollection("pages");
-const dateOf = (e: (typeof all)[number]) =>
-  e.data.publishedAt ?? e.data.modifiedAt ?? "";
-const posts = all
-  .filter((e) => e.data.tags.includes(newsTag))
-  .sort((a, b) => dateOf(b).localeCompare(dateOf(a)));
-
-const images: Photo[] = dedupePhotos(
-  posts.flatMap((e) =>
-    photosFrom(e.data.blocks).map((p) => ({
-      ...p,
-      alt: p.alt || e.data.title,
-      // Link the image to its source post unless it already carries a link.
-      href: p.href ?? path(e.data.slug),
-    })),
-  ),
-);
+const images = newsImages(all, newsTag, path);
 
 // Per-image aspect ratios so each masonry tile reserves the right height. A
 // failed lookup falls back to 4:3; the layout still holds, just less exact.
