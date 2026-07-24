@@ -12,26 +12,42 @@ import type { CosenseBlock } from "@cosense-site-kit/core";
 /** Matches both the page URL (gyazo.com/<id>/…) and the CDN one (i.gyazo.com/<id>.png). */
 const GYAZO_RE = /^https?:\/\/(?:i\.)?gyazo\.com\/([0-9a-f]{32})/i;
 
+/**
+ * Files uploaded directly into Cosense (scrapbox.io/files/…). These respond with
+ * `Cross-Origin-Resource-Policy: same-origin`, so a browser refuses to render
+ * them cross-origin from this site — the image just fails to load. Routing them
+ * through an image proxy (which fetches server-side and re-serves them with
+ * open headers) fixes that, and gives us resizing for free.
+ */
+const SCRAPBOX_FILE_RE = /^https?:\/\/scrapbox\.io\/files\//i;
+/** Public image-resizing proxy (images.weserv.nl). */
+const proxy = (url: string, w: number) =>
+  `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}&w=${w}&we`;
+
 /** Widths we ask Gyazo for. Covers a phone thumb up to a 2x hero on desktop. */
 const DEFAULT_WIDTHS = [480, 960, 1600] as const;
 
 export interface ResponsiveImage {
   src: string;
-  /** Absent for non-Gyazo URLs — we can't resize those. */
+  /** Absent when the source can't be resized. */
   srcset?: string;
 }
 
 /**
- * Build `src`/`srcset` for an image URL. Non-Gyazo URLs pass through untouched
- * so an externally hosted image still renders.
+ * Build `src`/`srcset` for an image URL. Gyazo and Cosense-uploaded files get a
+ * real srcset; any other URL passes through untouched.
  */
 export function responsiveImage(
   url: string,
   widths: readonly number[] = DEFAULT_WIDTHS,
 ): ResponsiveImage {
   const id = GYAZO_RE.exec(url)?.[1];
-  if (!id) return { src: url };
-  const at = (w: number) => `https://gyazo.com/${id}/thumb/${w}`;
+  const at = id
+    ? (w: number) => `https://gyazo.com/${id}/thumb/${w}`
+    : SCRAPBOX_FILE_RE.test(url)
+      ? (w: number) => proxy(url, w)
+      : null;
+  if (!at) return { src: url };
   return {
     src: at(widths[widths.length - 1]),
     srcset: widths.map((w) => `${at(w)} ${w}w`).join(", "),
