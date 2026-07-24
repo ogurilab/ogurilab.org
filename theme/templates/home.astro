@@ -8,6 +8,7 @@ import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { firstParagraph } from "../lib/content";
 import { newsSummary, formatNewsDate } from "../lib/news";
 import { newsImages } from "../lib/gallery";
+import { responsiveImage } from "../lib/photos";
 
 // Restrained home: a full-screen shader hero, then two quiet blocks — recent
 // news and a photo gallery that adapts to any number of images. Navigation is
@@ -84,22 +85,40 @@ const gallery = newsImages(all, newsTag, path).slice(0, galleryLimit);
             <h2 class="sect__en">News</h2>
             <p class="sect__ja">最近の活動</p>
           </div>
-          <ul class="feed" data-reveal>
-            {news.map((n) => (
-              <li class="feed__item">
-                <a class="feed__link" href={path(n.slug)}>
-                  {n.date && (
-                    <time class="feed__date" datetime={n.date.toISOString()}>
-                      {formatNewsDate(n.date)}
-                    </time>
-                  )}
-                  <span class="feed__main">
-                    {n.chip && <span class="feed__chip">{n.chip}</span>}
-                    <span class="feed__title">{n.title}</span>
-                  </span>
-                </a>
-              </li>
-            ))}
+          <ul class="postlist" data-reveal>
+            {news.map((n) => {
+              const thumb = n.image ? responsiveImage(n.image) : null;
+              const tags = n.tags.filter((t) => t !== newsTag);
+              // Many posts open with a paragraph that repeats their title; drop
+              // the summary in that case so the card isn't the same line twice.
+              const summary =
+                n.description && n.description.slice(0, 16) !== n.title.slice(0, 16)
+                  ? n.description
+                  : null;
+              return (
+                <li class="postlist__item">
+                  <a class="postlist__thumb" href={path(n.slug)} aria-hidden="true" tabindex="-1">
+                    {thumb ? (
+                      <img src={thumb.src} srcset={thumb.srcset} sizes="72px" alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span class="postlist__ph">{Array.from(n.title.trim())[0] ?? "·"}</span>
+                    )}
+                  </a>
+                  <div class="postlist__body">
+                    <a class="postlist__title" href={path(n.slug)}>{n.title}</a>
+                    {summary && <p class="postlist__summary">{summary}</p>}
+                    <div class="postlist__meta">
+                      {n.date && (
+                        <time class="postlist__date" datetime={n.date.toISOString()}>
+                          {formatNewsDate(n.date)}
+                        </time>
+                      )}
+                      {tags.map((t) => <span class="postlist__tag">#{t}</span>)}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
           <a class="more" href={path("news")}>すべて見る<span aria-hidden="true">→</span></a>
         </div>
