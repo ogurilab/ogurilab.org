@@ -136,7 +136,7 @@ h1, h2, h3, h4, h5, h6 {
    as a fallback if the image 404s (`.logo-failed`, set by the img's onerror). */
 .site-logo {
   display: block;
-  height: 28px;
+  height: 40px;
   width: auto;
 }
 .site-brand-text { display: inline-block; }

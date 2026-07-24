@@ -14,6 +14,6 @@ export default defineConfig({
     // Header logo: place the image in `public/` and point `logo` at its
     // site-root path. Until the file exists the header falls back to the site
     // title text. For a PNG, change this to "/logo.png" (or `{ src, height }`).
-    themeLab({ logo: "/logo.svg" }),
+    themeLab({ logo: { src: "/logo.svg", height: 40 } }),
   ],
 });
