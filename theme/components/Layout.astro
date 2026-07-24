@@ -56,7 +56,9 @@ const lang = site?.lang ?? "ja";
 // configured site origin; og:image resolves to absolute (page image, else the
 // favicon). Built here so every template that uses Layout gets cards for free.
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
-const imageSrc = image ?? site?.icon;
+// Favicon: theme option wins over the framework's `.site`-resolved icon.
+const faviconHref = options.favicon ?? site?.icon;
+const imageSrc = image ?? faviconHref;
 const ogImage = imageSrc && Astro.site ? new URL(imageSrc, Astro.site).href : imageSrc;
 const jsonLd = {
   "@context": "https://schema.org",
@@ -91,7 +93,8 @@ const htmlStyle = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {metaDescription && <meta name="description" content={metaDescription} />}
     {canonical && <link rel="canonical" href={canonical} />}
-    {site?.icon && <link rel="icon" href={site.icon} />}
+    {faviconHref && <link rel="icon" href={faviconHref} />}
+    {options.favicon && <link rel="apple-touch-icon" href={options.favicon} />}
     {hasFeed && (
       <link
         rel="alternate"

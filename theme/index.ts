@@ -33,6 +33,11 @@ export interface ThemeLabOptions {
    * shown as a fallback if the image fails to load.
    */
   logo?: ThemeLabLogo | string;
+  /**
+   * Favicon: a site-relative path or URL (e.g. "/favicon.png"). Put the file in
+   * `public/`. Overrides the framework's `.site` favicon resolution.
+   */
+  favicon?: string;
   /** Default meta description. Falls back to cosense.config.ts site.description. */
   siteDescription?: string;
   /** Header nav items. Falls back to .site `nav:` when empty. */
@@ -99,6 +104,7 @@ export interface ThemeLabPreset {
 export interface ThemeLabRuntimeOptions {
   siteTitle?: string;
   logo?: ThemeLabLogo;
+  favicon?: string;
   siteDescription?: string;
   nav: ThemeLabNavItem[];
   homePage?: string;
@@ -128,6 +134,7 @@ export function resolveThemeOptions(opts: ThemeLabOptions = {}): ThemeLabRuntime
   return {
     siteTitle: opts.siteTitle ?? base.siteTitle,
     logo: normalizeLogo(opts.logo ?? base.logo),
+    favicon: opts.favicon ?? base.favicon,
     siteDescription: opts.siteDescription ?? base.siteDescription,
     nav: opts.nav ?? base.nav ?? [],
     homePage: opts.homePage ?? base.homePage,

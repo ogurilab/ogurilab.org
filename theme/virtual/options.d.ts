@@ -12,6 +12,7 @@ declare module "virtual:cosense-theme-lab/options" {
   export interface ThemeLabRuntimeOptions {
     siteTitle?: string;
     logo?: ThemeLabLogo;
+    favicon?: string;
     siteDescription?: string;
     nav: ThemeLabNavItem[];
     homePage?: string;
