@@ -1020,48 +1020,6 @@ html[data-theme="dark"] .page-content .astro-code span {
   .masonry__cell { margin-bottom: 0.5rem; }
 }
 
-/* ----- Onward links ----- */
-.links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  border-top: 1px solid var(--color-border);
-  border-left: 1px solid var(--color-border);
-}
-.links__item {
-  border-right: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-}
-.links__link {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 1.4rem 1.5rem;
-  color: inherit;
-  text-decoration: none;
-  transition: background-color 0.25s var(--ease), color 0.25s var(--ease);
-}
-.links__link:hover { background: var(--color-accent); color: #fff; }
-.links__label {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-.links__sub { font-size: 0.75rem; color: var(--color-text-muted); transition: color 0.25s var(--ease); }
-.links__link:hover .links__sub { color: color-mix(in srgb, #fff 82%, transparent); }
-.links__arrow {
-  position: absolute;
-  top: 1.4rem;
-  right: 1.5rem;
-  opacity: 0;
-  transform: translateX(-0.35rem);
-  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
-}
-.links__link:hover .links__arrow { opacity: 1; transform: none; }
-
 @media (max-width: 560px) {
   /* Date on its own line above the title. */
   .feed__link {
