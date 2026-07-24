@@ -1028,6 +1028,71 @@ html[data-theme="dark"] .page-content .astro-code span {
   }
 }
 
+/* ===================== Gallery page (/gallery) ===================== */
+
+.gallery-page { padding: clamp(2.5rem, 6vh, 4.5rem) clamp(1rem, 3vw, 2.5rem) clamp(4rem, 9vh, 6rem); }
+.gallery-page__head {
+  max-width: var(--width-wide);
+  margin: 0 auto clamp(2rem, 5vh, 3.25rem);
+}
+.gallery-page__eyebrow {
+  margin: 0 0 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.gallery-page__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.gallery-page__sub { margin: 0.6rem 0 0; color: var(--color-text-muted); font-size: 0.875rem; }
+.gallery-page__empty { color: var(--color-text-muted); }
+
+/* Masonry (Pinterest-style): CSS columns keep each image at its own aspect
+   ratio, so the wall reads as irregular. Each tile carries its real ratio as an
+   inline `aspect-ratio`, so it reserves the correct height before the image
+   loads — the layout never jumps, and native lazy-loading only fetches tiles as
+   they scroll near. Column width (not count) is fixed, so it stays responsive. */
+.pin {
+  columns: clamp(15rem, 24vw, 21rem);
+  column-gap: clamp(0.5rem, 1vw, 0.85rem);
+}
+.pin__cell {
+  display: block;
+  margin-bottom: clamp(0.5rem, 1vw, 0.85rem);
+  break-inside: avoid;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-bg-soft);
+}
+.pin__cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Hide alt text for a broken image so the tile stays a clean placeholder
+     (screen readers still get the alt). */
+  color: transparent;
+  transition: transform 0.6s var(--ease);
+}
+.pin__cell:hover img { transform: scale(1.05); }
+/* Fade each image in as it (lazily) loads. Gated by js-reveal so no-JS shows
+   images immediately; reduced motion skips the fade. */
+.js-reveal .pin__cell img { opacity: 0; transition: opacity 0.5s var(--ease), transform 0.6s var(--ease); }
+.js-reveal .pin__cell img.is-loaded { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .js-reveal .pin__cell img { opacity: 1; transition: transform 0.6s var(--ease); }
+}
+@media (max-width: 560px) {
+  .pin { columns: 2; column-gap: 0.5rem; }
+  .pin__cell { margin-bottom: 0.5rem; }
+}
+
 /* ===================== Members ===================== */
 
 .members-group { margin-bottom: 3rem; }
