@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDate } from "@cosense-site-kit/theme-utils";
+import { formatDate, hidesDates } from "@cosense-site-kit/theme-utils";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
 import Related from "@cosense-site-kit/theme-utils/components/Related.astro";
@@ -18,6 +18,10 @@ const updatedDay = formatDate(page.modifiedAt);
 // Only show the updated date when it actually differs from the publish date,
 // so a page edited the same day it was published shows a single date.
 const showUpdated = updatedDay && updatedDay !== publishedDay;
+// Pages tagged #no-date opt out of the date line entirely (e.g. evergreen
+// index pages like Research). Uses the framework helper so the tag name and
+// its normalization stay in sync with theme-default and theme-utils.
+const showDates = !hidesDates(page.tags ?? []);
 ---
 <Layout title={page.title} description={page.summary} image={page.image} ogType="article">
   <article data-pagefind-body>
@@ -25,8 +29,8 @@ const showUpdated = updatedDay && updatedDay !== publishedDay;
       {page.draft && <span class="draft-badge">Draft · preview only</span>}
       <h1>{page.title}</h1>
       <div class="page-meta">
-        {publishedDay && <time class="updated" datetime={page.publishedAt}>{publishedDay}</time>}
-        {showUpdated && <time class="updated" datetime={page.modifiedAt}>Updated {updatedDay}</time>}
+        {showDates && publishedDay && <time class="updated" datetime={page.publishedAt}>{publishedDay}</time>}
+        {showDates && showUpdated && <time class="updated" datetime={page.modifiedAt}>Updated {updatedDay}</time>}
       </div>
     </header>
 
