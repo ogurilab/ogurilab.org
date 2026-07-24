@@ -136,8 +136,12 @@ h1, h2, h3, h4, h5, h6 {
    as a fallback if the image 404s (`.logo-failed`, set by the img's onerror). */
 .site-logo {
   display: block;
-  height: 40px;
+  height: 56px;
   width: auto;
+}
+/* Cap on narrow screens so the wide logo doesn't crowd the menu/search icons. */
+@media (max-width: 600px) {
+  .site-logo { height: 40px; }
 }
 .site-brand-text { display: inline-block; }
 .site-brand:has(.site-logo) .site-brand-text { display: none; }
