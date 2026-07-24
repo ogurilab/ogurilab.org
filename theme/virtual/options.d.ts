@@ -16,6 +16,7 @@ declare module "virtual:cosense-theme-lab/options" {
     nav: ThemeLabNavItem[];
     homePage?: string;
     newsTag: string;
+    memberTag: string;
     affiliation?: string;
     copyrightHolder?: string;
     copyrightUrl?: string;

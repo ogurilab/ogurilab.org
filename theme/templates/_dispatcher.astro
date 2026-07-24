@@ -9,16 +9,14 @@ import NewsPost from "./news-post.astro";
 import Member from "./member.astro";
 
 // Template registry. Map a Cosense page's resolved `template` value (from
-// #template/<name> tag or .site `templates:` mapping) to its renderer.
+// #template/<name> tag or .site `templates:` mapping) to its renderer. These are
+// for pages you explicitly assign a template to (one-off pages like Members Data
+// or Publications).
 const TEMPLATES: Record<string, typeof Page> = {
   page: Page,
   members: Members,
   publications: Publications,
-  member: Member,
 };
-
-// Tag that marks a page as an individual member profile.
-const MEMBER_TAG = "member";
 
 export async function getStaticPaths() {
   return pagePaths();
@@ -27,12 +25,12 @@ export async function getStaticPaths() {
 const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
 const data = entry.data as { template: string; tags: string[] };
 
-// Tag-driven overrides take precedence over explicit template assignment:
-// a #news page is a post, a #member page is a profile. Everything else uses its
-// assigned template.
+// Tag-driven content types take precedence over explicit template assignment.
+// These are categories defined by a tag (many pages each), not one-off pages:
+// a #news page is a post, a #member page is a profile.
 let Template: typeof Page;
 if (data.tags.includes(options.newsTag)) Template = NewsPost;
-else if (data.tags.includes(MEMBER_TAG)) Template = Member;
+else if (data.tags.includes(options.memberTag)) Template = Member;
 else Template = TEMPLATES[data.template] ?? Page;
 ---
 <Template entry={entry} />

@@ -46,6 +46,11 @@ export interface ThemeLabOptions {
    */
   newsTag?: string;
   /**
+   * Tag that marks a Cosense page as an individual member profile, rendered
+   * with the member template. Tag-driven, mirroring `newsTag`. Default: "member".
+   */
+  memberTag?: string;
+  /**
    * How many posts the News index shows per page before paginating
    * (/news, /news/2, …). Default: 12. The home page's "recent news" preview
    * is controlled separately by `.site` `posts.limit`.
@@ -98,6 +103,7 @@ export interface ThemeLabRuntimeOptions {
   nav: ThemeLabNavItem[];
   homePage?: string;
   newsTag: string;
+  memberTag: string;
   newsPageSize: number;
   affiliation?: string;
   copyrightHolder?: string;
@@ -126,6 +132,7 @@ export function resolveThemeOptions(opts: ThemeLabOptions = {}): ThemeLabRuntime
     nav: opts.nav ?? base.nav ?? [],
     homePage: opts.homePage ?? base.homePage,
     newsTag: opts.newsTag ?? base.newsTag ?? "news",
+    memberTag: opts.memberTag ?? base.memberTag ?? "member",
     newsPageSize: opts.newsPageSize ?? base.newsPageSize ?? 12,
     affiliation: opts.affiliation ?? base.affiliation,
     copyrightHolder: opts.copyrightHolder ?? base.copyrightHolder,
@@ -164,6 +171,8 @@ export default function themeLab(opts: ThemeLabOptions = {}): AstroIntegration {
 
         // Fixed-route templates: each owns a known URL.
         injectRoute({ pattern: "/", entrypoint: here("templates/home.astro") });
+        // Auto gallery: every image used across the site, one adaptive grid.
+        injectRoute({ pattern: "/gallery", entrypoint: here("templates/gallery.astro") });
         // Paginated News index: page 1 is /news, later pages are /news/2, …
         injectRoute({
           pattern: "/news/[...page]",
