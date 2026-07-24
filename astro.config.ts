@@ -10,6 +10,10 @@ export default defineConfig({
     // Dark skin available: `import themeLab, { presetDark } from "./theme"`
     // then `themeLab({ preset: presetDark })`. Or switch at runtime from
     // Cosense via the `.site` code:site.yaml `theme: { skin: dark }`.
-    themeLab(),
+    //
+    // Header logo: place the image in `public/` and point `logo` at its
+    // site-root path. Until the file exists the header falls back to the site
+    // title text. For a PNG, change this to "/logo.png" (or `{ src, height }`).
+    themeLab({ logo: "/logo.svg" }),
   ],
 });

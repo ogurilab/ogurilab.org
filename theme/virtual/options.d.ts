@@ -4,8 +4,14 @@ declare module "virtual:cosense-theme-lab/options" {
     page?: string;
     href?: string;
   }
+  export interface ThemeLabLogo {
+    src: string;
+    height?: number;
+    darkSrc?: string;
+  }
   export interface ThemeLabRuntimeOptions {
     siteTitle?: string;
+    logo?: ThemeLabLogo;
     siteDescription?: string;
     nav: ThemeLabNavItem[];
     homePage?: string;

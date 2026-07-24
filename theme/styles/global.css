@@ -121,6 +121,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .site-brand {
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-display);
   font-size: 1.125rem;
   color: var(--color-text);
@@ -129,6 +131,19 @@ h1, h2, h3, h4, h5, h6 {
   margin-right: auto;
 }
 .site-brand:hover { text-decoration: none; }
+
+/* Logo image (theme option `logo`). Replaces the title text; the text returns
+   as a fallback if the image 404s (`.logo-failed`, set by the img's onerror). */
+.site-logo {
+  display: block;
+  height: 28px;
+  width: auto;
+}
+.site-brand-text { display: inline-block; }
+.site-brand:has(.site-logo) .site-brand-text { display: none; }
+.site-brand.logo-failed .site-logo { display: none; }
+.site-brand.logo-failed .site-brand-text { display: inline-block; }
+
 .site-affiliation {
   display: block;
   font-size: 0.75rem;

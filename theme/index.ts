@@ -11,9 +11,28 @@ export interface ThemeLabNavItem {
   href?: string;
 }
 
+export interface ThemeLabLogo {
+  /**
+   * Site-relative path or absolute URL to the logo image. Put the file in
+   * `public/` so Astro serves it at the site root — e.g. `public/logo.svg`
+   * becomes `"/logo.svg"`.
+   */
+  src: string;
+  /** Rendered height in px (width scales automatically). Default 28. */
+  height?: number;
+  /** Optional alternate image for the dark skin. */
+  darkSrc?: string;
+}
+
 export interface ThemeLabOptions {
   /** Site title shown in the header. Falls back to cosense.config.ts site.title. */
   siteTitle?: string;
+  /**
+   * Logo image for the header, replacing the site-title text. A bare string is
+   * shorthand for `{ src }`. The title text is used as the image's alt/label and
+   * shown as a fallback if the image fails to load.
+   */
+  logo?: ThemeLabLogo | string;
   /** Default meta description. Falls back to cosense.config.ts site.description. */
   siteDescription?: string;
   /** Header nav items. Falls back to .site `nav:` when empty. */
@@ -74,6 +93,7 @@ export interface ThemeLabPreset {
 /** Shape injected into templates via virtual:cosense-theme-lab/options. */
 export interface ThemeLabRuntimeOptions {
   siteTitle?: string;
+  logo?: ThemeLabLogo;
   siteDescription?: string;
   nav: ThemeLabNavItem[];
   homePage?: string;
@@ -94,10 +114,14 @@ const VIRTUAL_ID = "virtual:cosense-theme-lab/options";
 // Merge user options with the chosen preset. Explicit options win; the preset's
 // own options fill the gaps. tokens/colorScheme/fontHref come from the preset.
 // Pure and exported so it can be unit-tested without spinning up Astro.
+const normalizeLogo = (logo?: ThemeLabLogo | string): ThemeLabLogo | undefined =>
+  logo == null ? undefined : typeof logo === "string" ? { src: logo } : logo;
+
 export function resolveThemeOptions(opts: ThemeLabOptions = {}): ThemeLabRuntimeOptions {
   const base = opts.preset?.options ?? {};
   return {
     siteTitle: opts.siteTitle ?? base.siteTitle,
+    logo: normalizeLogo(opts.logo ?? base.logo),
     siteDescription: opts.siteDescription ?? base.siteDescription,
     nav: opts.nav ?? base.nav ?? [],
     homePage: opts.homePage ?? base.homePage,
