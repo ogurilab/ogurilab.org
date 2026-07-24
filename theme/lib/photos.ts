@@ -1,4 +1,4 @@
-import type { CosenseBlock } from "@cosense-site-kit/core";
+import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
 
 /**
  * Photo handling for the home page.
@@ -66,6 +66,31 @@ export function photosFrom(blocks: CosenseBlock[], alt = ""): Photo[] {
   for (const b of blocks) {
     if (b.type !== "image") continue;
     out.push({ ...responsiveImage(b.url), alt: b.alt ?? alt, href: b.href });
+  }
+  return out;
+}
+
+/**
+ * Like `photosFrom`, but also picks up images that sit inline in the text — e.g.
+ * two images on one line, which Cosense parses as inline nodes rather than
+ * standalone image blocks. Cosense page-icons (`type: "icon"`) are not images,
+ * so they're excluded. Use this where every image matters (the home page's
+ * gallery source); use `photosFrom` where only deliberate block images should
+ * count.
+ */
+export function allPhotosFrom(blocks: CosenseBlock[], alt = ""): Photo[] {
+  const out: Photo[] = [];
+  const add = (url: string, a?: string, href?: string) =>
+    out.push({ ...responsiveImage(url), alt: a ?? alt, href });
+  const walk = (nodes: InlineNode[]) => {
+    for (const n of nodes) {
+      if (n.type === "image") add(n.src, n.alt, n.href);
+      else if ("children" in n) walk(n.children);
+    }
+  };
+  for (const b of blocks) {
+    if (b.type === "image") add(b.url, b.alt, b.href);
+    else if ("children" in b) walk(b.children);
   }
   return out;
 }

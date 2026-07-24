@@ -7,8 +7,7 @@ import ShaderHero from "../components/ShaderHero.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { firstParagraph } from "../lib/content";
 import { newsSummary, formatNewsDate } from "../lib/news";
-import { newsImages } from "../lib/gallery";
-import { responsiveImage } from "../lib/photos";
+import { allPhotosFrom, responsiveImage, type Photo } from "../lib/photos";
 
 // Restrained home: a full-screen shader hero, then two quiet blocks — recent
 // news and a photo gallery that adapts to any number of images. Navigation is
@@ -52,11 +51,24 @@ const news = posts.slice(0, structure.posts?.limit ?? 5).map((n) => ({
 }));
 
 // ----- Gallery preview --------------------------------------------------
-// Fully automatic: the newest images from the lab's news posts. No Cosense
-// "Gallery" page to maintain — the full set lives on /gallery. Cap the preview
-// with `gallery: { limit: N }` in the .site YAML.
+// The images pasted on the home page (`.site` home.page). If that page has no
+// images, fall back to a random handful of news post header images. Cap with
+// `gallery: { limit: N }` in the .site YAML.
 const galleryLimit = cfg.gallery?.limit ?? 6;
-const gallery = newsImages(all, newsTag, path).slice(0, galleryLimit);
+const homePhotos = homeEntry ? allPhotosFrom(homeEntry.data.blocks) : [];
+const newsHeaders: Photo[] = posts
+  .filter((p) => p.image)
+  .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title, href: path(p.slug) }));
+// Fisher–Yates shuffle (fixed per build) for the fallback.
+const shuffledHeaders = (() => {
+  const a = [...newsHeaders];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+})();
+const gallery = (homePhotos.length > 0 ? homePhotos : shuffledHeaders).slice(0, galleryLimit);
 ---
 <Layout title={siteTitle} description={siteDescription} bare hideToc>
   <script is:inline>document.documentElement.classList.add("js-reveal");</script>

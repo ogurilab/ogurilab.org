@@ -3,17 +3,21 @@ import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-lab/options";
 import Layout from "../components/Layout.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
-import { newsImages } from "../lib/gallery";
+import { galleryPhotos } from "../lib/gallery";
 import { aspectRatios } from "../lib/gyazo";
 
-// The gallery: every image used across the lab's news / blog posts, newest
-// first, in one adaptive grid. Fully automatic — authors just paste images into
-// their posts and they collect here. Each tile links back to its source post.
+// The gallery: the home page's own images first, then every image used across
+// the lab's news / blog posts, newest first, in one adaptive grid. Mostly
+// automatic — authors paste images into their posts (or the home page) and they
+// collect here. Each post tile links back to its source post.
 
 const structure = await loadStructure();
 const newsTag = structure.posts?.tag ?? options.newsTag;
 const all = await getCollection("pages");
-const images = newsImages(all, newsTag, path);
+const homeEntry = all.find(
+  (e) => e.data.title === (structure.home?.page ?? options.homePage),
+);
+const images = galleryPhotos(all, newsTag, path, homeEntry);
 
 // Per-image aspect ratios so each masonry tile reserves the right height. A
 // failed lookup falls back to 4:3; the layout still holds, just less exact.
