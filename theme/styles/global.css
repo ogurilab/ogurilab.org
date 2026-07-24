@@ -333,9 +333,8 @@ h1, h2, h3, h4, h5, h6 {
   padding: 3rem 1.5rem 4rem;
 }
 .site-main.wide { max-width: var(--width-wide); }
-/* Home: the page owns its own measure, and its main flex-grows so the
-   single-screen portal can fill the viewport below the header. */
-.site-main.bare { max-width: none; padding: 0; display: flex; flex: 1; }
+/* Home: the page owns its own measure (full-bleed hero + gateway sections). */
+.site-main.bare { max-width: none; padding: 0; }
 
 @media (max-width: 540px) {
   .site-main { padding: 2.5rem 1.25rem 4rem; }
@@ -817,22 +816,35 @@ html[data-theme="dark"] .page-content .astro-code span {
 }
 .shader-bg--static canvas { display: none; }
 
-/* ===================== Home: portal (single screen) ===================== */
+/* ===================== Home: reveal on scroll ===================== */
 
-/* One-viewport gateway — no scroll. The bare main flex-grows to fill the column
-   below the header (footer is hidden on this page), and the portal fills it. */
-.portal {
+/* Gateway sections fade up as they enter view. Only hidden once the inline
+   js-reveal class lands, so JS-off stays fully visible. */
+.js-reveal [data-reveal] {
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+.js-reveal [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js-reveal [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+
+/* ===================== Home: hero (first screen) ===================== */
+
+/* Full-screen shader hero. The page scrolls past it to the gateway sections. */
+.hero {
   position: relative;
   overflow: hidden;
   display: flex;
-  flex: 1;
-  /* Let this flex item shrink to the viewport instead of its content's
-     min-content width (which would overflow and clip on narrow screens). */
-  min-width: 0;
-  min-height: 100%;
-  padding-block: clamp(1.75rem, 4vh, 3.25rem);
+  /* One screen tall, minus the sticky header (~header height). */
+  min-height: calc(100svh - 3.9rem);
+  padding-block: clamp(2rem, 5vh, 3.5rem);
 }
-.portal__scrim {
+.hero__scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -844,22 +856,18 @@ html[data-theme="dark"] .page-content .astro-code span {
     color-mix(in srgb, var(--color-bg) 52%, transparent) 100%
   );
 }
-.portal__inner {
+.hero__inner {
   position: relative;
   z-index: 2;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   max-width: var(--width-wide);
   margin: 0 auto;
   padding-inline: 1.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: clamp(2rem, 7vh, 5rem);
+  justify-content: center;
 }
-
-/* Intro */
-.portal__eyebrow {
+.hero__eyebrow {
   margin: 0 0 1.25rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -867,7 +875,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
-.portal__title {
+.hero__title {
   margin: 0;
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 6.5vw, 4.5rem);
@@ -875,92 +883,136 @@ html[data-theme="dark"] .page-content .astro-code span {
   word-break: auto-phrase;
   text-wrap: balance;
 }
-.portal__mission {
+.hero__mission {
   margin: clamp(1.25rem, 3vh, 2rem) 0 0;
   max-width: 34rem;
   color: var(--color-text-soft);
   font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
   line-height: 1.9;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+}
+.hero__scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+.hero__scroll:hover { color: var(--color-accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .hero__scroll svg { animation: hero-bob 1.8s var(--ease) infinite; }
+  @keyframes hero-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
 }
 
-/* Destinations — an index row that hands off to the real pages. */
-.portal__grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 1px;
-  background: var(--color-border);
-  border-block: 1px solid var(--color-border);
+/* ===================== Home: gateway sections ===================== */
+
+.gateway {
+  padding-block: clamp(2rem, 5vh, 4rem);
 }
-.portal__cell { background: transparent; }
-.portal__dest {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  height: 100%;
-  padding: 1.5rem 1.25rem 1.4rem;
+/* One destination = rounded photo + heading + circular arrow + one line. Sides
+   alternate down the page. The whole block is the link. */
+.gate {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 4.5rem);
+  max-width: var(--width-wide);
+  margin: 0 auto;
+  padding: clamp(2rem, 5vh, 4rem) 1.5rem;
   color: inherit;
   text-decoration: none;
-  background: color-mix(in srgb, var(--color-bg) 60%, transparent);
-  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
 }
-.portal__dest:hover,
-.portal__dest:focus-visible {
+.gate:nth-child(even) .gate__media { order: 2; }
+.gate__media {
+  display: block;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: var(--color-bg-soft);
+  aspect-ratio: 4 / 3;
+}
+.gate__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.7s var(--ease);
+}
+.gate:hover .gate__media img { transform: scale(1.04); }
+.gate__media--empty {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(120% 100% at 20% 15%, var(--color-accent-soft), transparent 60%),
+    var(--color-bg-soft);
+}
+.gate__body { display: block; }
+.gate__eyebrow {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.9rem;
+}
+.gate__head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.gate__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.6vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+/* The circular arrow — keita-lab's signature affordance. */
+.gate__go {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
   background: var(--color-accent);
   color: #fff;
-  outline: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background-color 0.25s var(--ease), transform 0.3s var(--ease);
 }
-.portal__no {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--color-accent);
-  font-variant-numeric: tabular-nums;
-  transition: color 0.3s var(--ease);
+.gate:hover .gate__go {
+  background: var(--color-accent-hover);
+  transform: translateX(0.35rem);
 }
-.portal__dest:hover .portal__no,
-.portal__dest:focus-visible .portal__no {
-  color: color-mix(in srgb, #fff 80%, transparent);
-}
-.portal__label {
-  font-family: var(--font-display);
-  font-size: 1.375rem;
-  line-height: 1.2;
-}
-.portal__sub {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  transition: color 0.3s var(--ease);
-}
-.portal__dest:hover .portal__sub,
-.portal__dest:focus-visible .portal__sub {
-  color: color-mix(in srgb, #fff 82%, transparent);
-}
-.portal__arrow {
-  position: absolute;
-  top: 1.45rem;
-  right: 1.25rem;
-  opacity: 0;
-  transform: translateX(-0.35rem);
-  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
-}
-.portal__dest:hover .portal__arrow,
-.portal__dest:focus-visible .portal__arrow {
-  opacity: 1;
-  transform: none;
+.gate__desc {
+  display: block;
+  margin-top: 1.1rem;
+  max-width: 30rem;
+  color: var(--color-text-soft);
+  font-size: 0.9375rem;
+  line-height: 1.9;
 }
 
-@media (max-width: 640px) {
-  .portal__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .portal__dest { padding: 1.1rem 1rem; gap: 0.25rem; }
-  .portal__label { font-size: 1.125rem; }
-  .portal__mission { -webkit-line-clamp: 2; }
+@media (max-width: 900px) {
+  .gate {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding-block: clamp(2rem, 5vh, 3rem);
+  }
+  /* Photo always on top when stacked, regardless of alternation. */
+  .gate__media,
+  .gate:nth-child(even) .gate__media { order: 0; }
+  .gate__title { font-size: clamp(1.5rem, 7vw, 2rem); }
 }
 
 /* ===================== Members ===================== */

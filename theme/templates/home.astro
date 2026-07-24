@@ -6,13 +6,19 @@ import Layout from "../components/Layout.astro";
 import ShaderHero from "../components/ShaderHero.astro";
 import { loadStructure, loadTitleToSlug, navHref, path } from "@cosense-site-kit/theme-utils";
 import { firstParagraph } from "../lib/content";
+import { newsSummary } from "../lib/news";
+import { dedupePhotos, photosFrom, responsiveImage, type Photo } from "../lib/photos";
 
-// A single-screen portal: no scroll. The individual pages already carry the
-// depth (About, News, Members, Publications, Contact, Join), so the home page's
-// only job is to state who the lab is and hand visitors off to those pages.
+// Hybrid home: a full-screen shader hero (who the lab is), then keita-lab-style
+// gateway sections — one big rounded photo + heading + circular arrow per
+// destination — that hand visitors off to the real pages. Brand type (Shippori
+// Mincho) and the navy accent are kept; the layout language is what's borrowed.
 
 const structure = await loadStructure();
-const cfg = structure as typeof structure & { join?: { page?: string } };
+const cfg = structure as typeof structure & {
+  gallery?: { page?: string };
+  join?: { page?: string };
+};
 const all = await getCollection("pages");
 const titleToSlug = await loadTitleToSlug();
 
@@ -23,14 +29,12 @@ const find = (name?: string): Entry | undefined =>
 const siteTitle = options.siteTitle ?? site?.title ?? "Home";
 const siteDescription = options.siteDescription ?? site?.description;
 
-// The site title doubles as the header logo ("dclab | デジタルカルチャー研究室").
-// Split on the pipe: brand → eyebrow, full name → the display title.
+// Header logo carries brand + full name ("dclab | デジタルカルチャー研究室").
 const [brand, ...restTitle] = siteTitle.split("|").map((s) => s.trim());
 const displayTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
 const eyebrow = options.affiliation ?? (restTitle.length > 0 ? brand : undefined);
 
-// One-line mission, taken from the Welcome/home page's last paragraph (its punchy
-// statement), falling back to the first paragraph or the site description.
+// Mission line — the home page's punchiest paragraph (its last).
 const homeEntry = find(structure.home?.page ?? options.homePage);
 const paragraphs = (homeEntry?.data.blocks ?? [])
   .filter((b) => b.type === "paragraph")
@@ -38,61 +42,141 @@ const paragraphs = (homeEntry?.data.blocks ?? [])
   .filter(Boolean);
 const mission = paragraphs.at(-1) ?? siteDescription ?? "";
 
-// Destinations: the site nav, plus Join when that page exists. Each gets a short
-// Japanese sublabel for warmth; unknown labels just show the label alone.
+// ----- News (for the News gateway photo) --------------------------------
+const newsTag = structure.posts?.tag ?? options.newsTag;
+const posts = all
+  .filter((e) => e.data.tags.includes(newsTag))
+  .map((e) => newsSummary(e))
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+
+// ----- Photo pool -------------------------------------------------------
+// Ambient lab photos (home + Gallery) first, then news images as backfill, so
+// every gateway section can show a real photo even before curation.
+const galleryEntry = find(cfg.gallery?.page ?? "Gallery");
+const pool: Photo[] = dedupePhotos([
+  ...(homeEntry ? photosFrom(homeEntry.data.blocks) : []),
+  ...(galleryEntry ? photosFrom(galleryEntry.data.blocks) : []),
+  ...posts
+    .filter((p) => p.image)
+    .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title }) as Photo),
+]);
+
+// ----- Destinations -----------------------------------------------------
+// The site nav, plus Join when that page exists. Each gets a Japanese heading
+// and a one-line description in keita-lab's "…を詳しく知る" register.
 const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
 const joinEntry = find(cfg.join?.page ?? "Join") ?? find("学生の方へ");
 
-const SUBLABEL: Record<string, string> = {
-  about: "研究室について",
-  news: "最近の活動",
-  members: "メンバー",
-  publications: "業績・論文",
-  contact: "お問い合わせ・共同研究",
-  join: "学生の方へ",
+const META: Record<string, { heading: string; desc: string }> = {
+  about: { heading: "研究室について", desc: "研究室のミッションと、研究に対する考え方。" },
+  vision: { heading: "ビジョン", desc: "私たちが目指す社会と研究の方向性。" },
+  members: { heading: "メンバー", desc: "教員・大学院生・学部生を紹介します。" },
+  publications: { heading: "業績・論文", desc: "対外発表・論文などの研究成果の一覧。" },
+  news: { heading: "最近の活動", desc: "発表・出展・受賞などの最新のできごと。" },
+  contact: { heading: "お問い合わせ", desc: "共同研究・取材・出展のご相談はこちら。" },
+  join: { heading: "学生の方へ", desc: "配属・大学院進学を考えている方へ。" },
 };
 
-interface Dest {
+interface Gate {
   label: string;
-  sub?: string;
   href: string;
+  heading: string;
+  desc: string;
+  cover?: Photo;
 }
-const destinations: Dest[] = navItems.map((item) => ({
-  label: item.label,
-  sub: SUBLABEL[item.label.toLowerCase()],
-  href: navHref(item, titleToSlug),
-}));
-// Add Join if it isn't already in the nav.
-if (joinEntry && !destinations.some((d) => d.label.toLowerCase() === "join")) {
-  destinations.push({ label: "Join", sub: SUBLABEL.join, href: path(joinEntry.data.slug) });
+const used = new Set<string>();
+let pi = 0;
+const nextPoolPhoto = (): Photo | undefined => {
+  while (pi < pool.length && used.has(pool[pi].src)) pi++;
+  return pool[pi++];
+};
+
+const gates: Gate[] = navItems.map((item) => {
+  const key = item.label.toLowerCase();
+  const meta = META[key] ?? { heading: item.label, desc: "" };
+  const entry = "page" in item ? find(item.page) : undefined;
+  let cover = entry ? photosFrom(entry.data.blocks)[0] : undefined;
+  if (!cover) cover = nextPoolPhoto();
+  if (cover) used.add(cover.src);
+  return { label: item.label, href: navHref(item, titleToSlug), ...meta, cover };
+});
+if (joinEntry && !gates.some((g) => g.label.toLowerCase() === "join")) {
+  const cover = photosFrom(joinEntry.data.blocks)[0] ?? nextPoolPhoto();
+  if (cover) used.add(cover.src);
+  gates.push({ label: "Join", href: path(joinEntry.data.slug), ...META.join, cover });
 }
 ---
-<Layout title={siteTitle} description={siteDescription} bare hideToc hideFooter>
-  <section class="portal" data-pagefind-body>
+<Layout title={siteTitle} description={siteDescription} bare hideToc>
+  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
+
+  <section class="hero" data-pagefind-body>
     <ShaderHero />
-    <div class="portal__scrim" aria-hidden="true"></div>
-
-    <div class="portal__inner">
-      <header class="portal__intro">
-        {eyebrow && <p class="portal__eyebrow">{eyebrow}</p>}
-        <h1 class="portal__title">{displayTitle}</h1>
-        {mission && <p class="portal__mission">{mission}</p>}
-      </header>
-
-      <nav class="portal__nav" aria-label="サイト案内">
-        <ul class="portal__grid">
-          {destinations.map((d, i) => (
-            <li class="portal__cell">
-              <a class="portal__dest" data-magnetic="0.15" href={d.href}>
-                <span class="portal__no">{String(i + 1).padStart(2, "0")}</span>
-                <span class="portal__label">{d.label}</span>
-                {d.sub && <span class="portal__sub">{d.sub}</span>}
-                <span class="portal__arrow" aria-hidden="true">→</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <div class="hero__scrim" aria-hidden="true"></div>
+    <div class="hero__inner">
+      {eyebrow && <p class="hero__eyebrow">{eyebrow}</p>}
+      <h1 class="hero__title">{displayTitle}</h1>
+      {mission && <p class="hero__mission">{mission}</p>}
+      <a class="hero__scroll" href="#gateway" aria-label="下へスクロール">
+        <span>Scroll</span>
+        <svg width="14" height="22" viewBox="0 0 14 22" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M7 1v18M1 13l6 7 6-7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
     </div>
   </section>
+
+  <div class="gateway" id="gateway">
+    {gates.map((g) => (
+      <a class="gate" href={g.href} data-reveal aria-label={`${g.heading}のページへ`}>
+        <span class="gate__media">
+          {g.cover ? (
+            <img
+              src={g.cover.src}
+              srcset={g.cover.srcset}
+              sizes="(max-width: 900px) 100vw, 50vw"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span class="gate__media--empty" aria-hidden="true"></span>
+          )}
+        </span>
+        <span class="gate__body">
+          <span class="gate__eyebrow">{g.label}</span>
+          <span class="gate__head">
+            <span class="gate__title">{g.heading}</span>
+            <span class="gate__go" data-magnetic="0.25" aria-hidden="true">→</span>
+          </span>
+          {g.desc && <span class="gate__desc">{g.desc}</span>}
+        </span>
+      </a>
+    ))}
+  </div>
 </Layout>
+
+<script>
+  // Reveal gateway sections as they scroll into view. Hidden only once the inline
+  // js-reveal class lands, so JS-off keeps everything visible; reduced motion
+  // skips the animation.
+  const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+  const show = (el: Element) => el.classList.add("is-visible");
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    !("IntersectionObserver" in window)
+  ) {
+    targets.forEach(show);
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          show(e.target);
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+    targets.forEach((el) => io.observe(el));
+  }
+</script>
