@@ -36,7 +36,6 @@ const paragraphs = (homeEntry?.data.blocks ?? [])
   .filter((b) => b.type === "paragraph")
   .map((b) => firstParagraph([b]))
   .filter(Boolean);
-const mission = paragraphs.at(-1) ?? siteDescription ?? "";
 
 // ----- News -------------------------------------------------------------
 const newsTag = structure.posts?.tag ?? options.newsTag;
@@ -79,7 +78,13 @@ const gallery = (homePhotos.length > 0 ? homePhotos : shuffledHeaders).slice(0, 
     <div class="hero__inner">
       {eyebrow && <p class="hero__eyebrow">{eyebrow}</p>}
       <h1 class="hero__title">{displayTitle}</h1>
-      {mission && <p class="hero__mission">{mission}</p>}
+      {paragraphs.length > 0 ? (
+        <div class="hero__lead">
+          {paragraphs.map((p) => <p>{p}</p>)}
+        </div>
+      ) : (
+        siteDescription && <p class="hero__lead">{siteDescription}</p>
+      )}
       <a class="hero__scroll" href="#main" aria-label="下へスクロール">
         <span>Scroll</span>
         <svg width="14" height="22" viewBox="0 0 14 22" fill="none" stroke="currentColor" aria-hidden="true">

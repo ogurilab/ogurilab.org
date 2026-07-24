@@ -875,10 +875,12 @@ html[data-theme="dark"] .page-content .astro-code span {
   padding-inline: 1.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Anchor the text to the lower-left of the screen. */
+  justify-content: flex-end;
+  align-items: flex-start;
 }
 .hero__eyebrow {
-  margin: 0 0 1.25rem;
+  margin: 0 0 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -888,23 +890,25 @@ html[data-theme="dark"] .page-content .astro-code span {
 .hero__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 6.5vw, 4.5rem);
-  line-height: 1.12;
+  font-size: clamp(1.6rem, 4.2vw, 2.75rem);
+  line-height: 1.18;
   word-break: auto-phrase;
   text-wrap: balance;
 }
-.hero__mission {
-  margin: clamp(1.25rem, 3vh, 2rem) 0 0;
-  max-width: 34rem;
+.hero__lead {
+  max-width: 40rem;
+  margin-top: clamp(0.9rem, 2vh, 1.4rem);
   color: var(--color-text-soft);
-  font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+  font-size: 0.875rem;
   line-height: 1.9;
 }
+.hero__lead p { margin: 0.4rem 0 0; }
+.hero__lead p:first-child { margin-top: 0; }
 .hero__scroll {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  margin-top: clamp(2.5rem, 6vh, 4rem);
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
   color: var(--color-text-muted);
   text-decoration: none;
   font-size: 0.6875rem;
