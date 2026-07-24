@@ -54,7 +54,7 @@ const news = posts.slice(0, structure.posts?.limit ?? 5).map((n) => ({
 // Fully automatic: the newest images from the lab's news posts. No Cosense
 // "Gallery" page to maintain — the full set lives on /gallery. Cap the preview
 // with `gallery: { limit: N }` in the .site YAML.
-const galleryLimit = cfg.gallery?.limit ?? 12;
+const galleryLimit = cfg.gallery?.limit ?? 6;
 const gallery = newsImages(all, newsTag, path).slice(0, galleryLimit);
 ---
 <Layout title={siteTitle} description={siteDescription} bare hideToc>
