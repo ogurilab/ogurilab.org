@@ -15,7 +15,7 @@ import { dedupePhotos, photosFrom, type Photo } from "../lib/photos";
 
 const structure = await loadStructure();
 const cfg = structure as typeof structure & {
-  gallery?: { page?: string };
+  gallery?: { page?: string; limit?: number };
 };
 const all = await getCollection("pages");
 
@@ -55,10 +55,16 @@ const news = posts.slice(0, structure.posts?.limit ?? 5).map((n) => ({
 // The layout (masonry) handles any count and any aspect ratio, so authors can
 // just drop images in Cosense and they read well without further tuning.
 const galleryEntry = find(cfg.gallery?.page ?? "Gallery");
-const gallery: Photo[] = dedupePhotos([
+const galleryAll: Photo[] = dedupePhotos([
   ...(homeEntry ? photosFrom(homeEntry.data.blocks) : []),
   ...(galleryEntry ? photosFrom(galleryEntry.data.blocks) : []),
 ]);
+// Cap how many photos the home page shows; the rest live on the Gallery page,
+// reached via a "see all" link. Overridable with `gallery: { limit: N }`.
+const galleryLimit = cfg.gallery?.limit ?? 12;
+const gallery = galleryAll.slice(0, galleryLimit);
+const galleryMore =
+  galleryAll.length > galleryLimit && galleryEntry ? path(galleryEntry.data.slug) : null;
 ---
 <Layout title={siteTitle} description={siteDescription} bare hideToc>
   <script is:inline>document.documentElement.classList.add("js-reveal");</script>
@@ -135,6 +141,9 @@ const gallery: Photo[] = dedupePhotos([
               );
             })}
           </div>
+          {galleryMore && (
+            <a class="more" href={galleryMore}>すべて見る<span aria-hidden="true">→</span></a>
+          )}
         </div>
       </section>
     )}
