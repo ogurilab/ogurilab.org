@@ -538,10 +538,16 @@ html[data-theme="dark"] .page-content .astro-code span {
 /* ===================== Images / embeds / tables ===================== */
 
 .page-content img {
+  display: block;
+  /* Full content width for normal/landscape images; cap the height so a tall
+     portrait image doesn't dominate the page. width/height auto keeps the aspect
+     ratio and never upscales a small image. Matches the upstream theme's sizing. */
   max-width: 100%;
+  max-height: min(53vh, 400px);
+  width: auto;
   height: auto;
+  margin: 1rem auto;
   border-radius: 6px;
-  margin: 1rem 0;
 }
 .page-content img.inline-image {
   display: inline-block;
