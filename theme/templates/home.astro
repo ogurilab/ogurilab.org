@@ -4,7 +4,7 @@ import site from "virtual:cosense-site-kit/site";
 import { getCollection } from "astro:content";
 import Layout from "../components/Layout.astro";
 import ShaderHero from "../components/ShaderHero.astro";
-import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { hasTag, loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { firstParagraph } from "../lib/content";
 import { newsSummary, formatNewsDate } from "../lib/news";
 import { allPhotosFrom, responsiveImage, type Photo } from "../lib/photos";
@@ -40,7 +40,7 @@ const paragraphs = (homeEntry?.data.blocks ?? [])
 // ----- News -------------------------------------------------------------
 const newsTag = structure.posts?.tag ?? options.newsTag;
 const posts = all
-  .filter((e) => e.data.tags.includes(newsTag))
+  .filter((e) => hasTag(e.data.tags, newsTag))
   .map((e) => newsSummary(e))
   .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
 const news = posts.slice(0, structure.posts?.limit ?? 5).map((n) => ({

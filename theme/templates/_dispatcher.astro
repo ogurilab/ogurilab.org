@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { pagePaths } from "@cosense-site-kit/theme-utils";
+import { hasTag, pagePaths } from "@cosense-site-kit/theme-utils";
 import options from "virtual:cosense-theme-lab/options";
 import Page from "./page.astro";
 import Members from "./members.astro";
@@ -29,8 +29,8 @@ const data = entry.data as { template: string; tags: string[] };
 // These are categories defined by a tag (many pages each), not one-off pages:
 // a #news page is a post, a #member page is a profile.
 let Template: typeof Page;
-if (data.tags.includes(options.newsTag)) Template = NewsPost;
-else if (data.tags.includes(options.memberTag)) Template = Member;
+if (hasTag(data.tags, options.newsTag)) Template = NewsPost;
+else if (hasTag(data.tags, options.memberTag)) Template = Member;
 else Template = TEMPLATES[data.template] ?? Page;
 ---
 <Template entry={entry} />

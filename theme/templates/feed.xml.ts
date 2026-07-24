@@ -2,7 +2,7 @@ import { getCollection } from "astro:content";
 import site from "virtual:cosense-site-kit/site";
 import options from "virtual:cosense-theme-lab/options";
 import type { CosenseSitePage } from "@cosense-site-kit/core";
-import { buildRssFeed, type FeedItem, loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { buildRssFeed, type FeedItem, hasTag, loadStructure, path } from "@cosense-site-kit/theme-utils";
 import type { APIContext } from "astro";
 
 // /feed.xml — RSS 2.0 of the news posts, newest first. The post tag is the
@@ -18,7 +18,7 @@ export async function GET(context: APIContext): Promise<Response> {
   // so pin the entry shape to the intermediate page model.
   const pages = (await getCollection("pages")) as { data: CosenseSitePage }[];
   const posts = pages
-    .filter((e) => e.data.tags.includes(postTag))
+    .filter((e) => hasTag(e.data.tags, postTag))
     .sort((a, b) => (b.data.publishedAt ?? "").localeCompare(a.data.publishedAt ?? ""));
 
   const items: FeedItem[] = posts.map((e) => ({

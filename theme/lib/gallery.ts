@@ -1,4 +1,5 @@
 import type { CosenseBlock } from "@cosense-site-kit/core";
+import { hasTag } from "@cosense-site-kit/theme-utils";
 import { allPhotosFrom, dedupePhotos, photosFrom, type Photo } from "./photos";
 
 // Minimal shape of a page entry we read here (kept structural so this lib does
@@ -32,7 +33,7 @@ export function galleryPhotos(
 
   const dateOf = (e: PageEntry) => e.data.publishedAt ?? e.data.modifiedAt ?? "";
   const fromPosts: Photo[] = entries
-    .filter((e) => e.data.tags.includes(newsTag))
+    .filter((e) => hasTag(e.data.tags, newsTag))
     .sort((a, b) => dateOf(b).localeCompare(dateOf(a)))
     .flatMap((e) =>
       photosFrom(e.data.blocks).map((p) => ({
