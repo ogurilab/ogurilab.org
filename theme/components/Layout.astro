@@ -7,6 +7,7 @@ import TableOfContents from "./TableOfContents.astro";
 import CodeBlockEnhancer from "./CodeBlockEnhancer.astro";
 import LinkPreview from "./LinkPreview.astro";
 import SearchOverlay from "./SearchOverlay.astro";
+import Interactions from "./Interactions.astro";
 import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { resolveActiveSkin } from "../presets";
@@ -17,6 +18,11 @@ interface Props {
   description?: string;
   /** Use the wide page width (e.g. members grids). */
   wide?: boolean;
+  /**
+   * Drop the main column's width cap and padding, letting the page own its own
+   * layout. Used by the home page, whose photo grid runs edge to edge.
+   */
+  bare?: boolean;
   /** Hide the floating right-side TOC (use on home / list pages). */
   hideToc?: boolean;
   /** OG/Twitter card image (absolute or site-relative). Falls back to favicon. */
@@ -29,6 +35,7 @@ const {
   title,
   description,
   wide = false,
+  bare = false,
   hideToc = false,
   image,
   ogType = "website",
@@ -124,12 +131,13 @@ const htmlStyle = [
   <body>
     <Header currentPath={Astro.url.pathname} />
     {options.search && <SearchOverlay />}
-    <main class:list={["site-main", { wide }]}>
+    <main class:list={["site-main", { wide, bare }]}>
       <slot />
     </main>
     <Footer />
     {!hideToc && <TableOfContents />}
     <CodeBlockEnhancer />
     <LinkPreview />
+    <Interactions />
   </body>
 </html>

@@ -3,16 +3,15 @@ import { getCollection } from "astro:content";
 import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
 import Layout from "../components/Layout.astro";
+import ShaderHero from "../components/ShaderHero.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import { loadStructure, loadTitleToSlug, navHref, path } from "@cosense-site-kit/theme-utils";
 import { newsSummary, formatNewsDate } from "../lib/news";
-import {
-  dedupePhotos,
-  photosFrom,
-  responsiveImage,
-  withoutImages,
-  type Photo,
-} from "../lib/photos";
+import { dedupePhotos, photosFrom, responsiveImage, withoutImages, type Photo } from "../lib/photos";
+
+// The home page is deliberately three moves and no more: a statement, a wall of
+// photographs, and a list of what happened lately. Anything that would repeat
+// one of those (a second card grid, a second photo rail) belongs on its own page.
 
 const structure = await loadStructure();
 const all = await getCollection("pages");
@@ -29,10 +28,10 @@ const siteDescription = options.siteDescription ?? site?.description;
 
 // The site title doubles as the header logo, so it often carries a short brand
 // plus the full name ("dclab | デジタルカルチャー研究室"). Split on the pipe so
-// the hero can show the brand as an eyebrow above a clean <h1>.
+// the opening can show the brand as an eyebrow above a clean <h1>.
 const [brand, ...restTitle] = siteTitle.split("|").map((s) => s.trim());
-const heroTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
-const heroEyebrow = restTitle.length > 0 ? brand : options.affiliation;
+const openingTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
+const openingEyebrow = options.affiliation ?? (restTitle.length > 0 ? brand : undefined);
 
 // ----- News -------------------------------------------------------------
 const newsTag = structure.posts?.tag ?? options.newsTag;
@@ -42,16 +41,14 @@ const posts = all
   .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
 const news = posts.slice(0, structure.posts?.limit ?? 5);
 
-// ----- Photos -----------------------------------------------------------
-// Three sources, in order of intent:
-//   1. images pasted on the home page itself (Gyazo lines in Cosense),
+// ----- Photographs ------------------------------------------------------
+// Every photo on this page comes from Cosense, in order of intent:
+//   1. images pasted on the home page itself (Gyazo lines),
 //   2. a dedicated photo page (default "Gallery", overridable with
 //      `gallery: { page: … }` in the .site YAML),
 //   3. the newest post images — so a site that has curated nothing yet still
-//      looks like a lab rather than a wall of text.
-// The hero takes from the front of that list, the wide band gets the rest.
-const galleryTarget =
-  (structure as { gallery?: { page?: string } }).gallery?.page ?? "Gallery";
+//      shows the lab rather than a wall of text.
+const galleryTarget = (structure as { gallery?: { page?: string } }).gallery?.page ?? "Gallery";
 const galleryEntry = find(galleryTarget);
 
 const curated = dedupePhotos([
@@ -60,109 +57,78 @@ const curated = dedupePhotos([
 ]);
 const fromPosts: Photo[] = posts
   .filter((p) => p.image)
-  .slice(0, 12)
+  .slice(0, 8)
   .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title, href: path(p.slug) }));
-const photos = dedupePhotos([...curated, ...fromPosts]);
+// Post images are a stopgap, not a mix-in: they are whatever a news post
+// happened to open with (often a slide), and squaring those off next to real
+// photographs looks careless. Once the lab has curated a wall of its own, use
+// only that.
+const photos =
+  curated.length >= 3 ? curated.slice(0, 12) : dedupePhotos([...curated, ...fromPosts]).slice(0, 6);
 
-const heroPhotos = photos.slice(0, 5);
-const bandPhotos = photos.slice(5, 13);
-
-// ----- Featured ---------------------------------------------------------
-// `.site` YAML `featured: [ページ名, …]` — editorial picks, shown as big cards.
-const featured = (structure.featured ?? [])
-  .map(find)
-  .filter((e): e is Entry => Boolean(e))
-  .slice(0, 3);
-
-// ----- Hero actions -----------------------------------------------------
-// Reuse the nav so the buttons follow whatever the .site YAML declares.
+// ----- Opening links ----------------------------------------------------
+// Reuse the nav so these follow whatever the .site YAML declares.
 const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
 const navByLabel = (label: string) =>
   navItems.find((i) => i.label.toLowerCase() === label.toLowerCase());
 const aboutItem = navByLabel("about");
 const contactItem = navByLabel("contact");
 ---
-<Layout title={siteTitle} description={siteDescription} wide hideToc>
-  <section class="hero">
-    <div class="hero__intro" data-pagefind-body>
-      {heroEyebrow && <p class="hero__eyebrow">{heroEyebrow}</p>}
-      <h1 class="hero__title">{heroTitle}</h1>
+<Layout title={siteTitle} description={siteDescription} bare hideToc>
+  {/* Set before the sections parse so reveal targets start hidden without a
+      flash; without JS the class never lands and everything stays visible. */}
+  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
+
+  <section class="opening" data-pagefind-body>
+    <ShaderHero />
+    <div class="opening__scrim" aria-hidden="true"></div>
+    <div class="shell opening__content">
+      {openingEyebrow && <p class="opening__eyebrow">{openingEyebrow}</p>}
+      <h1 class="opening__title">{openingTitle}</h1>
       {homeEntry ? (
-        <div class="hero__lead">
+        <div class="opening__lead">
           <PageContent blocks={withoutImages(homeEntry.data.blocks)} />
         </div>
       ) : (
-        siteDescription && <p class="hero__lead">{siteDescription}</p>
+        siteDescription && <p class="opening__lead">{siteDescription}</p>
       )}
       {(aboutItem || contactItem) && (
-        <p class="hero__actions">
+        <p class="opening__links">
           {aboutItem && (
-            <a class="button button--primary" href={navHref(aboutItem, titleToSlug)}>
+            <a class="arrow-link" data-magnetic href={navHref(aboutItem, titleToSlug)}>
               研究室について
             </a>
           )}
           {contactItem && (
-            <a class="button" href={navHref(contactItem, titleToSlug)}>
+            <a class="arrow-link" data-magnetic href={navHref(contactItem, titleToSlug)}>
               お問い合わせ
             </a>
           )}
         </p>
       )}
     </div>
-
-    {heroPhotos.length > 0 && (
-      <div class="hero__photos" aria-hidden={heroPhotos.every((p) => !p.alt) || undefined}>
-        {heroPhotos.map((p, i) => {
-          const img = (
-            <img
-              src={p.src}
-              srcset={p.srcset}
-              sizes="(max-width: 900px) 45vw, 20rem"
-              alt={p.alt}
-              loading={i < 2 ? "eager" : "lazy"}
-              decoding="async"
-            />
-          );
-          return (
-            <figure class="hero__photo" style={`--i:${i}`}>
-              {p.href ? <a href={p.href}>{img}</a> : img}
-            </figure>
-          );
-        })}
-      </div>
-    )}
   </section>
 
-  {featured.length > 0 && (
-    <section class="home-section">
-      <h2 class="section-heading">Featured</h2>
-      <ul class="feature-grid">
-        {featured.map((e) => {
-          const cover = e.data.image ? responsiveImage(e.data.image) : undefined;
+  {photos.length > 0 && (
+    <section class="mosaic" aria-label="研究室の風景">
+      <ul class="mosaic__grid" data-count={photos.length}>
+        {photos.map((p, i) => {
+          const frame = (
+            <Fragment>
+              <img
+                src={p.src}
+                srcset={p.srcset}
+                sizes="(max-width: 720px) 50vw, 25vw"
+                alt={p.alt}
+                loading={i < 4 ? "eager" : "lazy"}
+                decoding="async"
+              />
+              {p.alt && <span class="mosaic__caption">{p.alt}</span>}
+            </Fragment>
+          );
           return (
-            <li class="feature-card">
-              <a class="feature-card__link" href={path(e.data.slug)}>
-                {/* No cover: a text-only card reads better than a big empty
-                    placeholder block. */}
-                {cover && (
-                  <span class="feature-card__cover">
-                    <img
-                      src={cover.src}
-                      srcset={cover.srcset}
-                      sizes="(max-width: 720px) 90vw, 20rem"
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </span>
-                )}
-                <span class="feature-card__body">
-                  <span class="feature-card__title">{e.data.title}</span>
-                  {e.data.summary && (
-                    <span class="feature-card__excerpt">{e.data.summary}</span>
-                  )}
-                </span>
-              </a>
+            <li class="mosaic__cell" data-reveal style={`--i:${i}`}>
+              {p.href ? <a href={p.href}>{frame}</a> : frame}
             </li>
           );
         })}
@@ -171,87 +137,54 @@ const contactItem = navByLabel("contact");
   )}
 
   {news.length > 0 && (
-    <section class="home-section">
-      <div class="section-head">
-        <h2 class="section-heading">Recent news</h2>
-        <a class="section-more" href={path("news")}>すべて見る</a>
-      </div>
-      <ul class="news-list">
-        {news.map((n) => {
-          // Drop the news tag itself — every post carries it, so it's noise.
-          const tags = n.tags.filter((t) => t !== newsTag);
-          const thumb = n.image ? responsiveImage(n.image, [240, 480]) : undefined;
-          return (
-            <li class="news-item">
-              <a class="news-item__link" href={path(n.slug)}>
-                {thumb ? (
-                  <span class="news-item__thumb">
-                    <img
-                      src={thumb.src}
-                      srcset={thumb.srcset}
-                      sizes="7rem"
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </span>
-                ) : (
-                  <span class="news-item__thumb news-item__thumb--empty" aria-hidden="true">
-                    {n.title.trim().charAt(0)}
-                  </span>
+    <section class="latest">
+      <div class="shell">
+        <div class="latest__head">
+          <h2 class="latest__heading">News</h2>
+          <a class="arrow-link" data-magnetic href={path("news")}>すべて見る</a>
+        </div>
+        <ul class="latest__list">
+          {news.map((n) => (
+            <li class="latest__item" data-reveal>
+              <a class="latest__link" href={path(n.slug)}>
+                {n.date && (
+                  <time class="latest__date" datetime={n.date.toISOString()}>
+                    {formatNewsDate(n.date)}
+                  </time>
                 )}
-                <span class="news-item__body">
-                  <span class="news-item__title">{n.title}</span>
-                  {n.date && (
-                    <time class="news-item__date" datetime={n.date.toISOString()}>
-                      {formatNewsDate(n.date)}
-                    </time>
-                  )}
-                  {tags.length > 0 && (
-                    <span class="news-item__tags">
-                      {tags.map((t) => (
-                        <span class="news-item__tag">#{t}</span>
-                      ))}
-                    </span>
-                  )}
-                </span>
+                <span class="latest__title">{n.title}</span>
               </a>
             </li>
-          );
-        })}
-      </ul>
-    </section>
-  )}
-
-  {bandPhotos.length >= 3 && (
-    <section class="photo-band" aria-label="研究室の風景">
-      <ul class="photo-band__track">
-        {bandPhotos.map((p) => (
-          <li class="photo-band__item">
-            {p.href ? (
-              <a href={p.href}>
-                <img
-                  src={p.src}
-                  srcset={p.srcset}
-                  sizes="18rem"
-                  alt={p.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </a>
-            ) : (
-              <img
-                src={p.src}
-                srcset={p.srcset}
-                sizes="18rem"
-                alt={p.alt}
-                loading="lazy"
-                decoding="async"
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+          ))}
+        </ul>
+      </div>
     </section>
   )}
 </Layout>
+
+<script>
+  // Fade sections in as they enter the viewport. Everything is already visible
+  // without JS (the `js-reveal` class above is what hides them), and reduced
+  // motion skips straight to the visible state.
+  const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+  const show = (el: Element) => el.classList.add("is-visible");
+
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    !("IntersectionObserver" in window)
+  ) {
+    targets.forEach(show);
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          show(entry.target);
+          io.unobserve(entry.target);
+        }
+      },
+      { rootMargin: "0px 0px -8% 0px" },
+    );
+    targets.forEach((el) => io.observe(el));
+  }
+</script>

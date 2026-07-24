@@ -1,0 +1,94 @@
+---
+// Site-wide pointer flourishes, purely additive. A soft accent ring trails the
+// cursor and swells over interactive targets, and `[data-magnetic]` elements
+// lean toward the pointer. The native cursor is never hidden. Everything is
+// gated behind a fine pointer + no reduced-motion, so touch and
+// motion-sensitive users get nothing extra.
+---
+<script>
+  function initInteractions(): void {
+    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!fine || reduce) return;
+    if (document.documentElement.dataset.cursor) return;
+    document.documentElement.dataset.cursor = "1";
+
+    // ----- Trailing cursor ring -----
+    const ring = document.createElement("div");
+    ring.className = "cursor-ring";
+    ring.setAttribute("aria-hidden", "true");
+    document.body.appendChild(ring);
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let rx = x;
+    let ry = y;
+    let shown = false;
+    let over = false;
+
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        x = e.clientX;
+        y = e.clientY;
+        if (!shown) {
+          shown = true;
+          ring.classList.add("is-active");
+        }
+        const t = (e.target as Element)?.closest?.(
+          "a, button, [data-magnetic], input, summary, label",
+        );
+        over = Boolean(t);
+        ring.classList.toggle("is-over", over);
+      },
+      { passive: true },
+    );
+    window.addEventListener("pointerdown", () => ring.classList.add("is-down"));
+    window.addEventListener("pointerup", () => ring.classList.remove("is-down"));
+    document.addEventListener("pointerleave", () => ring.classList.remove("is-active"));
+
+    let raf = requestAnimationFrame(function loop() {
+      rx += (x - rx) * 0.18;
+      ry += (y - ry) * 0.18;
+      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+      raf = requestAnimationFrame(loop);
+    });
+
+    // ----- Magnetic targets -----
+    const cleanups: Array<() => void> = [];
+    document.querySelectorAll<HTMLElement>("[data-magnetic]").forEach((el) => {
+      const strength = Number(el.dataset.magnetic) || 0.3;
+      const move = (e: PointerEvent) => {
+        const r = el.getBoundingClientRect();
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height / 2);
+        el.style.transform = `translate(${dx * strength}px, ${dy * strength}px)`;
+      };
+      const reset = () => {
+        el.style.transform = "";
+      };
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerleave", reset);
+      cleanups.push(() => {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerleave", reset);
+        reset();
+      });
+    });
+
+    document.addEventListener(
+      "astro:before-swap",
+      () => {
+        cancelAnimationFrame(raf);
+        ring.remove();
+        cleanups.forEach((fn) => fn());
+        delete document.documentElement.dataset.cursor;
+      },
+      { once: true },
+    );
+  }
+
+  if (document.readyState !== "loading") initInteractions();
+  else document.addEventListener("DOMContentLoaded", initInteractions);
+  document.addEventListener("astro:page-load", initInteractions);
+</script>

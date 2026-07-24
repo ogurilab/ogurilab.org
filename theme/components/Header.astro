@@ -59,7 +59,7 @@ const isActive = (href: string): boolean => {
               const href = navHref(item, titleToSlug);
               return (
                 <li>
-                  <a href={href} class:list={[{ "is-active": isActive(href) }]}>
+                  <a href={href} data-magnetic="0.2" class:list={[{ "is-active": isActive(href) }]}>
                     {item.label}
                   </a>
                 </li>
