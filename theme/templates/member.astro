@@ -1,0 +1,83 @@
+---
+import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import Layout from "../components/Layout.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import { path } from "@cosense-site-kit/theme-utils";
+import { asGroups, extractMembers, initialsOf, type Member } from "../lib/members";
+import { withoutImages } from "../lib/photos";
+
+// Per-person profile. Applied to a Cosense page tagged `#member` (or template
+// "member"). The header is enriched from the Members Data page's members.yaml
+// (role, group, links, photo) matched by name; the body renders the page's own
+// content (bio, activities).
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+const { entry } = Astro.props;
+const page = entry.data;
+
+const all = await getCollection("pages");
+
+// Find this person in the members.yaml, and remember which page holds it (for
+// the "back to members" link).
+let member: Member | undefined;
+let groupName: string | undefined;
+let membersHref: string | undefined;
+for (const e of all) {
+  const data = extractMembers(e.data.blocks);
+  if (!data) continue;
+  membersHref ??= path(e.data.slug);
+  for (const g of asGroups(data)) {
+    const found = g.members.find((m) => m.name === page.title);
+    if (found) {
+      member = found;
+      groupName = g.name || undefined;
+      membersHref = path(e.data.slug);
+      break;
+    }
+  }
+  if (member) break;
+}
+
+// Photo: explicit members.yaml photo, else the page's first image.
+const photo = member?.photo ?? page.image;
+const role = member?.role;
+const email = member?.email;
+const links = member?.links ?? [];
+---
+<Layout title={page.title} description={page.summary} image={page.image} hideToc>
+  <article class="profile" data-pagefind-body>
+    <header class="profile__head">
+      {photo ? (
+        <img class="profile__photo" src={photo} alt={page.title} loading="eager" decoding="async" />
+      ) : (
+        <span class="profile__photo profile__photo--ph" aria-hidden="true">
+          {initialsOf(page.title)}
+        </span>
+      )}
+      <div class="profile__meta">
+        {groupName && <p class="profile__group">{groupName}</p>}
+        <h1 class="profile__name">{page.title}</h1>
+        {role && <p class="profile__role">{role}</p>}
+        {(email || links.length > 0) && (
+          <div class="profile__links">
+            {email && <a href={`mailto:${email}`}>Email</a>}
+            {links.map((l) => (
+              <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <div class="profile__body page-content">
+      <PageContent blocks={withoutImages(page.blocks)} />
+    </div>
+
+    {membersHref && (
+      <p class="profile__back"><a href={membersHref}>← メンバー一覧へ</a></p>
+    )}
+  </article>
+</Layout>
