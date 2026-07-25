@@ -117,8 +117,12 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  /* Never break the bar onto a second row. The nav collapses into the hamburger
+     below the breakpoint instead, so a single row always suffices. Only the
+     no-JS fallback (which keeps the full nav visible) is allowed to wrap. */
+  flex-wrap: nowrap;
 }
+.site-header:not(.has-js) .site-header-inner { flex-wrap: wrap; }
 
 .site-brand {
   display: inline-flex;
@@ -302,7 +306,11 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0 0.1em;
 }
 
-@media (max-width: 720px) {
+/* Collapse to the hamburger while the inline nav still fits on one row. The
+   brand (logo ~280px) + nav (~476px) + search icon + gaps need ~800px, so the
+   switch has to happen well above the old 720px or the bar wrapped to 2 rows
+   in the 721–880px band. */
+@media (max-width: 900px) {
   .site-header-inner { padding: 0.75rem 1.25rem; }
 
   /* No-JS fallback: nav wraps to its own full-width row and stays visible. */
@@ -311,6 +319,12 @@ h1, h2, h3, h4, h5, h6 {
 
   /* JS enhancement: reveal the hamburger and collapse the nav into a dropdown. */
   .site-header.has-js .site-nav-toggle { display: inline-flex; }
+
+  /* Search sits to the LEFT of the hamburger, which stays the rightmost control.
+     The DOM order is brand → toggle → nav → search, so nudge the search icon
+     ahead of the toggle with `order` (default order is 0). */
+  .site-header.has-js .site-search-toggle { order: 1; }
+  .site-header.has-js .site-nav-toggle { order: 2; }
   .site-header.has-js .site-nav-wrap {
     position: absolute;
     top: 100%;
