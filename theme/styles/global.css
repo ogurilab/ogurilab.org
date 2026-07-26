@@ -873,12 +873,39 @@ html[data-theme="dark"] .page-content .astro-code span {
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  /* Opaque under the text (lower-left), clearing toward the upper right so the
+     field is actually visible. The previous 160deg ran the other way — densest
+     in the empty upper-left corner, thinnest right where the text sits — which
+     both hid the shader and did the least for legibility.
+
+     Stops are placed against measured text extent, not by eye: the title and
+     lead reach ~0.45 along this gradient axis, so the scrim holds >=74% bg
+     through 48% and only then clears. At 74% the smallest text (text-soft on
+     the darkest linework the field can produce) still measures ~5:1, while the
+     upper right — which no text occupies — drops to ~11% and shows the field. */
   background: linear-gradient(
-    160deg,
-    var(--color-bg) 0%,
-    color-mix(in srgb, var(--color-bg) 72%, transparent) 46%,
-    color-mix(in srgb, var(--color-bg) 52%, transparent) 100%
+    38deg,
+    color-mix(in srgb, var(--color-bg) 92%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg) 74%, transparent) 48%,
+    color-mix(in srgb, var(--color-bg) 24%, transparent) 78%,
+    transparent 100%
   );
+}
+/* Narrow viewports: the hero text spans nearly the full width, so a diagonal
+   scrim no longer matches the text's shape — it runs out of cover exactly where
+   the lead wraps furthest right (measured 4.4:1 at 390px, under AA). Bottom-up
+   is the shape that fits: dense across the text band, clearing upward where the
+   field has the screen to itself. */
+@media (max-width: 900px) {
+  .hero__scrim {
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-bg) 93%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg) 85%, transparent) 58%,
+      color-mix(in srgb, var(--color-bg) 18%, transparent) 84%,
+      transparent 100%
+    );
+  }
 }
 .hero__inner {
   position: relative;
@@ -923,7 +950,10 @@ html[data-theme="dark"] .page-content .astro-code span {
   align-items: center;
   gap: 0.6rem;
   margin-top: clamp(1.5rem, 4vh, 2.5rem);
-  color: var(--color-text-muted);
+  /* text-soft, not text-muted: at 11px this is small text, so it needs 4.5:1
+     against the shader field showing through the scrim — muted only reached
+     ~4.0:1 there. */
+  color: var(--color-text-soft);
   text-decoration: none;
   font-size: 0.6875rem;
   font-weight: 600;
