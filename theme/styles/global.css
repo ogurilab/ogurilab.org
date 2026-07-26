@@ -339,6 +339,18 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 12px 28px rgb(15 23 42 / 0.14);
   }
   .site-header.has-js .site-nav-wrap.is-open { display: block; }
+
+  /* In the dropdown each item owns its whole row. The desktop rule leaves these
+     inline-block, so the hit area was only as wide as the label (56–103px of a
+     390px row) and 36px tall — most of the row did nothing, and the target was
+     under the 44px minimum. */
+  .site-nav a {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+  }
 }
 
 /* ===================== Main column ===================== */
