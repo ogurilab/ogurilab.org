@@ -245,10 +245,10 @@ function usableSummary(summary: string | null | undefined, title: string): strin
      so the photo reads as a shape rather than a crop. Consecutive figures
      mirror the sweep so a row never looks stamped out. */
   .sx--hero .sx__figure img {
-    border-radius: 30% 6px 30% 6px / 46% 8px 46% 8px;
+    border-radius: 18% 8px 18% 8px / 27% 8px 27% 8px;
   }
   .sx--hero .sx__figure:nth-child(even) img {
-    border-radius: 6px 30% 6px 30% / 8px 46% 8px 46%;
+    border-radius: 8px 18% 8px 18% / 8px 27% 8px 27%;
   }
 
   /* The shape drifts on a very slow cycle — imperceptible frame to frame, but
@@ -269,19 +269,19 @@ function usableSummary(summary: string | null | undefined, title: string): strin
   @keyframes sx-drift {
     0%,
     100% {
-      border-radius: 30% 6px 30% 6px / 46% 8px 46% 8px;
+      border-radius: 18% 8px 18% 8px / 27% 8px 27% 8px;
     }
     50% {
-      border-radius: 21% 6px 39% 6px / 34% 8px 58% 8px;
+      border-radius: 13% 8px 23% 8px / 20% 8px 34% 8px;
     }
   }
   @keyframes sx-drift-mirrored {
     0%,
     100% {
-      border-radius: 6px 30% 6px 30% / 8px 46% 8px 46%;
+      border-radius: 8px 18% 8px 18% / 8px 27% 8px 27%;
     }
     50% {
-      border-radius: 6px 39% 6px 21% / 8px 58% 8px 34%;
+      border-radius: 8px 23% 8px 13% / 8px 34% 8px 20%;
     }
   }
 
