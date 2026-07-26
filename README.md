@@ -26,6 +26,18 @@ npm run dev     # http://localhost:4321
 | `npm run validate` | 中間データの検証 |
 | `npm run doctor` | 公開前チェック（参照切れ・draft漏れ等） |
 
+## テンプレート
+
+ページごとの見せ方は `theme/templates/` が持ちます。`.site` の `templates:` マッピングか、
+Cosense ページの `#template/<名前>` タグで割り当てます。
+
+| テンプレート | 用途 |
+|---|---|
+| `page` | 既定。ふつうの記事 |
+| `sections` | セクションを積み上げた案内ページ（About / Research など）→ [書き方](./docs/sections-template.md) |
+| `members` | `code:members.yaml` からのメンバー一覧 |
+| `publications` | `code:publications.yaml` からの論文一覧 |
+
 ## トップページ（一画面のハブ）
 
 トップは **スクロールしない 1 画面** で、研究室名＋ミッションを示し、各ページ（About / News / Members / Publications / Contact / Join）へ振り分けるだけの入口です。詳しい内容は各ページが持ちます。

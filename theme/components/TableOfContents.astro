@@ -88,8 +88,10 @@
     const indicator = document.querySelector(".toc-indicator");
     const list = document.querySelector(".toc-list");
     if (!toc || !indicator || !list) return;
+    // `.sx__head h2` are the `sections` template's section headings, which it
+    // renders itself rather than through .page-content.
     const headings = document.querySelectorAll<HTMLHeadingElement>(
-      ".page-content h2, .page-content h3",
+      ".page-content h2, .page-content h3, .sx__head h2",
     );
     if (headings.length === 0) { toc.remove(); return; }
 

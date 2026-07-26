@@ -1,7 +1,17 @@
 import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
 
+export interface InlineTextOptions {
+  /**
+   * Keep `#tag` nodes as `#name` instead of dropping them. Off by default so
+   * the home page's mission line doesn't pick up a page's trailing `#publish`
+   * line. Turn it on where a tag sits mid-sentence and dropping it would leave
+   * a hole in the text (section leads, list items).
+   */
+  keepTags?: boolean;
+}
+
 /** Flatten an inline node tree to plain text. */
-export function inlineText(nodes: InlineNode[]): string {
+export function inlineText(nodes: InlineNode[], opts: InlineTextOptions = {}): string {
   let out = "";
   for (const n of nodes) {
     switch (n.type) {
@@ -12,7 +22,7 @@ export function inlineText(nodes: InlineNode[]): string {
       case "emphasis":
       case "strikethrough":
       case "link":
-        out += inlineText(n.children);
+        out += inlineText(n.children, opts);
         break;
       case "code":
       case "formula":
@@ -20,6 +30,9 @@ export function inlineText(nodes: InlineNode[]): string {
         break;
       case "pageLink":
         out += n.title;
+        break;
+      case "tag":
+        if (opts.keepTags) out += `#${n.name}`;
         break;
       default:
         break;

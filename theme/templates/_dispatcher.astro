@@ -5,6 +5,7 @@ import options from "virtual:cosense-theme-lab/options";
 import Page from "./page.astro";
 import Members from "./members.astro";
 import Publications from "./publications.astro";
+import Sections from "./sections.astro";
 import NewsPost from "./news-post.astro";
 import Member from "./member.astro";
 
@@ -16,6 +17,7 @@ const TEMPLATES: Record<string, typeof Page> = {
   page: Page,
   members: Members,
   publications: Publications,
+  sections: Sections,
 };
 
 export async function getStaticPaths() {
