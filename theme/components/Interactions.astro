@@ -24,7 +24,6 @@
     let rx = x;
     let ry = y;
     let shown = false;
-    let over = false;
 
     window.addEventListener(
       "pointermove",
@@ -35,11 +34,10 @@
           shown = true;
           ring.classList.add("is-active");
         }
-        const t = (e.target as Element)?.closest?.(
+        const target = (e.target as Element)?.closest?.(
           "a, button, [data-magnetic], input, summary, label",
         );
-        over = Boolean(t);
-        ring.classList.toggle("is-over", over);
+        ring.classList.toggle("is-over", Boolean(target));
       },
       { passive: true },
     );
@@ -47,32 +45,90 @@
     window.addEventListener("pointerup", () => ring.classList.remove("is-down"));
     document.addEventListener("pointerleave", () => ring.classList.remove("is-active"));
 
+    // ----- Magnetic targets -----
+    // Each target holds a goal offset (set on pointermove) and a current offset
+    // that eases toward it inside the ring's rAF loop below.
+    //
+    // The goal is the pointer's position within the element expressed as -1..1
+    // of its half-size, times a pixel amplitude — not the raw pixel delta. A
+    // raw delta scales with the element, so the same setting that gives a
+    // desktop nav link a few px of lean throws a full-width row in the
+    // hamburger dropdown dozens of px sideways. Normalizing makes the lean read
+    // the same whatever the target's size.
+    const EASE = 0.1;
+    /** Lean in px at `data-magnetic="1"`; the attribute scales this down. */
+    const MAX_LEAN = 40;
+    /** Below this the offset is visually zero, so we can stop writing styles. */
+    const EPSILON = 0.05;
+
+    interface Magnet {
+      el: HTMLElement;
+      lean: number;
+      goalX: number;
+      goalY: number;
+      x: number;
+      y: number;
+    }
+    const magnets: Magnet[] = [];
+    /** Pointer offset from a centre, as -1..1 of the half-size. */
+    const unit = (delta: number, size: number) =>
+      size > 0 ? Math.min(1, Math.max(-1, delta / (size / 2))) : 0;
+
     let raf = requestAnimationFrame(function loop() {
       rx += (x - rx) * 0.18;
       ry += (y - ry) * 0.18;
       ring.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+
+      for (const m of magnets) {
+        m.x += (m.goalX - m.x) * EASE;
+        m.y += (m.goalY - m.y) * EASE;
+        // Settle exactly on zero rather than easing forever toward it, and drop
+        // the inline transform so the element is back to its plain state.
+        if (Math.abs(m.x) < EPSILON && Math.abs(m.y) < EPSILON && !m.goalX && !m.goalY) {
+          if (m.el.style.transform) {
+            m.el.style.transform = "";
+            m.x = 0;
+            m.y = 0;
+          }
+          continue;
+        }
+        m.el.style.transform = `translate3d(${m.x.toFixed(2)}px, ${m.y.toFixed(2)}px, 0)`;
+      }
+
       raf = requestAnimationFrame(loop);
     });
 
-    // ----- Magnetic targets -----
     const cleanups: Array<() => void> = [];
     document.querySelectorAll<HTMLElement>("[data-magnetic]").forEach((el) => {
-      const strength = Number(el.dataset.magnetic) || 0.3;
+      const magnet: Magnet = {
+        el,
+        lean: (Number(el.dataset.magnetic) || 0.3) * MAX_LEAN,
+        goalX: 0,
+        goalY: 0,
+        x: 0,
+        y: 0,
+      };
       const move = (e: PointerEvent) => {
         const r = el.getBoundingClientRect();
-        const dx = e.clientX - (r.left + r.width / 2);
-        const dy = e.clientY - (r.top + r.height / 2);
-        el.style.transform = `translate(${dx * strength}px, ${dy * strength}px)`;
+        // Subtract the current offset so the centre is the element's resting
+        // slot, not where the easing has pushed it — otherwise the offset feeds
+        // back into itself and the element drifts.
+        const cx = r.left + r.width / 2 - magnet.x;
+        const cy = r.top + r.height / 2 - magnet.y;
+        magnet.goalX = unit(e.clientX - cx, r.width) * magnet.lean;
+        magnet.goalY = unit(e.clientY - cy, r.height) * magnet.lean;
       };
-      const reset = () => {
-        el.style.transform = "";
+      const release = () => {
+        magnet.goalX = 0;
+        magnet.goalY = 0;
       };
       el.addEventListener("pointermove", move);
-      el.addEventListener("pointerleave", reset);
+      el.addEventListener("pointerleave", release);
+      magnets.push(magnet);
       cleanups.push(() => {
         el.removeEventListener("pointermove", move);
-        el.removeEventListener("pointerleave", reset);
-        reset();
+        el.removeEventListener("pointerleave", release);
+        el.style.transform = "";
       });
     });
 

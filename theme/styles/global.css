@@ -788,10 +788,11 @@ html[data-theme="dark"] .page-content .astro-code span {
 
 /* ===================== Pointer flourishes ===================== */
 
-/* Magnetic targets lean toward the pointer; JS sets the inline transform and
-   clears it on leave — this transition just smooths the release. */
+/* Magnetic targets lean toward the pointer. The easing lives in the rAF loop in
+   theme/components/Interactions.astro, which rewrites `transform` every frame —
+   a CSS transition on top of that restarts a fresh 300ms interpolation on every
+   write, turning a smooth lean into a lurch. So there deliberately isn't one. */
 [data-magnetic] {
-  transition: transform 0.3s var(--ease);
   will-change: transform;
 }
 
