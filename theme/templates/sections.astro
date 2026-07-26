@@ -240,6 +240,51 @@ function usableSummary(summary: string | null | undefined, title: string): strin
     gap: 0.75rem;
   }
 
+  /* Hero figures take an organic silhouette instead of a rectangle: two
+     opposite corners swept into wide ellipses, the other two barely rounded,
+     so the photo reads as a shape rather than a crop. Consecutive figures
+     mirror the sweep so a row never looks stamped out. */
+  .sx--hero .sx__figure img {
+    border-radius: 30% 6px 30% 6px / 46% 8px 46% 8px;
+  }
+  .sx--hero .sx__figure:nth-child(even) img {
+    border-radius: 6px 30% 6px 30% / 8px 46% 8px 46%;
+  }
+
+  /* The shape drifts on a very slow cycle — imperceptible frame to frame, but
+     enough that the image never quite settles. The two durations are close but
+     not multiples, so figures beside each other stay out of phase. The resting
+     shape above stands on its own, so dropping this block costs nothing but
+     the flourish. */
+  @media (prefers-reduced-motion: no-preference) {
+    .sx--hero .sx__figure img {
+      animation: sx-drift 26s ease-in-out infinite;
+    }
+    .sx--hero .sx__figure:nth-child(even) img {
+      animation-name: sx-drift-mirrored;
+      animation-duration: 31s;
+    }
+  }
+
+  @keyframes sx-drift {
+    0%,
+    100% {
+      border-radius: 30% 6px 30% 6px / 46% 8px 46% 8px;
+    }
+    50% {
+      border-radius: 21% 6px 39% 6px / 34% 8px 58% 8px;
+    }
+  }
+  @keyframes sx-drift-mirrored {
+    0%,
+    100% {
+      border-radius: 6px 30% 6px 30% / 8px 46% 8px 46%;
+    }
+    50% {
+      border-radius: 6px 39% 6px 21% / 8px 58% 8px 34%;
+    }
+  }
+
   /* ----- Hero: the prose beside its figures ----- */
 
   .sx--hero .sx__body {
