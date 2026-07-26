@@ -1144,7 +1144,6 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-weight: 700;
   line-height: 1.1;
 }
-.gallery-page__sub { margin: 0.6rem 0 0; color: var(--color-text-muted); font-size: 0.875rem; }
 .gallery-page__empty { color: var(--color-text-muted); }
 
 /* Masonry (Pinterest-style): CSS columns keep each image at its own aspect
