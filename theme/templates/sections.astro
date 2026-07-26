@@ -240,15 +240,17 @@ function usableSummary(summary: string | null | undefined, title: string): strin
     gap: 0.75rem;
   }
 
-  /* Hero figures take an organic silhouette instead of a rectangle: two
-     opposite corners swept into wide ellipses, the other two barely rounded,
-     so the photo reads as a shape rather than a crop. Consecutive figures
-     mirror the sweep so a row never looks stamped out. */
+  /* Hero figures get a grown outline rather than a drawn one. Every corner is
+     rounded, no two by the same amount, and none far enough to read as a
+     deliberate arc — the irregularity is what makes it organic. Two large
+     matching sweeps, which is where this started, look designed instead:
+     the eye finds the symmetry and stops seeing a shape. Consecutive figures
+     use a different set again, so a row never repeats. */
   .sx--hero .sx__figure img {
-    border-radius: 18% 8px 18% 8px / 27% 8px 27% 8px;
+    border-radius: 13% 7% 11% 9% / 19% 11% 16% 13%;
   }
   .sx--hero .sx__figure:nth-child(even) img {
-    border-radius: 8px 18% 8px 18% / 8px 27% 8px 27%;
+    border-radius: 8% 12% 7% 14% / 12% 18% 11% 20%;
   }
 
   /* The shape drifts on a very slow cycle — imperceptible frame to frame, but
@@ -266,22 +268,31 @@ function usableSummary(summary: string | null | undefined, title: string): strin
     }
   }
 
+  /* Three stops, not two: a two-stop cycle reads as a pulse going back and
+     forth, while a loop that passes through a third shape never retraces its
+     own path. Each corner also moves by a different amount. */
   @keyframes sx-drift {
     0%,
     100% {
-      border-radius: 18% 8px 18% 8px / 27% 8px 27% 8px;
+      border-radius: 13% 7% 11% 9% / 19% 11% 16% 13%;
     }
-    50% {
-      border-radius: 13% 8px 23% 8px / 20% 8px 34% 8px;
+    33% {
+      border-radius: 10% 10% 14% 7% / 15% 15% 20% 10%;
+    }
+    66% {
+      border-radius: 15% 8% 8% 12% / 22% 12% 12% 17%;
     }
   }
   @keyframes sx-drift-mirrored {
     0%,
     100% {
-      border-radius: 8px 18% 8px 18% / 8px 27% 8px 27%;
+      border-radius: 8% 12% 7% 14% / 12% 18% 11% 20%;
     }
-    50% {
-      border-radius: 8px 23% 8px 13% / 8px 34% 8px 20%;
+    33% {
+      border-radius: 12% 9% 11% 10% / 17% 13% 16% 14%;
+    }
+    66% {
+      border-radius: 7% 14% 9% 11% / 11% 20% 13% 16%;
     }
   }
 
