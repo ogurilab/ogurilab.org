@@ -231,6 +231,13 @@ function usableSummary(summary: string | null | undefined, title: string): strin
   .sx__figure img {
     display: block;
     width: 100%;
+    /* Fill the column, but never let a tall image take the section over — a 3:4
+       photo would otherwise render a full screen high and dwarf the prose next
+       to it. The theme caps body images the same way (.page-content img); the
+       difference is that a figure here is a designed slot, so the overflow is
+       cropped rather than shrinking the image away from the column edge. */
+    max-height: min(56vh, 26rem);
+    object-fit: cover;
     border-radius: 8px;
     background: var(--color-bg-hover);
   }
@@ -246,11 +253,22 @@ function usableSummary(summary: string | null | undefined, title: string): strin
      matching sweeps, which is where this started, look designed instead:
      the eye finds the symmetry and stops seeing a shape. Consecutive figures
      use a different set again, so a row never repeats. */
+  /* `min(length, percentage)` per corner, which is what makes the outline hold
+     up at any aspect ratio:
+       - a bare percentage resolves against the box, so one rule became a flat
+         lozenge on a panorama and a tall dome on a portrait;
+       - a bare length is stable but swallows a short box whole — on a 3:1 image
+         the two left corners alone ate most of the height.
+     The length sets the shape at ordinary sizes; the percentage only takes over
+     when the box is too small or too flat to carry it. Because each cap is
+     proportional to its own radius, a clamped outline shrinks evenly instead of
+     distorting. A single value per corner (no `/`) lets the cap answer to width
+     and height independently, so a wide box flattens its corners by itself. */
   .sx--hero .sx__figure img {
-    border-radius: 13% 7% 11% 9% / 19% 11% 16% 13%;
+    border-radius: min(4.5rem, 17%) min(2.5rem, 10%) min(3.75rem, 14%) min(3rem, 11%);
   }
   .sx--hero .sx__figure:nth-child(even) img {
-    border-radius: 8% 12% 7% 14% / 12% 18% 11% 20%;
+    border-radius: min(2.75rem, 10%) min(4rem, 15%) min(2.5rem, 9%) min(4.75rem, 18%);
   }
 
   /* The shape drifts on a very slow cycle — imperceptible frame to frame, but
@@ -274,25 +292,25 @@ function usableSummary(summary: string | null | undefined, title: string): strin
   @keyframes sx-drift {
     0%,
     100% {
-      border-radius: 13% 7% 11% 9% / 19% 11% 16% 13%;
+      border-radius: min(4.5rem, 17%) min(2.5rem, 10%) min(3.75rem, 14%) min(3rem, 11%);
     }
     33% {
-      border-radius: 10% 10% 14% 7% / 15% 15% 20% 10%;
+      border-radius: min(3.5rem, 13%) min(3.5rem, 13%) min(4.75rem, 18%) min(2.5rem, 9%);
     }
     66% {
-      border-radius: 15% 8% 8% 12% / 22% 12% 12% 17%;
+      border-radius: min(5.25rem, 20%) min(2.75rem, 10%) min(2.75rem, 10%) min(4rem, 15%);
     }
   }
   @keyframes sx-drift-mirrored {
     0%,
     100% {
-      border-radius: 8% 12% 7% 14% / 12% 18% 11% 20%;
+      border-radius: min(2.75rem, 10%) min(4rem, 15%) min(2.5rem, 9%) min(4.75rem, 18%);
     }
     33% {
-      border-radius: 12% 9% 11% 10% / 17% 13% 16% 14%;
+      border-radius: min(4rem, 15%) min(3rem, 11%) min(3.75rem, 14%) min(3.5rem, 13%);
     }
     66% {
-      border-radius: 7% 14% 9% 11% / 11% 20% 13% 16%;
+      border-radius: min(2.5rem, 9%) min(4.75rem, 18%) min(3rem, 11%) min(3.75rem, 14%);
     }
   }
 
