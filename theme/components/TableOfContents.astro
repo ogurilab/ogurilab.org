@@ -111,7 +111,10 @@
       a.dataset.target = h.id;
       a.addEventListener("click", (e) => {
         e.preventDefault();
-        h.scrollIntoView({ behavior: "smooth", block: "start" });
+        // No explicit `behavior`: it resolves to the root's `scroll-behavior`,
+        // which global.css turns off under prefers-reduced-motion. Hard-coding
+        // "smooth" here forced the animation on readers who asked for none.
+        h.scrollIntoView({ block: "start" });
         history.pushState(null, "", `#${h.id}`);
       });
       li.appendChild(a);

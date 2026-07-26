@@ -71,6 +71,20 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* Anchor jumps land under a sticky header otherwise. Applies to every
+     in-page target — the home page's Scroll button, TOC entries, headings
+     linked from elsewhere. */
+  scroll-padding-top: 5rem;
+}
+
+/* In-page anchors glide rather than cut. Declared here rather than per link so
+   every jump behaves alike, and so `scrollIntoView()` without an explicit
+   `behavior` (which resolves to this) stays instant for readers who ask for
+   less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
