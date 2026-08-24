@@ -1,0 +1,61 @@
+name: ci
+on:
+  pull_request:
+
+  # 手で回して確かめたいとき用 (デプロイは伴わない)
+  workflow_dispatch:
+
+# 同じ PR に続けて push したら古い run は捨てる。検証だけなので途中で止めても
+# 困らない (公開を伴う deploy.yml と違うところ)。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # 検証しかしないので読み取りのみ。公開に要る権限は deploy.yml 側が持つ。
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.x"
+          cache: npm
+
+      # restore 専用。GitHub のキャッシュはブランチスコープで隔離されていて、PR が
+      # 保存したものは main からも他の PR からも読めない。保存しても分身が増える
+      # だけなので、restore-keys の前方一致で deploy.yml が main で保存した
+      # cosense-cache-* を読むだけにする (key はわざと当たらない値)。
+      - name: Restore Cosense cache
+        uses: actions/cache/restore@v6
+        with:
+          path: .cosense-cache
+          key: cosense-cache-ci-${{ github.sha }}
+          restore-keys: |
+            cosense-cache-
+
+      - name: Install dependencies
+        run: npm ci
+
+      # astro build も同じパイプライン (Cosense の list → 差分 fetch) を内部で回すので
+      # このステップは必須ではない。それでも deploy.yml と同じ 2 段にしてあるのは、
+      # Cosense 起因の失敗とビルド起因の失敗をステップ単位で切り分けたいから。
+      # キャッシュが温まっていれば数秒で終わる。
+      - name: Fetch Cosense pages
+        run: npx cosense-site fetch
+
+      - name: Build
+        run: npx astro build
+
+      # doctor が fail を返す条件 (公開 0 件・nav / home の参照切れ・slug 衝突・draft 漏れ) は
+      # ほとんどが Cosense 側の編集起因で、PR のコード変更とは独立に赤くなる。「無関係な
+      # PR が赤い」が常態になるとチェックを置く意味そのものが失われるので、ログに残す
+      # だけにして PR は止めない。公開前ゲートとして効かせたいなら deploy.yml 側が筋。
+      - name: Doctor
+        continue-on-error: true
+        run: npx cosense-site doctor

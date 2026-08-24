@@ -7,6 +7,8 @@
 - **テーマ**: `theme/`（cosense-theme-lab をこのリポジトリに vendoring。編集自由。フレームワーク `@cosense-site-kit/*` のみ npm 由来）
 - **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が cron で再フェッチ→ビルド→公開。
   Cloudflare 側の Git 連携によるビルドは**意図的に無効化**している（`deployments_enabled: false`）。Cosense の編集は git のコミットを生まないため push 起点のビルドでは記事の更新を拾えず、定期実行できる Actions 側に公開経路を一本化している。再有効化すると公開経路が二重になるので注意。
+- **CI**: `.github/workflows/ci.yml` が PR ごとにビルド検証（fetch→ビルド→`doctor`）を回す。公開はしない。
+  `doctor` は結果をログに残すだけで PR を落とさない（fail 条件のほとんどが Cosense 側の編集起因で、コード変更と無関係に赤くなるため）。
 
 ### スケジュール実行の維持
 
