@@ -16,7 +16,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # contents: write — 稼働記録のコミットに必要 (下の heartbeat ステップ)
+      contents: write
       deployments: write
     steps:
       - name: checkout
@@ -47,6 +48,35 @@ jobs:
 
       - name: Build
         run: npx astro build
+
+      # GitHub は「リポジトリに 60 日間アクティビティが無い」とスケジュール実行を
+      # 自動で無効化する。ワークフローの実行自体は活動に数えられない。このサイトは
+      # コンテンツを Cosense に置くためコミットが生まれず、放っておくと cron が
+      # 止まる (実際に 292 日間止まっていた)。そこで月に一度だけ記録ファイルを
+      # 更新してコミットし、リポジトリを活動状態に保つ。
+      #
+      # publish ステップより前に置いてある。wrangler-action は wrangler 本体を
+      # ワークツリーへ入れて package.json / package-lock.json を汚すため、後ろに
+      # 置くとそれを巻き込む。念のため add もファイル名で明示している。
+      - name: Keep the schedule alive
+        if: github.event.inputs.ref == '' || github.event.inputs.ref == 'main'
+        # 付随的な処理なので、失敗しても公開を止めない
+        continue-on-error: true
+        run: |
+          month=$(date -u +%Y-%m)
+          pages=$(find dist -name index.html | wc -l | tr -d ' ')
+          printf '{\n  "heartbeat": "%s",\n  "builtPages": %s\n}\n' "$month" "$pages" > .github/last-deploy.json
+          if git diff --quiet -- .github/last-deploy.json; then
+            echo "今月分は記録済み。コミットしない。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/last-deploy.json
+          git commit -m "chore: 稼働記録を更新する ($month) [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
 
       # cloudflare/pages-action はアーカイブ済み。後継の wrangler-action で
       # `wrangler pages deploy` を実行する。gitHubToken を渡すと pages-action と

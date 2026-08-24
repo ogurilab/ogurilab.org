@@ -8,6 +8,19 @@
 - **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が cron で再フェッチ→ビルド→公開。
   Cloudflare 側の Git 連携によるビルドは**意図的に無効化**している（`deployments_enabled: false`）。Cosense の編集は git のコミットを生まないため push 起点のビルドでは記事の更新を拾えず、定期実行できる Actions 側に公開経路を一本化している。再有効化すると公開経路が二重になるので注意。
 
+### スケジュール実行の維持
+
+GitHub は**リポジトリに 60 日間アクティビティが無いとスケジュール実行を自動で無効化**する。ワークフローの実行自体は活動に数えられない。このサイトはコンテンツを Cosense に置くため、記事を書いてもコミットが生まれず、放置すると cron が止まる（実際に 292 日間止まっていた）。
+
+対策として `deploy.yml` が月に一度だけ `.github/last-deploy.json` を更新してコミットし、リポジトリを活動状態に保っている。ログに現れる `chore: 稼働記録を更新する (YYYY-MM)` はこの仕組みによるもの。
+
+止まってしまった場合、`gh workflow enable "deploy website"` は**名前解決に失敗して黙って何もしない**（`state` は `active` を返すのに実体は無効のままで、dispatch してもジョブが 0 件のまま滞留する）。**ID 指定で有効化すること**。
+
+```bash
+gh api -X PUT repos/ogurilab/ogurilab.org/actions/workflows/99228705/enable
+```
+
+
 ## 開発
 
 ```bash
