@@ -48,12 +48,17 @@ jobs:
       - name: Build
         run: npx astro build
 
+      # cloudflare/pages-action はアーカイブ済み。後継の wrangler-action で
+      # `wrangler pages deploy` を実行する。gitHubToken を渡すと pages-action と
+      # 同じく GitHub Deployments が作られる (job の deployments: write が必要)。
+      #
+      # --commit-dirty=true: wrangler-action は wrangler 自体を
+      # `npm i wrangler@4` でこのワークツリーへ入れるため package.json /
+      # package-lock.json に差分が出て、毎回 dirty 警告が出る。公開物には影響しない。
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@1
+        uses: cloudflare/wrangler-action@v4
         with:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          projectName: ogurilab-org
-          directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          command: pages deploy dist --project-name=ogurilab-org --branch=main --commit-dirty=true
