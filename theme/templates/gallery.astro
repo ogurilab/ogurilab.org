@@ -1,0 +1,71 @@
+---
+import { getCollection } from "astro:content";
+import options from "virtual:cosense-theme-lab/options";
+import Layout from "../components/Layout.astro";
+import { loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { galleryPhotos } from "../lib/gallery";
+import { aspectRatios } from "../lib/gyazo";
+
+// The gallery: the home page's own images first, then every image used across
+// the lab's news / blog posts, newest first, in one adaptive grid. Mostly
+// automatic — authors paste images into their posts (or the home page) and they
+// collect here. Each post tile links back to its source post.
+
+const structure = await loadStructure();
+const newsTag = structure.posts?.tag ?? options.newsTag;
+const all = await getCollection("pages");
+const homeEntry = all.find(
+  (e) => e.data.title === (structure.home?.page ?? options.homePage),
+);
+const images = galleryPhotos(all, newsTag, path, homeEntry);
+
+// Per-image aspect ratios so each masonry tile reserves the right height. A
+// failed lookup falls back to 4:3; the layout still holds, just less exact.
+const ratios = await aspectRatios(images.map((p) => p.src));
+const ratioOf = (i: number) => ratios[i] ?? 4 / 3;
+---
+<Layout title="Gallery" description="研究室の活動・発表で使われた画像のアーカイブ" bare hideToc>
+  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
+
+  <div class="gallery-page">
+    <header class="gallery-page__head">
+      <p class="gallery-page__eyebrow">Gallery</p>
+      <h1 class="gallery-page__title">研究室の記録</h1>
+    </header>
+
+    {images.length > 0 ? (
+      <div class="pin">
+        {images.map((p, i) => (
+          <a class="pin__cell" href={p.href} style={`aspect-ratio:${ratioOf(i)}`}>
+            <img
+              src={p.src}
+              srcset={p.srcset}
+              sizes="(max-width: 560px) 50vw, (max-width: 1100px) 33vw, 25vw"
+              alt={p.alt}
+              loading={i < 8 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="gallery-page__empty">まだ画像がありません。</p>
+    )}
+  </div>
+</Layout>
+
+<script>
+  // Each cell reserves its height (aspect-ratio), so native lazy-loading only
+  // fetches images as they scroll near — the grid fills on scroll however many
+  // there are. Fade each in when it lands. `js-reveal` gates the start state, so
+  // with JS off every image is simply visible.
+  const imgs = document.querySelectorAll<HTMLImageElement>(".pin__cell img");
+  const done = (img: HTMLImageElement) => img.classList.add("is-loaded");
+  imgs.forEach((img) => {
+    if (img.complete && img.naturalWidth > 0) done(img);
+    else {
+      img.addEventListener("load", () => done(img), { once: true });
+      img.addEventListener("error", () => done(img), { once: true });
+    }
+  });
+</script>

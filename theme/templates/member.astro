@@ -1,0 +1,76 @@
+---
+import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import type { CosenseBlock } from "@cosense-site-kit/core";
+import Layout from "../components/Layout.astro";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
+import Related from "@cosense-site-kit/theme-utils/components/Related.astro";
+import { asGroups, extractMembers, initialsOf, type Member } from "../lib/members";
+
+// Per-person profile. Applied to a Cosense page tagged `#member`. Just a photo +
+// name header; below that it renders exactly like any other page (content,
+// backlinks, related, source). The avatar is the members.yaml `photo` matched by
+// name, else the page's own first image.
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+const { entry } = Astro.props;
+const page = entry.data;
+
+const all = await getCollection("pages");
+let member: Member | undefined;
+for (const e of all) {
+  const data = extractMembers(e.data.blocks);
+  if (!data) continue;
+  for (const g of asGroups(data)) {
+    const found = g.members.find((m) => m.name === page.title);
+    if (found) {
+      member = found;
+      break;
+    }
+  }
+  if (member) break;
+}
+
+const photo = member?.photo ?? page.image;
+// When the avatar is the page's own first image, drop just that one from the
+// body so it isn't shown twice.
+const avatarFromBody = !member?.photo && Boolean(page.image);
+const dropFirstImage = (blocks: CosenseBlock[]): CosenseBlock[] => {
+  let dropped = false;
+  return blocks.filter((b) => {
+    if (!dropped && b.type === "image") {
+      dropped = true;
+      return false;
+    }
+    return true;
+  });
+};
+const body = avatarFromBody ? dropFirstImage(page.blocks) : page.blocks;
+---
+<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
+  <article data-pagefind-body>
+    <header class="profile__head">
+      {photo ? (
+        <img class="profile__photo" src={photo} alt={page.title} loading="eager" decoding="async" />
+      ) : (
+        <span class="profile__photo profile__photo--ph" aria-hidden="true">
+          {initialsOf(page.title)}
+        </span>
+      )}
+      <h1 class="profile__name">{page.title}</h1>
+    </header>
+
+    <PageContent blocks={body} />
+
+    <Backlinks backlinks={page.backlinks} />
+
+    <Related title={page.title} links={page.links} exclude={page.backlinks} />
+
+    <footer class="source" data-pagefind-ignore>
+      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
+    </footer>
+  </article>
+</Layout>

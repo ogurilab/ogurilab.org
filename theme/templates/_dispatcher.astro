@@ -1,0 +1,38 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { hasTag, pagePaths } from "@cosense-site-kit/theme-utils";
+import options from "virtual:cosense-theme-lab/options";
+import Page from "./page.astro";
+import Members from "./members.astro";
+import Publications from "./publications.astro";
+import Sections from "./sections.astro";
+import NewsPost from "./news-post.astro";
+import Member from "./member.astro";
+
+// Template registry. Map a Cosense page's resolved `template` value (from
+// #template/<name> tag or .site `templates:` mapping) to its renderer. These are
+// for pages you explicitly assign a template to (one-off pages like Members Data
+// or Publications).
+const TEMPLATES: Record<string, typeof Page> = {
+  page: Page,
+  members: Members,
+  publications: Publications,
+  sections: Sections,
+};
+
+export async function getStaticPaths() {
+  return pagePaths();
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"pages"> };
+const data = entry.data as { template: string; tags: string[] };
+
+// Tag-driven content types take precedence over explicit template assignment.
+// These are categories defined by a tag (many pages each), not one-off pages:
+// a #news page is a post, a #member page is a profile.
+let Template: typeof Page;
+if (hasTag(data.tags, options.newsTag)) Template = NewsPost;
+else if (hasTag(data.tags, options.memberTag)) Template = Member;
+else Template = TEMPLATES[data.template] ?? Page;
+---
+<Template entry={entry} />

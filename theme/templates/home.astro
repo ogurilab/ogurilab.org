@@ -1,0 +1,202 @@
+---
+import options from "virtual:cosense-theme-lab/options";
+import site from "virtual:cosense-site-kit/site";
+import { getCollection } from "astro:content";
+import Layout from "../components/Layout.astro";
+import ShaderHero from "../components/ShaderHero.astro";
+import { hasTag, loadStructure, path } from "@cosense-site-kit/theme-utils";
+import { firstParagraph } from "../lib/content";
+import { newsSummary, formatNewsDate } from "../lib/news";
+import { allPhotosFrom, responsiveImage, type Photo } from "../lib/photos";
+
+// Restrained home: a full-screen shader hero, then two quiet blocks — recent
+// news and a photo gallery that adapts to any number of images. Navigation is
+// left to the header nav; the home page doesn't repeat it.
+
+const structure = await loadStructure();
+const cfg = structure as typeof structure & {
+  gallery?: { limit?: number };
+};
+const all = await getCollection("pages");
+
+type Entry = (typeof all)[number];
+const find = (name?: string): Entry | undefined =>
+  name ? all.find((e) => e.data.title === name || e.data.slug === name) : undefined;
+
+const siteTitle = options.siteTitle ?? site?.title ?? "Home";
+const siteDescription = options.siteDescription ?? site?.description;
+
+const [brand, ...restTitle] = siteTitle.split("|").map((s) => s.trim());
+const displayTitle = restTitle.length > 0 ? restTitle.join(" ") : brand;
+const eyebrow = options.affiliation ?? (restTitle.length > 0 ? brand : undefined);
+
+// Mission line — the home page's punchiest paragraph (its last).
+const homeEntry = find(structure.home?.page ?? options.homePage);
+const paragraphs = (homeEntry?.data.blocks ?? [])
+  .filter((b) => b.type === "paragraph")
+  .map((b) => firstParagraph([b]))
+  .filter(Boolean);
+
+// ----- News -------------------------------------------------------------
+const newsTag = structure.posts?.tag ?? options.newsTag;
+const posts = all
+  .filter((e) => hasTag(e.data.tags, newsTag))
+  .map((e) => newsSummary(e))
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+const news = posts.slice(0, structure.posts?.limit ?? 5).map((n) => ({
+  ...n,
+  // First public tag that isn't the news tag itself → a small category chip.
+  chip: n.tags.find((t) => t !== newsTag),
+}));
+
+// ----- Gallery preview --------------------------------------------------
+// The images pasted on the home page (`.site` home.page). If that page has no
+// images, fall back to a random handful of news post header images. Cap with
+// `gallery: { limit: N }` in the .site YAML.
+const galleryLimit = cfg.gallery?.limit ?? 6;
+const homePhotos = homeEntry ? allPhotosFrom(homeEntry.data.blocks) : [];
+const newsHeaders: Photo[] = posts
+  .filter((p) => p.image)
+  .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title, href: path(p.slug) }));
+// Fisher–Yates shuffle (fixed per build) for the fallback.
+const shuffledHeaders = (() => {
+  const a = [...newsHeaders];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+})();
+const gallery = (homePhotos.length > 0 ? homePhotos : shuffledHeaders).slice(0, galleryLimit);
+---
+<Layout title={siteTitle} description={siteDescription} bare hideToc>
+  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
+
+  <section class="hero" data-pagefind-body>
+    <ShaderHero />
+    <div class="hero__scrim" aria-hidden="true"></div>
+    <div class="hero__inner">
+      {eyebrow && <p class="hero__eyebrow">{eyebrow}</p>}
+      <h1 class="hero__title">{displayTitle}</h1>
+      {paragraphs.length > 0 ? (
+        <div class="hero__lead">
+          {paragraphs.map((p) => <p>{p}</p>)}
+        </div>
+      ) : (
+        siteDescription && <p class="hero__lead">{siteDescription}</p>
+      )}
+      <a class="hero__scroll" href="#main" aria-label="下へスクロール">
+        <span>Scroll</span>
+        <svg width="14" height="22" viewBox="0 0 14 22" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M7 1v18M1 13l6 7 6-7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <div id="main">
+    {news.length > 0 && (
+      <section class="block">
+        <div class="wrap">
+          <div class="sect">
+            <h2 class="sect__en">News</h2>
+            <p class="sect__ja">最近の活動</p>
+          </div>
+          <ul class="postlist" data-reveal>
+            {news.map((n) => {
+              const thumb = n.image ? responsiveImage(n.image) : null;
+              const tags = n.tags.filter((t) => t !== newsTag);
+              // Many posts open with a paragraph that repeats their title; drop
+              // the summary in that case so the card isn't the same line twice.
+              const summary =
+                n.description && n.description.slice(0, 16) !== n.title.slice(0, 16)
+                  ? n.description
+                  : null;
+              return (
+                <li class="postlist__item">
+                  <a class="postlist__thumb" href={path(n.slug)} aria-hidden="true" tabindex="-1">
+                    {thumb ? (
+                      <img src={thumb.src} srcset={thumb.srcset} sizes="72px" alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span class="postlist__ph">{Array.from(n.title.trim())[0] ?? "·"}</span>
+                    )}
+                  </a>
+                  <div class="postlist__body">
+                    <a class="postlist__title" href={path(n.slug)}>{n.title}</a>
+                    {summary && <p class="postlist__summary">{summary}</p>}
+                    <div class="postlist__meta">
+                      {n.date && (
+                        <time class="postlist__date" datetime={n.date.toISOString()}>
+                          {formatNewsDate(n.date)}
+                        </time>
+                      )}
+                      {tags.map((t) => <span class="postlist__tag">#{t}</span>)}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <a class="more" href={path("news")}>すべて見る<span aria-hidden="true">→</span></a>
+        </div>
+      </section>
+    )}
+
+    {gallery.length > 0 && (
+      <section class="block block--tint">
+        <div class="wrap">
+          <div class="sect">
+            <h2 class="sect__en">Gallery</h2>
+            <p class="sect__ja">研究室の様子</p>
+          </div>
+          <div class="masonry" data-reveal>
+            {gallery.map((p, i) => {
+              const img = (
+                <img
+                  src={p.src}
+                  srcset={p.srcset}
+                  sizes="(max-width: 560px) 50vw, (max-width: 900px) 33vw, 22vw"
+                  alt={p.alt}
+                  loading={i < 6 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              );
+              return (
+                <figure class="masonry__cell">
+                  {p.href ? <a href={p.href}>{img}</a> : img}
+                </figure>
+              );
+            })}
+          </div>
+          <a class="more" href={path("gallery")}>すべて見る<span aria-hidden="true">→</span></a>
+        </div>
+      </section>
+    )}
+
+  </div>
+</Layout>
+
+<script>
+  // Reveal blocks as they scroll into view. Hidden only once the inline
+  // js-reveal class lands (JS-off stays visible); reduced motion skips it.
+  const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+  const show = (el: Element) => el.classList.add("is-visible");
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    !("IntersectionObserver" in window)
+  ) {
+    targets.forEach(show);
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          show(e.target);
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px" },
+    );
+    targets.forEach((el) => io.observe(el));
+  }
+</script>

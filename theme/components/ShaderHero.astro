@@ -1,0 +1,427 @@
+---
+// GPU-drawn generative field behind the home opening. Hand-written WebGL
+// fragment shaders (no library), one per "scene" — see lib/shader-scenes.ts for
+// the scene contract and for how to add one.
+//
+// A visit picks a scene at random, then crossfades to the next one every
+// SCENE_HOLD_MS, so the page is never quite the same twice. `?bg=<id>` pins a
+// single scene, which is how you review one while authoring it.
+//
+// The canvas is decorative (pointer-events: none) and sits behind the hero text,
+// which keeps its own legibility scrim.
+//
+// Degrades cleanly: no WebGL / Save-Data / a lost context all fall back to the
+// CSS gradient in `.shader-bg--static`; prefers-reduced-motion renders a single
+// still frame of one scene, with no rotation.
+---
+<div class="shader-bg" aria-hidden="true">
+  <canvas data-shader-hero></canvas>
+</div>
+
+<script>
+  import { SCENES, SCENE_FADE_MS, SCENE_HOLD_MS } from "../lib/shader-scenes";
+
+  const VERT = `
+    attribute vec2 a_pos;
+    varying vec2 v_uv;
+    void main() {
+      v_uv = a_pos * 0.5 + 0.5;
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }
+  `;
+
+  // Shared prelude: everything a scene may rely on. Kept in one place so scenes
+  // stay pure geometry and the whole set shares a look.
+  const PRELUDE = `
+    precision highp float;
+    uniform vec2 u_res;
+    uniform float u_time;
+    uniform vec2 u_pointer;
+    uniform float u_reveal;
+    uniform float u_alpha;
+    uniform float u_px;
+    uniform vec3 u_bg;
+    uniform vec3 u_soft;
+    uniform vec3 u_accent;
+    uniform vec3 u_ink;
+    varying vec2 v_uv;
+
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+    float noise(vec2 p) {
+      vec2 i = floor(p), f = fract(p);
+      float a = hash(i), b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+    }
+    float fbm(vec2 p) {
+      float v = 0.0, a = 0.5;
+      mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+      for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
+      return v;
+    }
+    // Interleaved gradient noise — a cheap ordered dither threshold.
+    float ign(vec2 p) {
+      return fract(52.9829189 * fract(0.06711056 * p.x + 0.00583715 * p.y));
+    }
+    mat2 rot(float a) {
+      float c = cos(a), s = sin(a);
+      return mat2(c, -s, s, c);
+    }
+    // Resolution-aware line falloff: "d" is a distance in p-space, "sc" the
+    // scene's own scale factor, so lines stay one hairline wide at any DPR
+    // instead of thickening on retina or aliasing away on a small viewport.
+    float lineAA(float d, float sc) {
+      float w = max(u_px * sc * 1.4, 0.0008);
+      return 1.0 - smoothstep(0.0, w, d);
+    }
+  `;
+
+  // Shared tail: every scene is coloured by the same ramp, which is what makes
+  // four different geometries read as one family.
+  const MAIN = `
+    void main() {
+      float asp = u_res.x / max(u_res.y, 1.0);
+      vec2 p = vec2(v_uv.x * asp, v_uv.y);
+      vec2 pt = vec2(u_pointer.x * asp, u_pointer.y);
+
+      vec2 f = field(p, u_time, pt);
+      float tone = clamp(f.x, 0.0, 1.0);
+      float line = clamp(f.y, 0.0, 1.0);
+
+      float d = ign(gl_FragCoord.xy);
+
+      // Ramp in two stages. accent-soft alone is nearly white, so a single
+      // bg→soft ramp is what made this read as an empty page; carrying the
+      // upper half of the range on toward the accent is what gives the field
+      // actual mass.
+      vec3 col = mix(u_bg, u_soft, smoothstep(0.0, 0.55, tone));
+      col = mix(col, u_accent, smoothstep(0.55, 1.0, tone) * 0.45);
+      col = mix(col, u_accent, line * 0.70);
+      col = mix(col, u_ink, pow(tone, 3.0) * 0.10);
+      col = mix(u_bg, col, u_reveal);
+
+      // Fine ordered grain — the tactile, "printed" texture that reads as
+      // designed rather than a smooth gradient.
+      col += (d - 0.5) * 0.028;
+
+      gl_FragColor = vec4(col, u_alpha);
+    }
+  `;
+
+  /** Parsed as premultiply-ready rgb plus alpha; alpha is 1 unless given. */
+  function parseColor(str: string): [number, number, number, number] {
+    str = str.trim();
+    if (str[0] === "#") {
+      let h = str.slice(1);
+      if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+      if (h.length === 8) {
+        const n8 = parseInt(h, 16);
+        return [
+          ((n8 >>> 24) & 255) / 255,
+          ((n8 >>> 16) & 255) / 255,
+          ((n8 >>> 8) & 255) / 255,
+          (n8 & 255) / 255,
+        ];
+      }
+      const n = parseInt(h, 16);
+      return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255, 1];
+    }
+    const m = str.match(/[\d.]+/g);
+    if (m && m.length >= 3) {
+      return [+m[0] / 255, +m[1] / 255, +m[2] / 255, m.length >= 4 ? +m[3] : 1];
+    }
+    return [1, 1, 1, 1];
+  }
+
+  /**
+   * Flatten a token onto the page background. Palette tokens are allowed to be
+   * translucent — the dark skin ships `--color-accent-soft` as a 16% wash — and
+   * the shader has no backdrop to blend against, so an ignored alpha would come
+   * out at full strength.
+   */
+  function overBg(c: [number, number, number, number], bg: [number, number, number, number]) {
+    const a = c[3];
+    return new Float32Array([
+      c[0] * a + bg[0] * (1 - a),
+      c[1] * a + bg[1] * (1 - a),
+      c[2] * a + bg[2] * (1 - a),
+    ]);
+  }
+
+  interface SceneProgram {
+    prog: WebGLProgram;
+    attrib: number;
+    u: Record<string, WebGLUniformLocation | null>;
+  }
+
+  function initShaderHero(): void {
+    const canvas = document.querySelector<HTMLCanvasElement>("canvas[data-shader-hero]");
+    if (!canvas || canvas.dataset.inited) return;
+    // Size and orient to the wrapper, which the host section stretches to fill.
+    const hero = canvas.parentElement as HTMLElement;
+
+    const conn = (navigator as { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData) {
+      hero.classList.add("shader-bg--static");
+      return;
+    }
+
+    let gl: WebGLRenderingContext | null = null;
+    try {
+      const opts = { antialias: false, alpha: false, depth: false, powerPreference: "low-power" };
+      gl =
+        (canvas.getContext("webgl", opts) as WebGLRenderingContext | null) ??
+        (canvas.getContext("experimental-webgl", opts) as WebGLRenderingContext | null);
+    } catch {
+      gl = null;
+    }
+    if (!gl) {
+      hero.classList.add("shader-bg--static");
+      return;
+    }
+    const ctx = gl;
+
+    const compile = (type: number, src: string): WebGLShader | null => {
+      const sh = ctx.createShader(type)!;
+      ctx.shaderSource(sh, src);
+      ctx.compileShader(sh);
+      return ctx.getShaderParameter(sh, ctx.COMPILE_STATUS) ? sh : null;
+    };
+
+    const vs = compile(ctx.VERTEX_SHADER, VERT);
+    if (!vs) {
+      hero.classList.add("shader-bg--static");
+      return;
+    }
+
+    // Scenes are compiled on first use, not upfront: a visit usually shows one
+    // or two of them, and a cold compile of the whole registry would be work
+    // done during the opening animation.
+    const cache = new Map<number, SceneProgram | null>();
+    const build = (i: number): SceneProgram | null => {
+      const hit = cache.get(i);
+      if (hit !== undefined) return hit;
+
+      let rec: SceneProgram | null = null;
+      const fs = compile(ctx.FRAGMENT_SHADER, PRELUDE + SCENES[i].glsl + MAIN);
+      if (fs) {
+        const prog = ctx.createProgram()!;
+        ctx.attachShader(prog, vs);
+        ctx.attachShader(prog, fs);
+        ctx.linkProgram(prog);
+        if (ctx.getProgramParameter(prog, ctx.LINK_STATUS)) {
+          const names = [
+            "u_res", "u_time", "u_pointer", "u_reveal", "u_alpha", "u_px",
+            "u_bg", "u_soft", "u_accent", "u_ink",
+          ];
+          const u: Record<string, WebGLUniformLocation | null> = {};
+          for (const n of names) u[n] = ctx.getUniformLocation(prog, n);
+          rec = { prog, attrib: ctx.getAttribLocation(prog, "a_pos"), u };
+        }
+      }
+      cache.set(i, rec);
+      return rec;
+    };
+
+    // Authoring aids: ?bg=<id> pins one scene, ?bgHold=<ms> shortens the hold so
+    // a crossfade can be reviewed without waiting out the real interval.
+    const params = new URLSearchParams(location.search);
+    const pinned = params.get("bg");
+    const pinnedIdx = pinned ? SCENES.findIndex((s) => s.id === pinned) : -1;
+    const holdMs = Math.max(1000, Number(params.get("bgHold")) || SCENE_HOLD_MS);
+    let curIdx = pinnedIdx >= 0 ? pinnedIdx : Math.floor(Math.random() * SCENES.length);
+
+    if (!build(curIdx)) {
+      // Only bail out if the first scene will not compile — one bad scene later
+      // is skipped instead of taking the whole background down.
+      hero.classList.add("shader-bg--static");
+      return;
+    }
+    canvas.dataset.inited = "1";
+    // Which scene is on screen, for debugging and for review tooling.
+    canvas.dataset.scene = SCENES[curIdx].id;
+
+    const buf = ctx.createBuffer();
+    ctx.bindBuffer(ctx.ARRAY_BUFFER, buf);
+    ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), ctx.STATIC_DRAW);
+
+    // Crossfade draws the incoming scene over the outgoing one.
+    ctx.enable(ctx.BLEND);
+    ctx.blendFunc(ctx.SRC_ALPHA, ctx.ONE_MINUS_SRC_ALPHA);
+
+    // Feed the theme's own design tokens to the shader, so a recolouring preset
+    // (e.g. the dark skin) recolours the field too.
+    const cs = getComputedStyle(document.documentElement);
+    const css = (name: string) => cs.getPropertyValue(name);
+    const bg = parseColor(css("--color-bg") || "#ffffff");
+    const palette = {
+      u_bg: overBg(bg, bg),
+      u_soft: overBg(parseColor(css("--color-accent-soft") || "#dbeafe"), bg),
+      u_accent: overBg(parseColor(css("--color-accent") || "#1e3a8a"), bg),
+      u_ink: overBg(parseColor(css("--color-text") || "#1f2937"), bg),
+    };
+
+    let w = 0;
+    let h = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const resize = () => {
+      const rect = hero.getBoundingClientRect();
+      w = Math.max(1, Math.round(rect.width * dpr));
+      h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        ctx.viewport(0, 0, w, h);
+      }
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(hero);
+
+    // Pointer, smoothed. Defaults to the centre so an untouched page still has a
+    // gentle focal point.
+    const target: [number, number] = [0.5, 0.55];
+    const cur: [number, number] = [0.5, 0.55];
+    const onPointer = (e: PointerEvent) => {
+      const rect = hero.getBoundingClientRect();
+      target[0] = (e.clientX - rect.left) / rect.width;
+      target[1] = 1 - (e.clientY - rect.top) / rect.height;
+    };
+    window.addEventListener("pointermove", onPointer, { passive: true });
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Rotation needs somewhere to rotate to, and is off when a scene is pinned
+    // or motion is unwelcome.
+    const rotates = !reduce && pinnedIdx < 0 && SCENES.length > 1;
+
+    let raf = 0;
+    let start = 0;
+    let visible = true;
+    let heldSince = 0;
+    let nextIdx = -1;
+    let fadeFrom = 0;
+
+    const draw = (rec: SceneProgram, time: number, alpha: number) => {
+      ctx.useProgram(rec.prog);
+      ctx.enableVertexAttribArray(rec.attrib);
+      ctx.vertexAttribPointer(rec.attrib, 2, ctx.FLOAT, false, 0, 0);
+      ctx.uniform2f(rec.u.u_res, w, h);
+      ctx.uniform1f(rec.u.u_time, time);
+      ctx.uniform2f(rec.u.u_pointer, cur[0], cur[1]);
+      ctx.uniform1f(rec.u.u_reveal, Math.min(1, time / 1.2));
+      ctx.uniform1f(rec.u.u_alpha, alpha);
+      ctx.uniform1f(rec.u.u_px, 1 / Math.max(h, 1));
+      ctx.uniform3fv(rec.u.u_bg, palette.u_bg);
+      ctx.uniform3fv(rec.u.u_soft, palette.u_soft);
+      ctx.uniform3fv(rec.u.u_accent, palette.u_accent);
+      ctx.uniform3fv(rec.u.u_ink, palette.u_ink);
+      ctx.drawArrays(ctx.TRIANGLES, 0, 3);
+    };
+
+    const frame = (now: number) => {
+      raf = 0;
+      if (!start) start = now;
+      if (!heldSince) heldSince = now;
+      const time = (now - start) / 1000;
+
+      cur[0] += (target[0] - cur[0]) * 0.06;
+      cur[1] += (target[1] - cur[1]) * 0.06;
+
+      // Fade + release as the hero scrolls away (cheap, per-frame).
+      const rect = hero.getBoundingClientRect();
+      canvas.style.opacity = String(Math.min(1, Math.max(0, 1 + rect.top / rect.height)));
+
+      // Time to line up the next scene?
+      if (rotates && nextIdx < 0 && now - heldSince > holdMs) {
+        for (let step = 1; step < SCENES.length; step++) {
+          const cand = (curIdx + step) % SCENES.length;
+          if (build(cand)) {
+            nextIdx = cand;
+            fadeFrom = now;
+            canvas.dataset.sceneNext = SCENES[cand].id;
+            break;
+          }
+        }
+        // Nothing else compiles — stop asking every frame.
+        if (nextIdx < 0) heldSince = Infinity;
+      }
+
+      const base = build(curIdx);
+      if (base) draw(base, time, 1);
+
+      if (nextIdx >= 0) {
+        const k = Math.min(1, (now - fadeFrom) / SCENE_FADE_MS);
+        const inc = build(nextIdx);
+        if (inc) draw(inc, time, k);
+        if (k >= 1) {
+          curIdx = nextIdx;
+          nextIdx = -1;
+          heldSince = now;
+          canvas.dataset.scene = SCENES[curIdx].id;
+          delete canvas.dataset.sceneNext;
+        }
+      }
+
+      if (visible && !reduce) raf = requestAnimationFrame(frame);
+    };
+
+    const stop = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    const play = () => {
+      if (!raf && visible) raf = requestAnimationFrame(frame);
+    };
+
+    if (reduce) {
+      // One still frame, fully revealed — no animation loop.
+      start = -1200;
+      requestAnimationFrame(frame);
+    } else {
+      // Only run while the hero is actually on screen and the tab is focused.
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          visible = entry.isIntersecting;
+          visible ? play() : stop();
+        },
+        { threshold: 0 },
+      );
+      io.observe(hero);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stop();
+        else {
+          // Don't count time on another tab toward the current scene's hold.
+          heldSince = performance.now();
+          play();
+        }
+      });
+    }
+
+    canvas.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      stop();
+      hero.classList.add("shader-bg--static");
+    });
+
+    // Tear down before a View-Transitions swap so nothing leaks across pages.
+    document.addEventListener(
+      "astro:before-swap",
+      () => {
+        stop();
+        ro.disconnect();
+        window.removeEventListener("pointermove", onPointer);
+      },
+      { once: true },
+    );
+  }
+
+  if (document.readyState !== "loading") initShaderHero();
+  else document.addEventListener("DOMContentLoaded", initShaderHero);
+  // Harmless until View Transitions are enabled; ready for it when they are.
+  document.addEventListener("astro:page-load", initShaderHero);
+</script>

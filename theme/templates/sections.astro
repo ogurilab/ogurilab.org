@@ -1,0 +1,493 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import { path, slugifyHeading } from "@cosense-site-kit/theme-utils";
+import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
+import Layout from "../components/Layout.astro";
+import { responsiveImage } from "../lib/photos";
+import { ordinal, splitSections } from "../lib/sections";
+
+// A landing-style template: the page body is split into sections and each one
+// is laid out from what it contains (see lib/sections.ts). Not About-specific —
+// assign it to any page that reads as a stack of sections, either from the
+// `.site` `templates:` mapping or with a `#template/sections` tag.
+
+// Rendered widths, for picking a srcset candidate. A section figure spans the
+// column, or a little under half of it in the two-column hero; a card tracks
+// the ~15rem minimum of its grid.
+const FIGURE_SIZES = "(max-width: 60rem) 100vw, 45vw";
+const CARD_SIZES = "(max-width: 40rem) 100vw, 22rem";
+
+interface Props {
+  entry: CollectionEntry<"pages">;
+}
+
+const { entry } = Astro.props;
+const page = entry.data;
+const sections = splitSections(page.blocks);
+
+// Card items name a Cosense page; the card borrows that page's first image and
+// summary so the author only has to write `[Page title]`. Same lookup the
+// members template uses for avatars.
+const all = await getCollection("pages");
+const linked = new Map<string, { slug: string; image?: string; summary?: string }>();
+for (const e of all) {
+  if (linked.has(e.data.title)) continue;
+  linked.set(e.data.title, {
+    slug: e.data.slug,
+    image: e.data.image ?? undefined,
+    summary: usableSummary(e.data.summary, e.data.title),
+  });
+}
+
+// Not every page's summary earns a place on a card:
+//   - a page whose first line is an image or a bare link has that raw
+//     `[https://gyazo.com/…]` markup as its summary, which reads as noise;
+//   - plenty of posts open with a sentence that restates their title, which
+//     would print the same line twice. Same guard the home news list uses.
+function usableSummary(summary: string | null | undefined, title: string): string | undefined {
+  const text = summary?.trim();
+  if (!text || /^\[?https?:\/\//.test(text)) return undefined;
+  if (text.slice(0, 16) === title.slice(0, 16)) return undefined;
+  return text;
+}
+---
+
+<Layout title={page.title} description={page.summary} image={page.image} ogType="article" wide>
+  <article data-pagefind-body>
+    <header class="page-header">
+      {page.draft && <span class="draft-badge">Draft · preview only</span>}
+      <h1>{page.title}</h1>
+    </header>
+
+    {sections.map((section) => (
+      <section class:list={["sx", `sx--${section.layout}`]}>
+        {section.title && (
+          <div class="sx__head">
+            <h2 id={slugifyHeading(section.title)}>{section.title}</h2>
+            {section.lead && <p class="sx__lead">{section.lead}</p>}
+          </div>
+        )}
+
+        {/* Every layout uses this same body; `hero` differs only in that CSS
+            puts the prose and the figures side by side. */}
+        <div class="sx__body">
+          {section.blocks.length > 0 && <PageContent blocks={section.blocks} />}
+
+          {section.images.length > 0 && (
+            <div class="sx__figures">
+              {section.images.map((img) => {
+                const figure = responsiveImage(img.url);
+                const picture = (
+                  <img
+                    src={figure.src}
+                    srcset={figure.srcset}
+                    sizes={FIGURE_SIZES}
+                    alt={img.alt ?? ""}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                );
+                return (
+                  <figure class="sx__figure">
+                    {/* Cosense lets an image carry a link (`[<image> <url>]`);
+                        keep it, the way the gallery and home page do. */}
+                    {img.href ? <a href={img.href}>{picture}</a> : picture}
+                  </figure>
+                );
+              })}
+            </div>
+          )}
+
+          {section.layout === "numbered" && (
+            <ol class="sx__numbered">
+              {section.items.map((item, i) => (
+                <li class="sx__num-item">
+                  <span class="sx__num" aria-hidden="true">{ordinal(i)}</span>
+                  <div>
+                    <p class="sx__num-title">{item.title}</p>
+                    {item.body && <p class="sx__num-body">{item.body}</p>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {section.layout === "cards" && (
+            <ul class="sx__cards">
+              {section.items.map((item) => {
+                const ref = item.page ? linked.get(item.page) : undefined;
+                const href = item.href ?? (ref ? path(ref.slug) : undefined);
+                const thumb = ref?.image ? responsiveImage(ref.image) : undefined;
+                const body = item.body ?? ref?.summary;
+                const card = (
+                  <Fragment>
+                    <span class="sx__card-thumb">
+                      {thumb ? (
+                        <img
+                          src={thumb.src}
+                          srcset={thumb.srcset}
+                          sizes={CARD_SIZES}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <span class="sx__card-ph" aria-hidden="true">
+                          {Array.from(item.title.trim())[0] ?? "·"}
+                        </span>
+                      )}
+                    </span>
+                    <span class="sx__card-body">
+                      <span class="sx__card-title">{item.title}</span>
+                      {body && <span class="sx__card-text">{body}</span>}
+                    </span>
+                  </Fragment>
+                );
+                return (
+                  <li class="sx__card">
+                    {href ? (
+                      <a
+                        href={href}
+                        class="sx__card-link"
+                        target={item.href ? "_blank" : undefined}
+                        rel={item.href ? "noopener noreferrer" : undefined}
+                      >
+                        {card}
+                      </a>
+                    ) : (
+                      <span class="sx__card-link is-static">{card}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {section.layout === "chips" && (
+            <ul class="sx__chips">
+              {section.items.map((item) => (
+                <li class="sx__chip">{item.title}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+    ))}
+
+    <footer class="source" data-pagefind-ignore>
+      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
+    </footer>
+  </article>
+</Layout>
+
+<style>
+  /* Section rhythm. Generous vertical space is what makes a stack of sections
+     read as a landing page rather than an article. */
+  .sx {
+    margin-top: clamp(3rem, 8vw, 5.5rem);
+  }
+  .sx:first-of-type {
+    margin-top: clamp(2rem, 5vw, 3rem);
+  }
+
+  .sx__head {
+    margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  }
+  .sx__head h2 {
+    margin: 0;
+    font-size: clamp(1.375rem, 2.5vw, 1.75rem);
+    letter-spacing: 0.01em;
+  }
+  /* The one-line introduction under a heading. */
+  .sx__lead {
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  /* ----- Body ----- */
+
+  /* Space only between parts that are actually present, so a section with no
+     prose doesn't get a stray gap under its heading. `:global` reaches
+     PageContent's root, which carries its own scope rather than this one's. */
+  .sx__body :global(.page-content) + *,
+  .sx__figures + * {
+    margin-top: 1.5rem;
+  }
+  .sx__body :global(.page-content > :first-child) {
+    margin-top: 0;
+  }
+
+  /* ----- Figures ----- */
+
+  .sx__figure {
+    margin: 0;
+  }
+  .sx__figure a {
+    display: block;
+  }
+  .sx__figure img {
+    display: block;
+    width: 100%;
+    /* Fill the column, but never let a tall image take the section over — a 3:4
+       photo would otherwise render a full screen high and dwarf the prose next
+       to it. The theme caps body images the same way (.page-content img); the
+       difference is that a figure here is a designed slot, so the overflow is
+       cropped rather than shrinking the image away from the column edge. */
+    max-height: min(56vh, 26rem);
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--color-bg-hover);
+  }
+  .sx__figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  /* Hero figures get a grown outline rather than a drawn one. Every corner is
+     rounded, no two by the same amount, and none far enough to read as a
+     deliberate arc — the irregularity is what makes it organic. Two large
+     matching sweeps, which is where this started, look designed instead:
+     the eye finds the symmetry and stops seeing a shape. Consecutive figures
+     use a different set again, so a row never repeats. */
+  /* `min(length, percentage)` per corner, which is what makes the outline hold
+     up at any aspect ratio:
+       - a bare percentage resolves against the box, so one rule became a flat
+         lozenge on a panorama and a tall dome on a portrait;
+       - a bare length is stable but swallows a short box whole — on a 3:1 image
+         the two left corners alone ate most of the height.
+     The length sets the shape at ordinary sizes; the percentage only takes over
+     when the box is too small or too flat to carry it. Because each cap is
+     proportional to its own radius, a clamped outline shrinks evenly instead of
+     distorting. A single value per corner (no `/`) lets the cap answer to width
+     and height independently, so a wide box flattens its corners by itself. */
+  .sx--hero .sx__figure img {
+    border-radius: min(4.5rem, 17%) min(2.5rem, 10%) min(3.75rem, 14%) min(3rem, 11%);
+  }
+  .sx--hero .sx__figure:nth-child(even) img {
+    border-radius: min(2.75rem, 10%) min(4rem, 15%) min(2.5rem, 9%) min(4.75rem, 18%);
+  }
+
+  /* The shape drifts on a very slow cycle — imperceptible frame to frame, but
+     enough that the image never quite settles. The two durations are close but
+     not multiples, so figures beside each other stay out of phase. The resting
+     shape above stands on its own, so dropping this block costs nothing but
+     the flourish. */
+  @media (prefers-reduced-motion: no-preference) {
+    .sx--hero .sx__figure img {
+      animation: sx-drift 26s ease-in-out infinite;
+    }
+    .sx--hero .sx__figure:nth-child(even) img {
+      animation-name: sx-drift-mirrored;
+      animation-duration: 31s;
+    }
+  }
+
+  /* Three stops, not two: a two-stop cycle reads as a pulse going back and
+     forth, while a loop that passes through a third shape never retraces its
+     own path. Each corner also moves by a different amount. */
+  @keyframes sx-drift {
+    0%,
+    100% {
+      border-radius: min(4.5rem, 17%) min(2.5rem, 10%) min(3.75rem, 14%) min(3rem, 11%);
+    }
+    33% {
+      border-radius: min(3.5rem, 13%) min(3.5rem, 13%) min(4.75rem, 18%) min(2.5rem, 9%);
+    }
+    66% {
+      border-radius: min(5.25rem, 20%) min(2.75rem, 10%) min(2.75rem, 10%) min(4rem, 15%);
+    }
+  }
+  @keyframes sx-drift-mirrored {
+    0%,
+    100% {
+      border-radius: min(2.75rem, 10%) min(4rem, 15%) min(2.5rem, 9%) min(4.75rem, 18%);
+    }
+    33% {
+      border-radius: min(4rem, 15%) min(3rem, 11%) min(3.75rem, 14%) min(3.5rem, 13%);
+    }
+    66% {
+      border-radius: min(2.5rem, 9%) min(4.75rem, 18%) min(3rem, 11%) min(3.75rem, 14%);
+    }
+  }
+
+  /* ----- Hero: the prose beside its figures ----- */
+
+  .sx--hero .sx__body {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    align-items: start;
+  }
+  @media (min-width: 60rem) {
+    .sx--hero .sx__body {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    }
+  }
+  /* The grid's own gap does the spacing here. */
+  .sx--hero .sx__body :global(.page-content) + * {
+    margin-top: 0;
+  }
+  /* One image fills the column; several share it side by side rather than
+     stacking into a wall of full-width photos. */
+  .sx__hero-figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  /* ----- Numbered cards (01 / 02 / 03) ----- */
+
+  /* Typeset rather than boxed: a hairline over each entry with a short accent
+     tick, then an oversized mincho numeral. Boxes would add a third border
+     weight to a theme already built from rules and whitespace — and an
+     auto-fit grid of boxes leaves a visible hole when the last row is short.
+     The rules land on the grid's row lines, so the set reads as a printed
+     index however many entries there are. */
+  .sx__numbered {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    column-gap: clamp(1.5rem, 4vw, 3rem);
+    row-gap: clamp(2rem, 4vw, 3rem);
+  }
+  .sx__num-item {
+    position: relative;
+    padding-top: 1.125rem;
+    border-top: 1px solid var(--color-divider);
+  }
+  /* Accent tick sitting on the hairline, aligned with the numeral above it. */
+  .sx__num-item::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 2.25rem;
+    height: 2px;
+    background: var(--color-accent);
+  }
+  .sx__num {
+    display: block;
+    margin-bottom: 0.625rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 5vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--color-accent);
+    /* Ghosted so the numeral gives the entry scale without shouting over the
+       title, which is the thing worth reading. */
+    opacity: 0.26;
+    font-variant-numeric: tabular-nums;
+  }
+  .sx__num-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+  .sx__num-body {
+    margin: 0.625rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.8;
+    color: var(--color-text-soft);
+  }
+
+  /* ----- Card grid (thumbnail + title + summary) ----- */
+
+  .sx__cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: clamp(1rem, 2.5vw, 1.75rem);
+  }
+  /* min-width:0 on both the track and the text column: without it a long
+     unbroken string (a URL in a summary) forces the grid track wider than the
+     card and the text runs outside it. */
+  .sx__card {
+    min-width: 0;
+  }
+  .sx__card-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 100%;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+  }
+  .sx__card-body {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .sx__card-thumb {
+    display: block;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--color-bg-soft);
+  }
+  .sx__card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s var(--ease);
+  }
+  .sx__card-link:hover .sx__card-thumb img {
+    transform: scale(1.04);
+  }
+  .sx__card-ph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    color: var(--color-text-faint);
+  }
+  .sx__card-title {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  .sx__card-link:not(.is-static):hover .sx__card-title {
+    color: var(--color-accent);
+  }
+  .sx__card-text {
+    display: block;
+    margin-top: 0.375rem;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    color: var(--color-text-soft);
+  }
+
+  /* ----- Chips (short vocabulary: equipment, tools, keywords) ----- */
+
+  .sx__chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .sx__chip {
+    padding: 0.25rem 0.875rem;
+    border-radius: 999px;
+    background: var(--color-tag-bg);
+    color: var(--color-tag-text);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+  }
+</style>
