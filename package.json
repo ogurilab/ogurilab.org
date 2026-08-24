@@ -16,7 +16,7 @@
     "@cosense-site-kit/cli": "^0.1.9",
     "@cosense-site-kit/core": "^0.4.1",
     "@cosense-site-kit/theme-utils": "^0.4.7",
-    "astro": "^6.4.4",
+    "astro": "^7.2.4",
     "pagefind": "^1.5.2",
     "yaml": "^2.6.0",
     "zod": "^4.4.3"
