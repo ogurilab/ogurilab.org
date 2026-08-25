@@ -1,0 +1,32 @@
+name: pr-title
+
+# squash merge ではこの PR タイトルがそのまま main のコミット要約になる。
+# 崩れた形式は履歴に恒久的に残り、後から直せない (force push が要る) ので
+# マージ前のここで止める。
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Conventional Commits format
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # type は個人標準の 8 種。style と revert は使わない
+          # (整形のみは chore、revert は打ち消す側の type を名乗る)。
+          # scope は任意。破壊的変更の ! も許す。
+          pattern='^(feat|fix|docs|refactor|test|chore|ci|perf|build)(\([a-z0-9._/-]+\))?!?: .+'
+          if [[ ! "$TITLE" =~ $pattern ]]; then
+            echo "::error::PR タイトルが Conventional Commits の形式ではありません: $TITLE"
+            echo "期待する形式: <type>(<scope>): <要約>"
+            echo "type: feat / fix / docs / refactor / test / chore / ci / perf / build"
+            echo "例: fix(theme): メンバー一覧の折り返しを直す"
+            exit 1
+          fi
+          echo "OK: $TITLE"
