@@ -5,10 +5,25 @@
 
 - **データソース**: Cosense プロジェクト（`cosense.config.ts` の `source.project`）
 - **テーマ**: `theme/`（cosense-theme-lab をこのリポジトリに vendoring。編集自由。フレームワーク `@cosense-site-kit/*` のみ npm 由来）
-- **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が cron で再フェッチ→ビルド→公開。
+- **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が cron で再フェッチ→ビルド→`doctor`→公開。
   Cloudflare 側の Git 連携によるビルドは**意図的に無効化**している（`deployments_enabled: false`）。Cosense の編集は git のコミットを生まないため push 起点のビルドでは記事の更新を拾えず、定期実行できる Actions 側に公開経路を一本化している。再有効化すると公開経路が二重になるので注意。
 - **CI**: `.github/workflows/ci.yml` が PR ごとにビルド検証（fetch→ビルド→`doctor`）を回す。公開はしない。
   `doctor` は結果をログに残すだけで PR を落とさない（fail 条件のほとんどが Cosense 側の編集起因で、コード変更と無関係に赤くなるため）。
+  コンテンツを検査するゲートは、コンテンツを公開する経路である `deploy.yml` 側に置いている（下記）。
+
+### 公開前ゲート
+
+`deploy.yml` はビルドの後・公開の前に `cosense-site doctor` を挟み、fail なら公開しない。fail 条件（公開 0 件・`.site` の `code:site.yaml` がパース失敗・nav / home の参照切れ・slug 衝突）はどれも**今公開されているサイトより悪いものを出す**状態にあたる。
+
+止まったときに起きるのは「サイトが消える」ではなく「**直前のデプロイが配信され続ける**」。Cosense 側を直せば次の cron（12 時間後）で自動的に復帰する。warn 止まりの項目（broken link）は exit code に影響しないのでゲートには入らない。
+
+止まったことに気付けるよう、失敗した run は `deploy-blocked` ラベル付きの Issue を 1 件だけ自動で起票する。**直したらその Issue を close すること**（open のままだと次の失敗が起票されない）。
+
+承知のうえで公開したいときは、手動実行で `skip_doctor: true` を付けるとゲートを飛ばせる。
+
+```bash
+gh workflow run "deploy website" -f skip_doctor=true
+```
 
 ### スケジュール実行の維持
 
@@ -40,7 +55,7 @@ npm run dev     # http://localhost:4321
 | `npm run build` | fetch + `astro build` → `dist/` |
 | `npm run preview` | ビルド結果のプレビュー |
 | `npm run validate` | 中間データの検証 |
-| `npm run doctor` | 公開前チェック（参照切れ・draft漏れ等） |
+| `npm run doctor` | 公開前チェック（公開 0 件・参照切れ・slug 衝突など。`deploy.yml` のゲートと同じもの） |
 
 ## テンプレート
 

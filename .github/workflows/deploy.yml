@@ -7,6 +7,11 @@ on:
         default: "main"
         required: true
 
+      skip_doctor:
+        description: 公開前ゲート (doctor) を飛ばして公開する
+        type: boolean
+        default: false
+
   schedule:
     # 毎日 01:17 / 13:17 UTC に Cosense から再フェッチして再デプロイ
     # (schedule はデフォルトブランチ main でのみ発火する)
@@ -19,6 +24,8 @@ jobs:
       # contents: write — 稼働記録のコミットに必要 (下の heartbeat ステップ)
       contents: write
       deployments: write
+      # issues: write — 公開が止まったときの起票に必要 (下の report ステップ)
+      issues: write
     steps:
       - name: checkout
         uses: actions/checkout@v7
@@ -77,6 +84,26 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
 
+      # 公開前ゲート。fail 条件 (公開 0 件・.site の code:site.yaml がパース失敗・
+      # nav / home の参照切れ・slug 衝突) はどれも「今 live のサイトより悪いものを出す」
+      # 状態にあたる。ここで止めても publish が走らないだけで、Cloudflare Pages は
+      # 直前のデプロイを配信し続ける — 起きるのは「サイトが消える」ではなく
+      # 「昨日のサイトが据え置かれる」。Cosense 側を直せば次の cron で自動的に復帰する。
+      #
+      # heartbeat より後・publish より前に置いてある。前に置くと、ゲートが落ち続けて
+      # いる間ずっと稼働記録のコミットが生まれず、60 日で cron が自動停止する
+      # (このリポが 292 日止まったのと同じ経路)。build 1 回ぶんを捨てる代わりに、
+      # 公開が止まっている間も cron は生かしておく。
+      #
+      # warn 止まりの項目 (broken link) は exit code に影響しないのでゲートに入らない。
+      # PR 側 (ci.yml) の doctor は continue-on-error のまま。あちらの fail 条件は
+      # コード変更と独立に赤くなるが、ここは公開しようとしている中身そのものの問題になる。
+      #
+      # schedule 起動では inputs が空なので skip_doctor は null 扱いになり、必ず走る。
+      - name: Doctor
+        id: doctor
+        if: ${{ !inputs.skip_doctor }}
+        run: npx cosense-site doctor
 
       # cloudflare/pages-action はアーカイブ済み。後継の wrangler-action で
       # `wrangler pages deploy` を実行する。gitHubToken を渡すと pages-action と
@@ -92,3 +119,38 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           command: pages deploy dist --project-name=ogurilab-org --branch=main --commit-dirty=true
+
+      # ゲートで止まったことに気付けるようにする。このワークフローの失敗メールは
+      # cron を最後に編集した人にしか飛ばず埋もれやすいので、リポジトリ側に残す。
+      # open な起票が既にあれば何もしないため、直すまで 12 時間ごとに増えたりはしない
+      # (裏返しに、直したら close しないと次の失敗が起票されない)。
+      - name: Report the stopped publish
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DOCTOR_OUTCOME: ${{ steps.doctor.outcome }}
+        run: |
+          gh label create deploy-blocked --force --color B60205 \
+            --description "自動デプロイが失敗して公開が止まっている"
+          existing=$(gh issue list --state open --label deploy-blocked --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "既に #$existing で起票済み。重ねて起票しない。"
+            exit 0
+          fi
+          if [ "$DOCTOR_OUTCOME" = "failure" ]; then
+            cause="公開前ゲート (\`cosense-site doctor\`) が fail を返したため、公開を止めました。Cosense 側の内容を直せば、次の cron で自動的に復帰します。"
+          else
+            cause="doctor 以外のステップが失敗したため、公開まで到達しませんでした。"
+          fi
+          cat > "$RUNNER_TEMP/body.md" <<MD
+          $cause
+
+          - 失敗した run: $RUN_URL
+          - サイトは直前のデプロイをそのまま配信し続けています (巻き戻ってはいません)
+          - 直したらこの Issue を close してください
+
+          承知のうえで公開したい場合は、deploy website を \`skip_doctor: true\` 付きで手動実行してください。
+          MD
+          gh issue create --title "deploy: 自動デプロイが失敗して公開が止まっています" \
+            --label deploy-blocked --body-file "$RUNNER_TEMP/body.md"
