@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm ci:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run fetch:*)",
+      "Bash(npm run validate:*)",
+      "Bash(npm run doctor:*)",
+      "Bash(npm run preview:*)",
+      "Bash(npx cosense-site fetch:*)",
+      "Bash(npx cosense-site validate:*)",
+      "Bash(npx cosense-site doctor:*)",
+      "Bash(npx astro build:*)",
+      "Bash(npx astro check:*)"
+    ]
+  }
+}
