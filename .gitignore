@@ -7,3 +7,7 @@ public/cosense-icons/
 .env.local
 .DS_Store
 *.tsbuildinfo
+
+# Claude Code のマシンローカル設定 (共有しない)
+.claude/settings.local.json
+.claude/worktrees/
