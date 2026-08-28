@@ -7,6 +7,7 @@
 - **テーマ**: `theme/`（cosense-theme-lab をこのリポジトリに vendoring。編集自由。フレームワーク `@cosense-site-kit/*` のみ npm 由来）
 - **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が cron で再フェッチ→ビルド→`doctor`→公開。
   Cloudflare 側の Git 連携によるビルドは**意図的に無効化**している（`deployments_enabled: false`）。Cosense の編集は git のコミットを生まないため push 起点のビルドでは記事の更新を拾えず、定期実行できる Actions 側に公開経路を一本化している。再有効化すると公開経路が二重になるので注意。
+  この設定の反映として、Cloudflare ダッシュボード（Workers & Pages）にはオレンジのアイコンと**「デプロイが一時停止されました」（Deployments paused）が常時表示される**。これは異常ではなく、Git 連携によるビルドを止めてある状態を指している。`wrangler pages deploy` による公開はこの表示と無関係に動くため、公開が生きているかは Actions の `deploy website` の実行結果で判断する。
 - **CI**: `.github/workflows/ci.yml` が PR ごとにビルド検証（fetch→ビルド→`doctor`）を回す。公開はしない。
   `doctor` は結果をログに残すだけで PR を落とさない（fail 条件のほとんどが Cosense 側の編集起因で、コード変更と無関係に赤くなるため）。
   コンテンツを検査するゲートは、コンテンツを公開する経路である `deploy.yml` 側に置いている（下記）。
