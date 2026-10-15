@@ -13,12 +13,84 @@ on:
         default: false
 
   schedule:
-    # 毎日 01:17 / 13:17 UTC に Cosense から再フェッチして再デプロイ
-    # (schedule はデフォルトブランチ main でのみ発火する)
-    - cron: "17 1,13 * * *"
+    # 15 分ごとに起動し、check ジョブが変更を検知したときだけビルド・公開する
+    # (schedule はデフォルトブランチ main でのみ発火する)。毎時 0 分は GitHub 全体で
+    # 混み合い遅延・取りこぼしが出やすいので外してある。
+    - cron: "7,22,37,52 * * * *"
+
+# 公開は重ねて走らせない。走っている公開は途中で止めず、後続は待たせる
+# (待ちは最新の 1 件だけ残り、それより古い待ちは GitHub が捨てる)。
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
 
 jobs:
+  # 空振りのビルドを省くための安い事前判定。更新頻度は低いので、15 分ごとの起動の
+  # ほとんどはここだけで終わる。判定に使う指紋は次の 3 つを連結したもの:
+  #
+  # - UTC の日付 — 変更が無くても 1 日 1 回は必ず公開まで走らせる。下の
+  #   heartbeat ステップは deploy ジョブの中にあるので、これが無いと無更新が
+  #   60 日続いたときに稼働記録コミットが生まれず cron が止まる (ADR 0003)。
+  #   指紋で拾えない変化 (Cosense のアイコン差し替えなど) の取りこぼしも 1 日で埋まる
+  # - main の commit SHA — theme/ などのコード変更。push では公開しないので、
+  #   これを入れないとコード変更が翌日まで出ない
+  # - Cosense の総ページ数と最終更新時刻 — 記事の編集・#publish の付け外し (編集
+  #   扱いで更新時刻が進む)・ページ削除 (総数が減る) を拾う
+  #
+  # 公開済みの指紋は actions/cache に空に近いエントリとして記録し、ここでは有無だけを
+  # 見る。キャッシュは 7 日使われないと消えるが、消えても 1 回余分に公開するだけ。
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.decide.outputs.changed }}
+      fingerprint: ${{ steps.fingerprint.outputs.value }}
+    steps:
+      - name: Compute fingerprint
+        id: fingerprint
+        env:
+          # cosense.config.ts の source.project と揃える
+          COSENSE_PROJECT: dclab
+        run: |
+          # sort=updated はピン留めページを先頭に返すので、1 件目ではなく先頭 100 件の
+          # 最大値を取る (ピン留めが 99 件を超えない限りこれで全体の最大値になる)
+          if ! res=$(curl -fsS --retry 3 --max-time 30 \
+              "https://scrapbox.io/api/pages/${COSENSE_PROJECT}?sort=updated&limit=100"); then
+            # 判定できないときは従来どおり公開まで走らせる (止まるより空振りのほうがよい)
+            echo "::warning::Cosense の更新状況を取得できなかったため、変更ありとして扱う"
+            exit 0
+          fi
+          cosense=$(jq -r '"\(.count)-\([.pages[].updated] | max)"' <<<"$res")
+          value="$(date -u +%F)-${GITHUB_SHA::12}-${cosense}"
+          echo "fingerprint: $value"
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+
+      - name: Look up the deployed fingerprint
+        id: lookup
+        if: github.event_name == 'schedule' && steps.fingerprint.outputs.value != ''
+        uses: actions/cache/restore@v6
+        with:
+          path: .deploy-marker
+          key: deployed-${{ steps.fingerprint.outputs.value }}
+          lookup-only: true
+
+      # 手動実行は常に公開する (判定は schedule 起動のときだけ)
+      - name: Decide
+        id: decide
+        env:
+          HIT: ${{ steps.lookup.outputs.cache-hit }}
+        run: |
+          if [ "$HIT" = "true" ]; then
+            echo "前回の公開から変更なし。今回はビルドしない。"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       # contents: write — 稼働記録のコミットに必要 (下の heartbeat ステップ)
@@ -122,7 +194,7 @@ jobs:
 
       # ゲートで止まったことに気付けるようにする。このワークフローの失敗メールは
       # cron を最後に編集した人にしか飛ばず埋もれやすいので、リポジトリ側に残す。
-      # open な起票が既にあれば何もしないため、直すまで 12 時間ごとに増えたりはしない
+      # open な起票が既にあれば何もしないため、直すまで失敗のたびに増えたりはしない
       # (裏返しに、直したら close しないと次の失敗が起票されない)。
       - name: Report the stopped publish
         if: failure()
@@ -154,3 +226,30 @@ jobs:
           MD
           gh issue create --title "deploy: 自動デプロイが失敗して公開が止まっています" \
             --label deploy-blocked --body-file "$RUNNER_TEMP/body.md"
+
+      # 公開した指紋を記録し、同じ内容での再ビルドを次の check で省かせる。doctor で
+      # 止まった場合も記録する — 内容が同じならやり直しても同じ結果になるので、
+      # Cosense 側が直る (= 指紋が変わる) まで 15 分ごとに捨てるビルドを回さない。
+      # それ以外の失敗 (ネットワーク等) は一過性かもしれないので記録せず、次で再試行する。
+      # main 以外の ref を手動で公開したときは main の指紋と一致しないので記録しない。
+      - name: Prepare the deployed marker
+        id: marker
+        if: >-
+          !cancelled()
+          && needs.check.outputs.fingerprint != ''
+          && (github.event.inputs.ref == '' || github.event.inputs.ref == 'main')
+          && (success() || steps.doctor.outcome == 'failure')
+        env:
+          FINGERPRINT: ${{ needs.check.outputs.fingerprint }}
+        run: |
+          mkdir -p .deploy-marker
+          echo "$FINGERPRINT" > .deploy-marker/fingerprint
+
+      - name: Record the deployed fingerprint
+        if: ${{ !cancelled() && steps.marker.outcome == 'success' }}
+        # 付随的な処理なので、失敗しても run を赤くしない (次の check で 1 回余分に公開するだけ)
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: .deploy-marker
+          key: deployed-${{ needs.check.outputs.fingerprint }}

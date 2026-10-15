@@ -14,7 +14,7 @@ ogurilab の研究室サイトです。内容の追加・修正は **多くの�
 | 見た目 (レイアウト・配色・コンポーネント) | このリポの `theme/` |
 | 公開の仕組み・CI | このリポの `.github/workflows/` |
 
-反映は 12 時間ごとの cron です。急ぐときは `gh workflow run "deploy website"`。
+反映は 15 分ごとの cron です (変更が無ければビルドせず終わる)。急ぐときは `gh workflow run "deploy website"`。
 
 ## 開発
 
