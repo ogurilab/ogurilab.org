@@ -13,3 +13,4 @@
 | [0001](./0001-publish-via-actions-cron.md) | 公開経路を GitHub Actions の cron に一本化する | 有効 |
 | [0002](./0002-doctor-as-deploy-gate.md) | doctor を CI でなく公開前ゲートに置く | 有効 |
 | [0003](./0003-heartbeat-commit-keeps-cron-alive.md) | 稼働記録コミットでスケジュール実行を維持する | 有効 |
+| [0004](./0004-frequent-cron-with-change-check.md) | cron を 15 分間隔にし、変更検知でビルドを省く | 有効 |

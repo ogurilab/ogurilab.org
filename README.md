@@ -5,7 +5,7 @@
 
 - **データソース**: Cosense プロジェクト（`cosense.config.ts` の `source.project`）
 - **テーマ**: `theme/`（cosense-theme-lab をこのリポジトリに vendoring。編集自由。フレームワーク `@cosense-site-kit/*` のみ npm 由来）
-- **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が cron で再フェッチ→ビルド→`doctor`→公開。
+- **デプロイ**: Cloudflare Pages（プロジェクト `ogurilab-org` + 独自ドメイン ogurilab.org）。`.github/workflows/deploy.yml` が 15 分ごとの cron で Cosense と main の変更を確かめ、変更があれば再フェッチ→ビルド→`doctor`→公開（[ADR 0004](./docs/decisions/0004-frequent-cron-with-change-check.md)）。
   Cloudflare 側の Git 連携によるビルドは**意図的に無効化**している（`deployments_enabled: false`）。Cosense の編集は git のコミットを生まないため push 起点のビルドでは記事の更新を拾えず、定期実行できる Actions 側に公開経路を一本化している。再有効化すると公開経路が二重になるので注意。
   この設定の反映として、Cloudflare ダッシュボード（Workers & Pages）にはオレンジのアイコンと**「デプロイが一時停止されました」（Deployments paused）が常時表示される**。これは異常ではなく、Git 連携によるビルドを止めてある状態を指している。`wrangler pages deploy` による公開はこの表示と無関係に動くため、公開が生きているかは Actions の `deploy website` の実行結果で判断する。
 - **CI**: `.github/workflows/ci.yml` が PR ごとにビルド検証（fetch→ビルド→`doctor`）を回す。公開はしない。
@@ -16,7 +16,7 @@
 
 `deploy.yml` はビルドの後・公開の前に `cosense-site doctor` を挟み、fail なら公開しない。fail 条件（公開 0 件・`.site` の `code:site.yaml` がパース失敗・nav / home の参照切れ・slug 衝突）はどれも**今公開されているサイトより悪いものを出す**状態にあたる。
 
-止まったときに起きるのは「サイトが消える」ではなく「**直前のデプロイが配信され続ける**」。Cosense 側を直せば次の cron（12 時間後）で自動的に復帰する。warn 止まりの項目（broken link）は exit code に影響しないのでゲートには入らない。
+止まったときに起きるのは「サイトが消える」ではなく「**直前のデプロイが配信され続ける**」。Cosense 側を直せば次の cron（15 分以内）で自動的に復帰する。warn 止まりの項目（broken link）は exit code に影響しないのでゲートには入らない。
 
 止まったことに気付けるよう、失敗した run は `deploy-blocked` ラベル付きの Issue を 1 件だけ自動で起票する。**直したらその Issue を close すること**（open のままだと次の失敗が起票されない）。
 
