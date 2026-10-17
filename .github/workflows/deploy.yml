@@ -111,11 +111,13 @@ jobs:
           node-version: "24.x"
           cache: npm
 
+      # key は run ごとに一意にする。actions/cache は主キーに exact hit すると保存を
+      # 省くので、固定キーだと初回の内容で凍結し、差分フェッチが効かなくなる (#82)。
       - name: Restore Cosense cache
         uses: actions/cache@v6
         with:
           path: .cosense-cache
-          key: cosense-cache-${{ github.ref }}
+          key: cosense-cache-${{ github.run_id }}
           restore-keys: |
             cosense-cache-
 
