@@ -4,8 +4,15 @@ import { getCollection } from "astro:content";
 import { path, slugifyHeading } from "@cosense-site-kit/theme-utils";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import Layout from "../components/Layout.astro";
+import LogoMark from "../components/LogoMark.astro";
+import YearSelect from "../components/YearSelect.astro";
 import { responsiveImage } from "../lib/photos";
 import { ordinal, splitSections } from "../lib/sections";
+import { inlineText } from "../lib/content";
+import { newsSummary } from "../lib/news";
+import options from "virtual:cosense-theme-lab/options";
+import { hasTag, loadStructure } from "@cosense-site-kit/theme-utils";
+import type { CosenseBlock, InlineNode } from "@cosense-site-kit/core";
 
 // A landing-style template: the page body is split into sections and each one
 // is laid out from what it contains (see lib/sections.ts). Not About-specific —
@@ -40,6 +47,146 @@ for (const e of all) {
   });
 }
 
+// ----- Tidying passes on top of the generic layouts -----------------------
+
+// A paragraph that is nothing but tags (`#template/sections`, `#publish`) is
+// page metadata, not content — drop it wherever it lands.
+const isTagLine = (b: CosenseBlock) =>
+  b.type === "paragraph" &&
+  b.children.every((n) => n.type === "tag" || (n.type === "text" && !n.value.trim()));
+for (const s of sections) s.blocks = s.blocks.filter((b) => !isTagLine(b));
+
+// A lead that is only tags ("#publish #no-date") is the page's tag line.
+for (const s of sections) if (s.lead && /^(#\S+\s*)+$/.test(s.lead.trim())) s.lead = undefined;
+// "OurMission" → "Our Mission" (two English words written without a space).
+for (const s of sections) if (/^[A-Z][a-z]+[A-Z][a-z]+$/.test(s.title)) s.title = s.title.replace(/([a-z])([A-Z])/, "$1 $2");
+
+// Per-section display mode on top of the generic layout:
+//   statement — prose that is one sub-heading + its paragraph
+//   numbered  — prose that is two or more sub-heading + paragraph pairs
+//   chips     — "cards" that link nowhere (e.g. "Unity, Blender, …")
+//   links     — cards without any pictures: a row of plain links instead of
+//               empty picture frames
+type Mode = "statement" | "links" | undefined;
+const modeOf = new Map<(typeof sections)[number], Mode>();
+const statementOf = new Map<(typeof sections)[number], { head: string; body: string }>();
+const blankPara = (b: CosenseBlock) =>
+  b.type === "paragraph" && b.children.every((n) => n.type === "text" && !n.value.trim());
+for (const s of sections) {
+  if (s.layout === "prose") {
+    const real = s.blocks.filter((b) => !blankPara(b));
+    const pairs: { title: string; body: string }[] = [];
+    let ok = real.length >= 2 && real.length % 2 === 0;
+    for (let i = 0; ok && i < real.length; i += 2) {
+      const h = real[i];
+      const p = real[i + 1];
+      if (h.type !== "heading" || p.type !== "paragraph") ok = false;
+      else pairs.push({ title: inlineText(h.children).trim(), body: inlineText(p.children).trim() });
+    }
+    if (ok && pairs.length === 1) {
+      modeOf.set(s, "statement");
+      statementOf.set(s, { head: pairs[0].title, body: pairs[0].body });
+    } else if (ok && pairs.length >= 2) {
+      s.layout = "numbered";
+      s.items = pairs;
+      s.blocks = [];
+    }
+  } else if (s.layout === "cards") {
+    // nothing to link to (no URL, and no published page by that name)
+    if (s.items.every((i) => !i.href && !(i.page && linked.get(i.page)))) {
+      s.layout = "chips";
+      s.items = s.items
+        .flatMap((i) => `${i.title}${i.body ?? ""}`.split(/\s*[,、]\s*/))
+        .map((t) => t.trim())
+        .filter((t) => t && !/^etc\.?$/i.test(t))
+        .map((title) => ({ title }));
+    } else if (s.items.every((i) => !(i.page && linked.get(i.page)?.image))) {
+      modeOf.set(s, "links");
+    }
+  }
+}
+// Section numbers (01, 02, …) for pages made of several titled sections.
+const titled = sections.filter((s) => s.title);
+const numberOf = new Map(titled.map((s, i) => [s, String(i + 1).padStart(2, "0")]));
+const showNumbers = titled.length >= 3;
+
+// Link labels for the "links" row: nav pages get their Japanese name.
+const LINK_JA: Record<string, string> = {
+  research: "研究",
+  members: "メンバー",
+  "members data": "メンバー",
+  publications: "業績",
+  news: "ニュース",
+  contact: "お問い合わせ",
+  about: "研究室について",
+  gallery: "ギャラリー",
+};
+
+const pageLinksIn = (nodes: InlineNode[]): string[] => {
+  const out: string[] = [];
+  const walk = (ns: InlineNode[]) => {
+    for (const n of ns) {
+      if (n.type === "pageLink") out.push(n.title);
+      else if ("children" in n && Array.isArray(n.children)) walk(n.children as InlineNode[]);
+    }
+  };
+  walk(nodes);
+  return out;
+};
+
+// "Works" lists: a prose section made of sub-headings (年度) each followed by
+// `[name] [title]` lines. Drawn as a year-switchable list of titles with the
+// author's name under each, instead of a raw bullet list of links.
+interface Work { name: string; title: string }
+interface WorkGroup { label: string; works: Work[] }
+function worksOf(blocks: CosenseBlock[]): WorkGroup[] | null {
+  const groups: WorkGroup[] = [];
+  let current: WorkGroup | null = null;
+  for (const b of blocks) {
+    if (b.type === "heading") {
+      current = { label: inlineText(b.children).trim(), works: [] };
+      groups.push(current);
+      continue;
+    }
+    if (b.type === "list" && current) {
+      const links = pageLinksIn(b.children);
+      if (links.length < 2) return null;
+      current.works.push({ name: links[0], title: links[1] });
+      continue;
+    }
+    return null; // anything else: leave the section as prose
+  }
+  const ok = groups.length > 0 && groups.every((g) => g.works.length > 0);
+  return ok ? groups : null;
+}
+
+// "See the publications" sections: a prose section whose only content is one
+// short line linking to a page. Rendered as a short list of the latest talks (news posts
+// that report a presentation) plus a proper "see all" link.
+function soleLinkOf(blocks: CosenseBlock[]): string | null {
+  // blank lines don't count
+  const real = blocks.filter(
+    (b) => !(b.type === "paragraph" && b.children.every((n) => n.type === "text" && !n.value.trim())),
+  );
+  if (real.length !== 1) return null;
+  const only = real[0];
+  if (only.type !== "paragraph" && only.type !== "list") return null;
+  // one short line pointing at one page ("すべての業績は [Publications] に…")
+  const links = pageLinksIn(only.children);
+  if (links.length !== 1) return null;
+  if (inlineText(only.children).trim().length > 60) return null;
+  return links[0];
+}
+const structure = await loadStructure();
+const newsTag = structure.posts?.tag ?? options.newsTag;
+const recentTalks = all
+  .filter((e) => hasTag(e.data.tags, newsTag))
+  .map((e) => newsSummary(e))
+  .filter((n) => /発表/.test(n.title))
+  .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+  .slice(0, 4);
+const pad = (n: number) => String(n).padStart(2, "0");
+
 // Not every page's summary earns a place on a card:
 //   - a page whose first line is an image or a bare link has that raw
 //     `[https://gyazo.com/…]` markup as its summary, which reads as noise;
@@ -49,11 +196,14 @@ function usableSummary(summary: string | null | undefined, title: string): strin
   const text = summary?.trim();
   if (!text || /^\[?https?:\/\//.test(text)) return undefined;
   if (text.slice(0, 16) === title.slice(0, 16)) return undefined;
+  // "RinkuTwilightにて…を行いました" under a title that already says so
+  const head = text.replace(/[。．.]$/, "").slice(0, 18);
+  if (head.length >= 10 && title.includes(head.slice(-10))) return undefined;
   return text;
 }
 ---
 
-<Layout title={page.title} description={page.summary} image={page.image} ogType="article" wide>
+<Layout title={page.title} sourceUrl={page.sourceUrl} description={page.summary} image={page.image} ogType="article" wide>
   <article data-pagefind-body>
     <header class="page-header">
       {page.draft && <span class="draft-badge">Draft · preview only</span>}
@@ -64,6 +214,7 @@ function usableSummary(summary: string | null | undefined, title: string): strin
       <section class:list={["sx", `sx--${section.layout}`]}>
         {section.title && (
           <div class="sx__head">
+            {showNumbers && <p class="sx__no" aria-hidden="true">{numberOf.get(section)}</p>}
             <h2 id={slugifyHeading(section.title)}>{section.title}</h2>
             {section.lead && <p class="sx__lead">{section.lead}</p>}
           </div>
@@ -72,7 +223,89 @@ function usableSummary(summary: string | null | undefined, title: string): strin
         {/* Every layout uses this same body; `hero` differs only in that CSS
             puts the prose and the figures side by side. */}
         <div class="sx__body">
-          {section.blocks.length > 0 && <PageContent blocks={section.blocks} />}
+          {(() => {
+            if (modeOf.get(section) === "statement") {
+              const st = statementOf.get(section)!;
+              return (
+                <div class="sx-statement">
+                  <p class="sx-statement__head">{st.head}</p>
+                  <p class="sx-statement__body">{st.body}</p>
+                </div>
+              );
+            }
+            const works = section.layout === "prose" ? worksOf(section.blocks) : null;
+            const sole = section.layout === "prose" ? soleLinkOf(section.blocks) : null;
+            if (works) {
+              const total = works.reduce((n, g) => n + g.works.length, 0);
+              return (
+                <div class="works">
+                  {works.length > 1 && (
+                    <YearSelect
+                      class="works__years"
+                      label="表示する年度"
+                      value="0"
+                      options={[
+                        ...works.map((g, gi) => ({ value: String(gi), label: g.label, count: g.works.length })),
+                        { value: "all", label: "すべての年度", count: total },
+                      ]}
+                    />
+                  )}
+                  {works.map((g, gi) => (
+                    <div class="works__group" data-works-group={gi} hidden={gi > 0 && works.length > 1}>
+                      <h3 class="works__label">{g.label}<span>{g.works.length} 件</span></h3>
+                      <ul class="works__list">
+                        {g.works.map((w) => {
+                          const t = linked.get(w.title);
+                          const n = linked.get(w.name);
+                          return (
+                            <li class="works__item">
+                              {t ? (
+                                <a class="works__title" href={path(t.slug)}>{w.title}</a>
+                              ) : (
+                                <span class="works__title">{w.title}</span>
+                              )}
+                              {n ? (
+                                <a class="works__name" href={path(n.slug)}>{w.name}</a>
+                              ) : (
+                                <span class="works__name">{w.name}</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            if (sole) {
+              const target = linked.get(sole);
+              return (
+                <div class="talks">
+                  {/publication|業績|発表/i.test(sole) && recentTalks.length > 0 && (
+                    <ul class="talks__list">
+                      {recentTalks.map((n) => (
+                        <li class="talks__item">
+                          {n.date && (
+                            <time class="talks__date" datetime={n.date.toISOString()}>
+                              {n.date.getFullYear()}.{pad(n.date.getMonth() + 1)}
+                            </time>
+                          )}
+                          <a class="talks__title" href={path(n.slug)}>{n.title}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {target && (
+                    <a class="more talks__more" href={path(target.slug)}>
+                      すべての{/publication/i.test(sole) ? "業績" : sole}を見る<span aria-hidden="true">→</span>
+                    </a>
+                  )}
+                </div>
+              );
+            }
+            return section.blocks.length > 0 ? <PageContent blocks={section.blocks} /> : null;
+          })()}
 
           {section.images.length > 0 && (
             <div class="sx__figures">
@@ -100,10 +333,12 @@ function usableSummary(summary: string | null | undefined, title: string): strin
           )}
 
           {section.layout === "numbered" && (
-            <ol class="sx__numbered">
+            <ol class:list={["sx__numbered", { "is-plain": showNumbers }]}>
               {section.items.map((item, i) => (
                 <li class="sx__num-item">
-                  <span class="sx__num" aria-hidden="true">{ordinal(i)}</span>
+                  {/* the page already numbers its sections (01, 02 …), so a
+                      numbered list inside one only keeps its accent tick */}
+                  {!showNumbers && <span class="sx__num" aria-hidden="true">{ordinal(i)}</span>}
                   <div>
                     <p class="sx__num-title">{item.title}</p>
                     {item.body && <p class="sx__num-body">{item.body}</p>}
@@ -113,7 +348,38 @@ function usableSummary(summary: string | null | undefined, title: string): strin
             </ol>
           )}
 
-          {section.layout === "cards" && (
+          {modeOf.get(section) === "links" && (
+            <ul class="sx-links">
+              {section.items.map((item) => {
+                const ref = item.page ? linked.get(item.page) : undefined;
+                const href = item.href ?? (ref ? path(ref.slug) : undefined);
+                const ja = LINK_JA[item.title.trim().toLowerCase()];
+                const label = ja ?? item.title.replace(/\s*[（(]\d{4}-\d{2}-\d{2}[）)]\s*$/, "");
+                return href ? (
+                  <li>
+                    <a class="sx-cta" href={href} {...(item.href ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+                      <span class="sx-cta__title">{label}</span>
+                      {ja && <span class="sx-cta__text">{item.title.replace(/\s*data$/i, "")}</span>}
+                      <span class="sx-cta__arrow" aria-hidden="true">→</span>
+                    </a>
+                  </li>
+                ) : null;
+              })}
+            </ul>
+          )}
+
+          {section.layout === "cards" && modeOf.get(section) !== "links" && (
+            <div class:list={["sx__cards-wrap", { "is-slider": section.items.length > 3 }]} data-cards-slider={section.items.length > 3 ? "" : undefined}>
+            {section.items.length > 3 && (
+              <div class="sx__slide-nav">
+                <button type="button" class="sx__slide-btn" data-dir="-1" aria-label="前へ" disabled>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+                </button>
+                <button type="button" class="sx__slide-btn" data-dir="1" aria-label="次へ">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                </button>
+              </div>
+            )}
             <ul class="sx__cards">
               {section.items.map((item) => {
                 const ref = item.page ? linked.get(item.page) : undefined;
@@ -134,12 +400,12 @@ function usableSummary(summary: string | null | undefined, title: string): strin
                         />
                       ) : (
                         <span class="sx__card-ph" aria-hidden="true">
-                          {Array.from(item.title.trim())[0] ?? "·"}
+                          <LogoMark class="thumb-mark" />
                         </span>
                       )}
                     </span>
                     <span class="sx__card-body">
-                      <span class="sx__card-title">{item.title}</span>
+                      <span class="sx__card-title">{item.title.replace(/\s*[（(]\d{4}-\d{2}-\d{2}[）)]\s*$/, "")}</span>
                       {body && <span class="sx__card-text">{body}</span>}
                     </span>
                   </Fragment>
@@ -162,6 +428,7 @@ function usableSummary(summary: string | null | undefined, title: string): strin
                 );
               })}
             </ul>
+            </div>
           )}
 
           {section.layout === "chips" && (
@@ -174,12 +441,62 @@ function usableSummary(summary: string | null | undefined, title: string): strin
         </div>
       </section>
     ))}
-
-    <footer class="source" data-pagefind-ignore>
-      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
-    </footer>
   </article>
 </Layout>
+
+<script>
+  // 年度 pulldown on a works list: show one year (or all), fading it in.
+  function initWorks(): void {
+    document.querySelectorAll<HTMLElement>(".works").forEach((root) => {
+      if (root.dataset.wired) return;
+      root.dataset.wired = "1";
+      const groups = [...root.querySelectorAll<HTMLElement>("[data-works-group]")];
+      root.addEventListener("mf-change", (e) => {
+        const v = (e as CustomEvent<{ value: string }>).detail.value;
+        root.classList.toggle("is-all", v === "all");
+        groups.forEach((g) => {
+          g.hidden = v !== "all" && g.dataset.worksGroup !== v;
+          g.classList.remove("is-in");
+          void g.offsetWidth;
+          if (!g.hidden) g.classList.add("is-in");
+        });
+      });
+    });
+  }
+  // Card rows with more than three cards: three at a time, slid sideways
+  // with the arrow buttons (or a swipe / trackpad); arrows dim at the ends.
+  function initCardSliders(): void {
+    document.querySelectorAll<HTMLElement>("[data-cards-slider]").forEach((wrap) => {
+      if (wrap.dataset.ready) return;
+      wrap.dataset.ready = "1";
+      const track = wrap.querySelector<HTMLElement>(".sx__cards");
+      const btns = [...wrap.querySelectorAll<HTMLButtonElement>(".sx__slide-btn")];
+      if (!track) return;
+      const update = () => {
+        const thumb = track.querySelector<HTMLElement>(".sx__card-thumb");
+        if (thumb) wrap.style.setProperty("--thumb-mid", `${thumb.offsetHeight / 2}px`);
+        const max = track.scrollWidth - track.clientWidth - 2;
+        btns[0].disabled = track.scrollLeft <= 2;
+        btns[1].disabled = track.scrollLeft >= max;
+      };
+      btns.forEach((b) =>
+        b.addEventListener("click", () => {
+          const card = track.querySelector<HTMLElement>(".sx__card");
+          const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+          const step = card ? card.offsetWidth + gap : track.clientWidth;
+          track.scrollBy({ left: step * Number(b.dataset.dir), behavior: "smooth" });
+        }),
+      );
+      track.addEventListener("scroll", () => requestAnimationFrame(update), { passive: true });
+      window.addEventListener("resize", update);
+      update();
+    });
+  }
+  initCardSliders();
+  document.addEventListener("astro:page-load", initCardSliders);
+  initWorks();
+  document.addEventListener("astro:page-load", initWorks);
+</script>
 
 <style>
   /* Section rhythm. Generous vertical space is what makes a stack of sections
@@ -193,6 +510,26 @@ function usableSummary(summary: string | null | undefined, title: string): strin
 
   .sx__head {
     margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  }
+  /* Section number: a small mono numeral on a short accent rule, above the
+     heading — gives the stack of sections a quiet table-of-contents rhythm. */
+  .sx__no {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--color-accent-bright);
+  }
+  .sx__no::after {
+    content: "";
+    width: 2rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.45;
   }
   .sx__head h2 {
     margin: 0;
@@ -370,6 +707,7 @@ function usableSummary(summary: string | null | undefined, title: string): strin
     height: 2px;
     background: var(--color-accent);
   }
+  .sx__numbered.is-plain .sx__num-item { padding-top: 1rem; }
   .sx__num {
     display: block;
     margin-bottom: 0.625rem;
@@ -399,6 +737,68 @@ function usableSummary(summary: string | null | undefined, title: string): strin
   }
 
   /* ----- Card grid (thumbnail + title + summary) ----- */
+
+  /* ----- Card slider (more than three cards) ----- */
+  .sx__cards-wrap { position: relative; }
+  .sx__cards-wrap.is-slider .sx__cards {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: calc((100% - 2 * clamp(1rem, 2.5vw, 1.75rem)) / 3);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    padding-bottom: 0.25rem;
+  }
+  .sx__cards-wrap.is-slider .sx__cards::-webkit-scrollbar { display: none; }
+  .sx__cards-wrap.is-slider .sx__card { scroll-snap-align: start; }
+  @media (max-width: 720px) {
+    .sx__cards-wrap.is-slider .sx__cards { grid-auto-columns: 78%; }
+  }
+  /* Arrows float over the pictures, at the left and right edges, centred on
+     the thumbnails (their height is set from the script). At an end the
+     arrow fades out. */
+  .sx__slide-nav {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .sx__slide-btn {
+    position: absolute;
+    top: var(--thumb-mid, 6rem);
+    translate: 0 -50%;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.68);
+    color: var(--color-text);
+    box-shadow: 0 8px 22px -8px rgb(34 38 38 / 0.45);
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    transition: color 0.2s var(--ease), background-color 0.2s var(--ease), opacity 0.3s var(--ease), scale 0.25s var(--ease-out);
+  }
+  .sx__slide-btn[data-dir="-1"] { left: 0.6rem; }
+  .sx__slide-btn[data-dir="1"] { right: 0.6rem; }
+  .sx__slide-btn:hover:not(:disabled) { color: var(--color-accent); scale: 1.06; background: rgb(255 255 255 / 0.9); }
+  .sx__slide-btn:disabled { opacity: 0; pointer-events: none; }
+  .sx__slide-btn svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 
   .sx__cards {
     list-style: none;
@@ -450,10 +850,9 @@ function usableSummary(summary: string | null | undefined, title: string): strin
     justify-content: center;
     width: 100%;
     height: 100%;
-    font-family: var(--font-display);
-    font-size: 1.75rem;
     color: var(--color-text-faint);
   }
+  .sx__card-ph :global(.thumb-mark) { height: 32%; width: auto; opacity: 0.55; }
   .sx__card-title {
     display: block;
     font-family: var(--font-display);
@@ -474,20 +873,179 @@ function usableSummary(summary: string | null | undefined, title: string): strin
 
   /* ----- Chips (short vocabulary: equipment, tools, keywords) ----- */
 
+  /* A set of terms (tools, keywords): plain words separated by thin
+     slashes — not pills, since nothing here can be pressed. */
   .sx__chips {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    row-gap: 0.35rem;
   }
-  .sx__chip {
-    padding: 0.25rem 0.875rem;
-    border-radius: 999px;
-    background: var(--color-tag-bg);
-    color: var(--color-tag-text);
+  /* ----- Statement (one sub-heading + paragraph, e.g. Mission) ----- */
+  .sx-statement__head {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.6vw, 1.625rem);
+    font-weight: 700;
+    line-height: 1.5;
+    text-wrap: balance;
+    word-break: auto-phrase;
+  }
+  .sx-statement__body {
+    margin: 0;
+    max-width: 44rem;
+    font-size: 0.9375rem;
+    line-height: 1.95;
+    color: var(--color-text-soft);
+  }
+
+  /* ----- Plain link row (cards that have no pictures) ----- */
+  .sx-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: 0.75rem;
+  }
+  .sx-links .sx-cta { max-width: none; height: 100%; }
+
+  /* ----- Call-to-action (a lone link card without a picture) ----- */
+  .sx-cta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 1.5rem;
+    max-width: 22rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  }
+  .sx-cta:hover {
+    border-color: var(--color-accent-bright);
+    box-shadow: 0 14px 30px -18px rgb(34 38 38 / 0.3);
+  }
+  .sx-cta__title { font-weight: 700; font-size: 1rem; }
+  .sx-cta__text {
+    grid-column: 1;
+    margin-top: 0.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem !important;
+    letter-spacing: 0.08em;
     font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+  .sx-cta__arrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: 1.25rem;
+    color: var(--color-text-faint);
+    transition: color 0.25s var(--ease), translate 0.35s var(--ease-out);
+  }
+  .sx-cta:hover .sx-cta__arrow { color: var(--color-accent); translate: 3px 0; }
+
+  /* ----- Works list (卒業研究・卒業制作): titles first, author underneath ----- */
+  .works__years { margin-bottom: 1.5rem; }
+  .works__group[hidden] { display: none; }
+  .works__group.is-in { animation: works-in 0.5s var(--ease-out) both; }
+  @keyframes works-in {
+    from { opacity: 0; translate: 0 8px; }
+  }
+  .works__group + .works__group { margin-top: 2rem; }
+  /* With one 年度 picked, the chip already says which — the heading only
+     helps when every year is listed. */
+  .works:has(.works__years):not(.is-all) .works__label { display: none; }
+  .works__label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+  .works__label span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-faint);
+  }
+  .works__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    column-gap: clamp(1.5rem, 4vw, 3rem);
+  }
+  .works__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+  .works__title {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  a.works__title { transition: color 0.2s var(--ease); }
+  a.works__title:hover { color: var(--color-accent); }
+  .works__name {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+  a.works__name:hover { color: var(--color-accent); }
+
+  /* ----- Recent talks + "see all" ----- */
+  .talks__list {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+  }
+  .talks__item {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+  .talks__date {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .talks__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.55;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: color 0.2s var(--ease);
+  }
+  .talks__title:hover { color: var(--color-accent); }
+  .talks__more { display: inline-flex; }
+
+  .sx__chip {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
     line-height: 1.7;
+    color: var(--color-text);
+  }
+  .sx__chip + .sx__chip::before {
+    content: "/";
+    margin: 0 0.75rem;
+    color: var(--color-text-faint);
   }
 </style>

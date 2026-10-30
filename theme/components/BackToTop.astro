@@ -1,0 +1,263 @@
+---
+// "Back to top": a small arrow button floating at the bottom right. It fades
+// in once the page has scrolled about a screen down. Pressing it glides to the
+// top. Hovering it (or focusing it) opens a light list above it of the page's
+// headings that are above the current position — pick one to glide back to
+// that section instead.
+---
+<div class="to-top-wrap">
+  <div class="to-top__panel" role="menu" aria-label="見出しへ戻る">
+    <ul class="to-top__menu"></ul>
+  </div>
+  <button type="button" class="to-top" aria-label="ページの先頭へ戻る" title="ページの先頭へ">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+  </button>
+</div>
+
+<script>
+  function initToTop(): void {
+    const wrap = document.querySelector<HTMLElement>(".to-top-wrap");
+    if (!wrap || wrap.dataset.ready) return;
+    wrap.dataset.ready = "1";
+    const btn = wrap.querySelector<HTMLButtonElement>(".to-top")!;
+    const menu = wrap.querySelector<HTMLUListElement>(".to-top__menu")!;
+    const reduce = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      wrap.classList.toggle("is-shown", window.scrollY > window.innerHeight * 0.8);
+    };
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    update();
+
+    // Section headings of the current page: section titles (h2) and the
+    // year labels of News / Gallery / Publications.
+    const SELECTOR = ".site-main h2, .site-main .gal-group__label";
+    const labelOf = (h: HTMLElement) => {
+      const name = h.querySelector(".gal-group__name");
+      if (name) return (name.textContent ?? "").trim();
+      const c = h.cloneNode(true) as HTMLElement;
+      c.querySelectorAll("[class*='count'], .c-en, .members-count").forEach((x) => x.remove());
+      return (c.textContent ?? "").replace(/\s+/g, " ").trim();
+    };
+    const build = () => {
+      const seen = new Set<string>();
+      const heads = [...document.querySelectorAll<HTMLElement>(SELECTOR)].filter((h) => {
+        if (!h.offsetParent || h.closest("[hidden], .to-top-wrap, .site-header, .site-footer")) return false;
+        // only headings above where we are now — this is for going back
+        return h.getBoundingClientRect().top < 40;
+      });
+      menu.replaceChildren();
+      for (const h of heads) {
+        const label = labelOf(h);
+        if (!label || seen.has(label + h.offsetTop)) continue;
+        seen.add(label + h.offsetTop);
+        const li = document.createElement("li");
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "to-top__item";
+        b.setAttribute("role", "menuitem");
+        b.textContent = label.length > 26 ? `${label.slice(0, 25)}…` : label;
+        b.addEventListener("click", () => {
+          const target = (h.closest(".gal-group, .sx, section") as HTMLElement | null) ?? h;
+          const top = target.getBoundingClientRect().top + window.scrollY - 110; // header comes back going up
+          wrap.classList.add("is-done");
+          window.setTimeout(() => wrap.classList.remove("is-done"), 1500);
+          window.scrollTo({ top: Math.max(0, top), behavior: reduce() ? "auto" : "smooth" });
+        });
+        li.style.setProperty("--i", String(heads.length - heads.indexOf(h) - 1));
+        li.appendChild(b);
+        menu.appendChild(li);
+      }
+      // nearest section at the bottom, right above the button
+      wrap.classList.toggle("has-menu", menu.children.length > 0);
+    };
+    // The headings list is a mouse feature. On touch screens the arrow simply
+    // goes to the top (a tap would otherwise flash the list open).
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+    wrap.addEventListener("pointerenter", (e) => {
+      if (canHover.matches && (e as PointerEvent).pointerType === "mouse") build();
+    });
+    btn.addEventListener("focus", () => {
+      if (canHover.matches) build();
+    });
+    wrap.addEventListener("pointerleave", () => wrap.classList.remove("is-done"));
+
+    btn.addEventListener("click", () => {
+      wrap.classList.add("is-done");
+          window.setTimeout(() => wrap.classList.remove("is-done"), 1500);
+      window.scrollTo({ top: 0, behavior: reduce() ? "auto" : "smooth" });
+      btn.blur();
+    });
+  }
+  initToTop();
+  document.addEventListener("astro:page-load", initToTop);
+</script>
+
+<style>
+  .to-top-wrap {
+    position: fixed;
+    right: clamp(1rem, 2.5vw, 1.75rem);
+    bottom: clamp(1rem, 2.5vw, 1.75rem);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    opacity: 0;
+    translate: 0 0.75rem;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.4s var(--ease),
+      translate 0.6s var(--ease-out),
+      visibility 0s linear 0.4s;
+  }
+  .to-top-wrap.is-shown {
+    opacity: 1;
+    translate: 0 0;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity 0.4s var(--ease),
+      translate 0.6s var(--ease-out);
+  }
+  .to-top {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    box-shadow: 0 10px 24px -12px rgb(34 38 38 / 0.35);
+    cursor: pointer;
+    transition: border-color 0.25s var(--ease), color 0.25s var(--ease);
+  }
+  .to-top:hover {
+    border-color: var(--color-accent-bright);
+    color: var(--color-accent);
+  }
+  .to-top:focus-visible {
+    outline: none;
+    border-color: var(--color-accent-bright);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
+  .to-top svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: translate 0.35s var(--ease-out);
+  }
+  .to-top:hover svg { translate: 0 -2px; }
+
+  /* Headings list, opening upward. Its bottom padding is a bridge so the
+     pointer can move from the button up into the list. */
+  .to-top__panel {
+    padding-bottom: 0.4rem;
+    opacity: 0;
+    translate: 0 4px;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.2s var(--ease),
+      translate 0.3s var(--ease-out),
+      visibility 0s linear 0.2s;
+  }
+  @media (hover: hover) and (pointer: fine) {
+  .to-top-wrap.has-menu:hover:not(.is-done) .to-top__panel,
+  .to-top-wrap.has-menu:focus-within:not(.is-done) .to-top__panel {
+    opacity: 1;
+    translate: 0 0;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity 0.2s var(--ease),
+      translate 0.3s var(--ease-out);
+  }
+  }
+  /* A light floating list: frosted, borderless, right-aligned words. */
+  .to-top__menu {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem;
+    max-width: 16rem;
+    max-height: min(20rem, 55vh);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    border-radius: var(--radius-lg);
+    background: rgb(255 255 255 / 0.78);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    backdrop-filter: blur(10px) saturate(1.2);
+    box-shadow: 0 10px 28px -18px rgb(34 38 38 / 0.35);
+  }
+  /* items drift in from below, nearest first */
+  .to-top__menu :global(li) {
+    opacity: 0;
+    translate: 0 4px;
+    transition:
+      opacity 0.25s var(--ease) calc(var(--i, 0) * 22ms),
+      translate 0.35s var(--ease-out) calc(var(--i, 0) * 22ms);
+  }
+  .to-top-wrap.has-menu:hover:not(.is-done) .to-top__menu :global(li),
+  .to-top-wrap.has-menu:focus-within:not(.is-done) .to-top__menu :global(li) {
+    opacity: 1;
+    translate: 0 0;
+  }
+  :global(.to-top__item) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.55rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    text-align: right;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+  }
+  :global(.to-top__item::after) {
+    content: "";
+    flex: none;
+    width: 0.35rem;
+    height: 0.35rem;
+    border-top: 1.4px solid currentColor;
+    border-left: 1.4px solid currentColor;
+    rotate: 45deg;
+    translate: 0 0.1rem;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease), translate 0.3s var(--ease-out);
+  }
+  :global(.to-top__item:hover),
+  :global(.to-top__item:focus-visible) {
+    outline: none;
+    background: rgb(34 38 38 / 0.05);
+    color: var(--color-accent);
+  }
+  :global(.to-top__item:hover::after) { opacity: 1; translate: 0 -0.02rem; }
+  @media (max-width: 560px) {
+    .to-top { width: 2.5rem; height: 2.5rem; }
+  }
+</style>

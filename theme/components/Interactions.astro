@@ -1,60 +1,42 @@
 ---
-// Site-wide pointer flourishes, purely additive. A soft accent ring trails the
-// cursor and swells over interactive targets, and `[data-magnetic]` elements
-// lean toward the pointer. The native cursor is never hidden. Everything is
-// gated behind a fine pointer + no reduced-motion, so touch and
-// motion-sensitive users get nothing extra.
+// Pointer flourishes, kept to where the reader is already aiming:
+//
+// 1. Magnetic targets — elements lean slightly toward the pointer while it's
+//    over them, on every page: the header nav links (`[data-magnetic]`,
+//    strength from the attribute) plus the groups in MAGNET_GROUPS — cards,
+//    list rows and small buttons/chips — each with its own strength.
+// 2. Nav highlight — in the desktop header nav, one soft pill glides from item
+//    to item under the pointer, and leans along with the hovered item.
+// 3. Scroll reveal — content blocks below the fold slide up into place as
+//    they scroll into view (siblings arriving together are staggered).
+//    Home and gallery run their own [data-reveal] / tile fades, so anything
+//    inside those is left alone.
+//
+// (A trailing cursor ring used to live here too; it was dropped because it
+// followed the pointer across the whole page.)
+//
+// Magnetic lean needs a fine pointer and no reduced-motion. The highlight needs
+// the inline (non-hamburger) nav; with reduced motion it jumps instead of
+// gliding. Without JS, the plain per-link :hover background in global.css
+// applies.
 ---
 <script>
   function initInteractions(): void {
-    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!fine || reduce) return;
-    if (document.documentElement.dataset.cursor) return;
-    document.documentElement.dataset.cursor = "1";
+    if (document.documentElement.dataset.interactions) return;
+    document.documentElement.dataset.interactions = "1";
 
-    // ----- Trailing cursor ring -----
-    const ring = document.createElement("div");
-    ring.className = "cursor-ring";
-    ring.setAttribute("aria-hidden", "true");
-    document.body.appendChild(ring);
-
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 2;
-    let rx = x;
-    let ry = y;
-    let shown = false;
-
-    window.addEventListener(
-      "pointermove",
-      (e) => {
-        x = e.clientX;
-        y = e.clientY;
-        if (!shown) {
-          shown = true;
-          ring.classList.add("is-active");
-        }
-        const target = (e.target as Element)?.closest?.(
-          "a, button, [data-magnetic], input, summary, label",
-        );
-        ring.classList.toggle("is-over", Boolean(target));
-      },
-      { passive: true },
-    );
-    window.addEventListener("pointerdown", () => ring.classList.add("is-down"));
-    window.addEventListener("pointerup", () => ring.classList.remove("is-down"));
-    document.addEventListener("pointerleave", () => ring.classList.remove("is-active"));
+    const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const inlineNav = window.matchMedia("(min-width: 1081px)");
 
     // ----- Magnetic targets -----
     // Each target holds a goal offset (set on pointermove) and a current offset
-    // that eases toward it inside the ring's rAF loop below.
+    // that eases toward it in the rAF loop below.
     //
-    // The goal is the pointer's position within the element expressed as -1..1
-    // of its half-size, times a pixel amplitude — not the raw pixel delta. A
-    // raw delta scales with the element, so the same setting that gives a
-    // desktop nav link a few px of lean throws a full-width row in the
-    // hamburger dropdown dozens of px sideways. Normalizing makes the lean read
-    // the same whatever the target's size.
+    // The goal is the pointer's position within the element as -1..1 of its
+    // half-size, times a pixel amplitude — not the raw pixel delta, which would
+    // scale with the element (a full-width dropdown row would swing dozens of
+    // px). Normalizing makes the lean read the same whatever the size.
     const EASE = 0.1;
     /** Lean in px at `data-magnetic="1"`; the attribute scales this down. */
     const MAX_LEAN = 40;
@@ -64,21 +46,172 @@
     interface Magnet {
       el: HTMLElement;
       lean: number;
+      /** Lean only vertically (news rows / cards). */
+      yOnly: boolean;
       goalX: number;
       goalY: number;
       x: number;
       y: number;
     }
+    /**
+     * Everything else that leans, grouped by how it should move — so no
+     * template needs a `data-magnetic` attribute. `lean` × MAX_LEAN is the
+     * px reached at the element's edge; `yOnly` rows follow up/down only
+     * (a wide row swinging sideways reads as jitter).
+     */
+    const MAGNET_GROUPS: Array<{ selector: string; lean: number; yOnly?: boolean }> = [
+      // Cards and photos (≈5px).
+      {
+        selector: [
+          ".member-card.has-page",
+          ".masonry__cell",
+          ".pin__cell",
+          ".sx__figure:has(a)",
+          ".sx__card:has(> a)",
+          ".sx-cta",
+          ".contact-way",
+        ].join(","),
+        lean: 0.12,
+      },
+      // List rows: news, publications, tag pages, numbered steps (≈4px, vertical).
+      {
+        selector: [
+          ".news-card",
+          ".postlist__item",
+          ".tag-page-list > li",
+        ].join(","),
+        lean: 0.1,
+        yOnly: true,
+      },
+      // Small buttons, chips and footer links (≈8px — like the header nav).
+      {
+        selector: [
+          ".tag",
+          ".backlinks a",
+          ".related a",
+          ".pagination__link",
+          ".more",
+          ".site-footer-nav a",
+          ".site-footer-source a",
+          ".hero__scroll",
+          ".contact-support__link",
+          ".to-top",
+        ].join(","),
+        lean: 0.2,
+      },
+    ];
+    const groupOf = (el: HTMLElement) => MAGNET_GROUPS.find((g) => el.matches(g.selector));
+    const ALL_MAGNETS = ["[data-magnetic]", ...MAGNET_GROUPS.map((g) => g.selector)].join(",");
+
     const magnets: Magnet[] = [];
-    /** Pointer offset from a centre, as -1..1 of the half-size. */
+    const magnetOf = new Map<HTMLElement, Magnet>();
     const unit = (delta: number, size: number) =>
       size > 0 ? Math.min(1, Math.max(-1, delta / (size / 2))) : 0;
 
-    let raf = requestAnimationFrame(function loop() {
-      rx += (x - rx) * 0.18;
-      ry += (y - ry) * 0.18;
-      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+    if (fine.matches && !reduce.matches) {
+      document.querySelectorAll<HTMLElement>(ALL_MAGNETS).forEach((el) => {
+        const group = el.dataset.magnetic !== undefined ? undefined : groupOf(el);
+        const strength = group ? group.lean : Number(el.dataset.magnetic) || 0.3;
+        const magnet: Magnet = {
+          el,
+          lean: strength * MAX_LEAN,
+          yOnly: group?.yOnly ?? false,
+          goalX: 0,
+          goalY: 0,
+          x: 0,
+          y: 0,
+        };
+        el.addEventListener("pointermove", (e) => {
+          // Still sliding in (scroll reveal owns `transform` until it's done).
+          if (el.classList.contains("sr")) return;
+          const r = el.getBoundingClientRect();
+          // Subtract the current offset so the centre is the element's resting
+          // slot, not where the easing has pushed it — otherwise the offset
+          // feeds back into itself and the element drifts.
+          const cx = r.left + r.width / 2 - magnet.x;
+          const cy = r.top + r.height / 2 - magnet.y;
+          magnet.goalX = magnet.yOnly ? 0 : unit(e.clientX - cx, r.width) * magnet.lean;
+          magnet.goalY = unit(e.clientY - cy, r.height) * magnet.lean;
+        });
+        el.addEventListener("pointerleave", () => {
+          magnet.goalX = 0;
+          magnet.goalY = 0;
+        });
+        magnets.push(magnet);
+        magnetOf.set(el, magnet);
+      });
+    }
 
+    // ----- Nav highlight -----
+    const nav = document.querySelector<HTMLElement>(".site-nav");
+    let pill: HTMLElement | null = null;
+    let pillTarget: HTMLElement | null = null;
+
+    if (nav) {
+      // An <li> so the <ul> keeps only list-item children.
+      const p = document.createElement("li");
+      p.className = "site-nav-highlight";
+      p.setAttribute("aria-hidden", "true");
+      nav.prepend(p);
+      nav.classList.add("has-highlight");
+      pill = p;
+
+      let visible = false;
+      const moveTo = (a: HTMLElement) => {
+        // Resting slot of the link, relative to the <ul>: measure the <li>
+        // (it never moves) plus the link's offset inside it, so the magnetic
+        // lean currently applied to the link doesn't skew the measurement.
+        const li = a.parentElement ?? a;
+        const base = nav.getBoundingClientRect();
+        const lr = li.getBoundingClientRect();
+        const x = lr.left - base.left - nav.clientLeft + a.offsetLeft;
+        const y = lr.top - base.top - nav.clientTop + a.offsetTop;
+        const place = () => {
+          p.style.transform = `translate(${x}px, ${y}px)`;
+          p.style.width = `${a.offsetWidth}px`;
+          p.style.height = `${a.offsetHeight}px`;
+        };
+        pillTarget = a;
+        if (!visible) {
+          // Appear in place rather than sliding in from the last spot.
+          p.classList.add("no-slide");
+          place();
+          void p.offsetWidth; // commit the jump before re-enabling the slide
+          p.classList.remove("no-slide");
+          p.classList.add("is-visible");
+          visible = true;
+          return;
+        }
+        place();
+      };
+      const hide = () => {
+        p.classList.remove("is-visible");
+        visible = false;
+        // Keep pillTarget: while the pill fades out it keeps following the
+        // link's lean as that eases back to rest.
+      };
+
+      nav.addEventListener("pointerover", (e) => {
+        if (!fine.matches || !inlineNav.matches) return;
+        const a = (e.target as Element).closest<HTMLElement>("a");
+        if (a && nav.contains(a)) moveTo(a);
+      });
+      nav.addEventListener("pointerleave", hide);
+      // Keyboard users get the same highlight following focus.
+      nav.addEventListener("focusin", (e) => {
+        if (!inlineNav.matches) return;
+        const a = (e.target as Element).closest<HTMLElement>("a");
+        if (a) moveTo(a);
+      });
+      nav.addEventListener("focusout", (e) => {
+        if (!nav.contains(e.relatedTarget as Node)) hide();
+      });
+      inlineNav.addEventListener("change", hide);
+    }
+
+    if (magnets.length === 0) return;
+
+    requestAnimationFrame(function loop() {
       for (const m of magnets) {
         m.x += (m.goalX - m.x) * EASE;
         m.y += (m.goalY - m.y) * EASE;
@@ -94,57 +227,178 @@
         }
         m.el.style.transform = `translate3d(${m.x.toFixed(2)}px, ${m.y.toFixed(2)}px, 0)`;
       }
-
-      raf = requestAnimationFrame(loop);
+      // The pill leans with the link it's on. It uses the separate `translate`
+      // property, so this per-frame nudge never fights the `transform`
+      // transition that glides it between items.
+      if (pill) {
+        const m = pillTarget ? magnetOf.get(pillTarget) : undefined;
+        pill.style.translate = m ? `${m.x.toFixed(2)}px ${m.y.toFixed(2)}px` : "";
+      }
+      requestAnimationFrame(loop);
     });
-
-    const cleanups: Array<() => void> = [];
-    document.querySelectorAll<HTMLElement>("[data-magnetic]").forEach((el) => {
-      const magnet: Magnet = {
-        el,
-        lean: (Number(el.dataset.magnetic) || 0.3) * MAX_LEAN,
-        goalX: 0,
-        goalY: 0,
-        x: 0,
-        y: 0,
-      };
-      const move = (e: PointerEvent) => {
-        const r = el.getBoundingClientRect();
-        // Subtract the current offset so the centre is the element's resting
-        // slot, not where the easing has pushed it — otherwise the offset feeds
-        // back into itself and the element drifts.
-        const cx = r.left + r.width / 2 - magnet.x;
-        const cy = r.top + r.height / 2 - magnet.y;
-        magnet.goalX = unit(e.clientX - cx, r.width) * magnet.lean;
-        magnet.goalY = unit(e.clientY - cy, r.height) * magnet.lean;
-      };
-      const release = () => {
-        magnet.goalX = 0;
-        magnet.goalY = 0;
-      };
-      el.addEventListener("pointermove", move);
-      el.addEventListener("pointerleave", release);
-      magnets.push(magnet);
-      cleanups.push(() => {
-        el.removeEventListener("pointermove", move);
-        el.removeEventListener("pointerleave", release);
-        el.style.transform = "";
-      });
-    });
-
-    document.addEventListener(
-      "astro:before-swap",
-      () => {
-        cancelAnimationFrame(raf);
-        ring.remove();
-        cleanups.forEach((fn) => fn());
-        delete document.documentElement.dataset.cursor;
-      },
-      { once: true },
-    );
   }
 
-  if (document.readyState !== "loading") initInteractions();
-  else document.addEventListener("DOMContentLoaded", initInteractions);
-  document.addEventListener("astro:page-load", initInteractions);
+  // ----- Scroll reveal -----
+  const REVEAL_SELECTOR = [
+    ".page-content > *",
+    ".sect",
+    ".news-card",
+    ".member-card",
+    ".members-group > h2",
+    ".pub-section > h2",
+    ".pub-item",
+    ".c-head",
+    ".c-item",
+    ".contact-way",
+    ".contact-support",
+    ".tag-page-list > li",
+    ".sx__head",
+    ".sx__figure",
+    ".sx__num-item",
+    ".backlinks",
+    ".related",
+    ".pagination",
+  ].join(",");
+  /** Per-sibling delay when several blocks enter together, and its cap. */
+  const STAGGER_MS = 70;
+  const STAGGER_MAX_MS = 350;
+
+  function initScrollReveal(): void {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!("IntersectionObserver" in window)) return;
+    if (document.documentElement.dataset.scrollReveal) return;
+    document.documentElement.dataset.scrollReveal = "1";
+
+    // Only hide what starts below the fold — what's on screen at load is
+    // already covered by the page transition and must never blink.
+    const fold = window.innerHeight;
+    const targets = Array.from(
+      document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR),
+    ).filter(
+      (el) =>
+        !el.closest("[data-reveal], .pin, .site-header, .toc") &&
+        el.getBoundingClientRect().top > fold,
+    );
+    if (targets.length === 0) return;
+    for (const el of targets) el.classList.add("sr");
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entering = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => e.target as HTMLElement)
+          .sort(
+            (a, b) =>
+              a.getBoundingClientRect().top - b.getBoundingClientRect().top ||
+              a.getBoundingClientRect().left - b.getBoundingClientRect().left,
+          );
+        entering.forEach((el, i) => {
+          io.unobserve(el);
+          el.style.setProperty("--sr-delay", `${Math.min(i * STAGGER_MS, STAGGER_MAX_MS)}ms`);
+          el.classList.add("sr-in");
+          // Once settled, drop the reveal classes so the element's own
+          // transitions / hover transforms (cards lift on hover) take over.
+          window.setTimeout(() => {
+            el.classList.remove("sr", "sr-in");
+            el.style.removeProperty("--sr-delay");
+          }, 1200 + STAGGER_MAX_MS);
+        });
+      },
+      // Fire a little before the block is fully in, so it's moving as it lands.
+      { rootMargin: "0px 0px -8% 0px", threshold: 0 },
+    );
+    for (const el of targets) io.observe(el);
+  }
+
+  // ----- Ground lens -----
+  // Around the pointer, the dots of the page ground swell a little — like a
+  // loupe passing over graph paper. The lens is a fixed layer *under* the
+  // white sheets, so it only shows on the ground between them. Its position
+  // eases after the pointer instead of snapping, which keeps it soft.
+  // ----- Leave fade (fallback) -----
+  // Browsers with cross-document view transitions animate page changes in
+  // CSS (see "Page transitions" in global.css). Elsewhere, fade the content
+  // out briefly before following an internal link, so the swap isn't abrupt.
+  function initLeaveFade(): void {
+    if (document.documentElement.dataset.leaveFade) return;
+    document.documentElement.dataset.leaveFade = "1";
+    if ("onpagereveal" in window) return; // view transitions handle it
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    document.addEventListener("click", (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as HTMLElement).closest?.("a");
+      if (!a || !a.href || a.target || a.hasAttribute("download")) return;
+      const url = new URL(a.href, location.href);
+      if (url.origin !== location.origin) return;
+      if (url.pathname === location.pathname && url.search === location.search) return; // in-page
+      e.preventDefault();
+      document.documentElement.classList.add("is-leaving");
+      window.setTimeout(() => {
+        location.href = url.href;
+      }, 200);
+    });
+    // coming back via the back button restores the page from cache as it was
+    window.addEventListener("pageshow", (e) => {
+      if (e.persisted) document.documentElement.classList.remove("is-leaving");
+    });
+  }
+
+  function initGroundLens(): void {
+    const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!fine.matches || reduce.matches) return;
+    if (document.querySelector(".ground-lens")) return;
+
+    const lens = document.createElement("div");
+    lens.className = "ground-lens";
+    lens.setAttribute("aria-hidden", "true");
+    document.body.prepend(lens);
+
+    let tx = -9999;
+    let ty = -9999;
+    let x = tx;
+    let y = ty;
+    let running = false;
+    const tick = () => {
+      x += (tx - x) * 0.2;
+      y += (ty - y) * 0.2;
+      lens.style.setProperty("--lx", `${x.toFixed(1)}px`);
+      lens.style.setProperty("--ly", `${y.toFixed(1)}px`);
+      if (Math.abs(tx - x) > 0.3 || Math.abs(ty - y) > 0.3) {
+        requestAnimationFrame(tick);
+      } else {
+        running = false;
+      }
+    };
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        tx = e.clientX;
+        ty = e.clientY;
+        if (!lens.classList.contains("is-on")) {
+          // First move (or back from outside the window): appear in place.
+          x = tx;
+          y = ty;
+          lens.classList.add("is-on");
+        }
+        if (!running) {
+          running = true;
+          requestAnimationFrame(tick);
+        }
+      },
+      { passive: true },
+    );
+    document.documentElement.addEventListener("pointerleave", () => {
+      lens.classList.remove("is-on");
+    });
+  }
+
+  function boot(): void {
+    initInteractions();
+    initScrollReveal();
+    initGroundLens();
+    initLeaveFade();
+  }
+  if (document.readyState !== "loading") boot();
+  else document.addEventListener("DOMContentLoaded", boot);
 </script>

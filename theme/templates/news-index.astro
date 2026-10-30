@@ -1,17 +1,22 @@
 ---
 import { getCollection } from "astro:content";
-import type { GetStaticPaths, PaginateFunction } from "astro";
+import type { GetStaticPaths } from "astro";
 import options from "virtual:cosense-theme-lab/options";
 import Layout from "../components/Layout.astro";
-import Pagination from "../components/Pagination.astro";
+import LogoMark from "../components/LogoMark.astro";
+import YearJump from "../components/YearJump.astro";
 import { hasTag, loadStructure, path } from "@cosense-site-kit/theme-utils";
-import { newsSummary, formatNewsDate } from "../lib/news";
+import { newsSummary } from "../lib/news";
+import { responsiveImage } from "../lib/photos";
 
-// Paginated News archive. Every #news page is listed, `newsPageSize` per page:
-// page 1 is /news, later pages /news/2, /news/3, … (`posts.limit` only caps the
-// home page's "recent news" preview, not this list). The route always emits at
-// least page 1 — a stub when no posts exist — so /news never 404s.
-export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+// News archive as one timeline: every #news page on a single page (no
+// pagination), newest first, grouped by year. Each year has a label on the
+// left that stays in view while its posts scroll past, and a row of year
+// chips at the top jumps between years. The rows reuse the home page's
+// timeline list (.postlist): a line down the left with a dot per post. The
+// newest year keeps the home page's cyan-to-grey line; older years are grey.
+// Only /news is emitted (later pages of the old pagination are gone).
+export const getStaticPaths: GetStaticPaths = async () => {
   const structure = await loadStructure();
   const tag = structure.posts?.tag ?? options.newsTag;
   const all = await getCollection("pages");
@@ -19,169 +24,97 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
     .filter((e) => hasTag(e.data.tags, tag))
     .map((e) => newsSummary(e))
     .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
-
-  if (items.length === 0) {
-    return [{ params: { page: undefined }, props: { items: [], tag, pageInfo: null } }];
-  }
-
-  return (paginate as PaginateFunction)(items, { pageSize: options.newsPageSize }).map((route) => ({
-    params: route.params,
-    props: {
-      items: route.props.page.data,
-      tag,
-      pageInfo: {
-        current: route.props.page.currentPage,
-        last: route.props.page.lastPage,
-        prevUrl: route.props.page.url.prev,
-        nextUrl: route.props.page.url.next,
-      },
-    },
-  }));
+  return [{ params: { page: undefined }, props: { items, tag } }];
 };
 
 type NewsItem = ReturnType<typeof newsSummary>;
-const { items, tag, pageInfo } = Astro.props as {
-  items: NewsItem[];
-  tag: string;
-  pageInfo: { current: number; last: number; prevUrl?: string; nextUrl?: string } | null;
-};
+const { items, tag } = Astro.props as { items: NewsItem[]; tag: string };
+
+// Grouped by 年度 (the Japanese academic / fiscal year, April–March): a post
+// dated 2026-03-23 belongs to 2025年度.
+const fyOf = (d: Date) => (d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1);
+const byYear = new Map<string, NewsItem[]>();
+for (const n of items) {
+  const y = n.date ? String(fyOf(n.date)) : "—";
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(n);
+}
+const years = [...byYear.entries()].map(([y, list]) => ({
+  id: y === "—" ? "undated" : `fy${y}`,
+  label: y === "—" ? "日付なし" : y,
+  chip: y === "—" ? "日付なし" : `${y}年度`,
+  list,
+}));
+const pad = (n: number) => String(n).padStart(2, "0");
 ---
 <Layout title="News" description="ニュース・お知らせ" wide hideToc>
-  <header class="page-header">
-    <h1>News</h1>
-  </header>
-  {items.length === 0 ? (
-    <p class="summary">
-      ニュースは <code>#{tag}</code> タグ付きのページとして公開してください。
-    </p>
-  ) : (
-    <>
-    <ul class="news-feed">
-      {items.map((n) => {
-        // Drop the news tag itself — every card would carry it, so it's noise.
-        const cardTags = n.tags.filter((t) => t !== tag);
-        return (
-          <li class="news-card">
-            <a class="news-card__link" href={path(n.slug)}>
-              {n.image ? (
-                <span class="news-card__thumb">
-                  <img src={n.image} alt="" loading="lazy" decoding="async" />
-                </span>
-              ) : (
-                <span class="news-card__thumb news-card__thumb--empty" aria-hidden="true">
-                  {n.title.trim().charAt(0)}
-                </span>
-              )}
-              <span class="news-card__body">
-                {n.date && (
-                  <time class="news-card__date" datetime={n.date.toISOString()}>
-                    {formatNewsDate(n.date)}
-                  </time>
-                )}
-                <span class="news-card__title">{n.title}</span>
-                {/* Always rendered (even when empty) so every card reserves the
-                    same height and the grid stays even. */}
-                <span class="news-card__excerpt">{n.description}</span>
-                {/* All tags are emitted; the client script below keeps as many
-                    as fit on one row for the current card width and folds the
-                    rest into a "+N" chip. Without JS they stay on one row and
-                    the overflow is clipped (see .news-card__tags in global.css). */}
-                <span class="news-card__tags">
-                  {cardTags.map((t) => (
-                    <span class="news-card__tag">#{t}</span>
-                  ))}
-                </span>
-              </span>
-            </a>
-          </li>
-        );
-      })}
-    </ul>
-    {pageInfo && <Pagination {...pageInfo} />}
-    </>
-  )}
+  <div class="news-page">
+    <header class="news-page__head">
+      <div class="sect">
+        <h1 class="sect__en">News</h1>
+        <p class="sect__ja">研究室の活動 <span class="news-page__count">{items.length} 件</span></p>
+      </div>
+      {years.length > 1 && (
+        <YearJump
+          class="news-page__years"
+          label="年度から探す"
+          sections=".news-year"
+          options={years.map((y) => ({ id: y.id, label: y.chip, count: y.list.length }))}
+        />
+      )}
+    </header>
+
+    {items.length === 0 ? (
+      <p class="summary">
+        ニュースは <code>#{tag}</code> タグ付きのページとして公開してください。
+      </p>
+    ) : (
+      <div class="news-years">
+      {years.map((y, yi) => (
+        <section class="gal-group news-year" id={y.id} aria-labelledby={`${y.id}-label`}>
+          <h2 class="gal-group__label" id={`${y.id}-label`}>
+            <span class="gal-group__name">{y.label}</span>
+            <span class="gal-group__n">{y.id !== "undated" && "年度・"}{y.list.length} 件</span>
+          </h2>
+          <ul class:list={["postlist", { "postlist--past": yi > 0 }]}>
+            {y.list.map((n) => {
+              const thumb = n.image ? responsiveImage(n.image) : null;
+              const tags = n.tags.filter((t) => t !== tag);
+              return (
+                <li class="postlist__item">
+                  {n.date ? (
+                    <time class="postlist__date" datetime={n.date.toISOString()}>
+                      <span class="postlist__md">{pad(n.date.getMonth() + 1)}.{pad(n.date.getDate())}</span>
+                    </time>
+                  ) : (
+                    <span class="postlist__date postlist__date--none" aria-hidden="true"></span>
+                  )}
+                  <a class="postlist__thumb" href={path(n.slug)} aria-hidden="true" tabindex="-1">
+                    {thumb ? (
+                      <img src={thumb.src} srcset={thumb.srcset} sizes="76px" alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span class="postlist__ph"><LogoMark class="thumb-mark" /></span>
+                    )}
+                  </a>
+                  <div class="postlist__body">
+                    <a class="postlist__title" href={path(n.slug)}>{n.title}</a>
+                    {n.description && n.description.slice(0, 16) !== n.title.slice(0, 16) && (
+                      <p class="postlist__summary">{n.description}</p>
+                    )}
+                    {tags.length > 0 && (
+                      <div class="postlist__meta">
+                        {tags.map((t) => <span class="postlist__tag">#{t}</span>)}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+      </div>
+    )}
+  </div>
 </Layout>
 
-<script>
-  // Fit each card's tag row to its current width: show as many tags as fit on
-  // one line, fold the remainder into a trailing "+N" chip. Re-runs on resize
-  // (card width changes with the grid's column count) and after web fonts load
-  // (chip widths shift on swap). No-JS degrades to a single clipped row.
-  type Row = HTMLElement;
-
-  const fitRow = (row: Row): void => {
-    const chips = Array.from(
-      row.querySelectorAll<HTMLElement>(".news-card__tag:not(.news-card__tag--more)"),
-    );
-    if (chips.length === 0) return;
-
-    let more = row.querySelector<HTMLElement>(".news-card__tag--more");
-    if (!more) {
-      more = document.createElement("span");
-      more.className = "news-card__tag news-card__tag--more";
-      row.appendChild(more);
-    }
-
-    // Reset to a clean slate before measuring.
-    more.hidden = true;
-    for (const c of chips) c.hidden = false;
-
-    const avail = row.clientWidth;
-    const styles = getComputedStyle(row);
-    const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
-
-    // First pass: does everything fit without a "+N" chip?
-    let used = 0;
-    let allFit = true;
-    for (let i = 0; i < chips.length; i++) {
-      used += (i === 0 ? 0 : gap) + chips[i].offsetWidth;
-      if (used > avail) {
-        allFit = false;
-        break;
-      }
-    }
-    if (allFit) return;
-
-    // Second pass: reserve room for the "+N" chip (sized for a worst-case count).
-    more.hidden = false;
-    more.textContent = `+${chips.length}`;
-    const reserve = gap + more.offsetWidth;
-
-    used = 0;
-    let fit = 0;
-    for (let i = 0; i < chips.length; i++) {
-      const next = used + (i === 0 ? 0 : gap) + chips[i].offsetWidth;
-      if (next + reserve > avail) break;
-      used = next;
-      fit = i + 1;
-    }
-    if (fit < 1) fit = 1; // always keep at least one real tag
-
-    for (let i = 0; i < chips.length; i++) chips[i].hidden = i >= fit;
-    more.textContent = `+${chips.length - fit}`;
-  };
-
-  const rows = Array.from(document.querySelectorAll<Row>(".news-card__tags"));
-  if (rows.length > 0) {
-    const fitAll = () => {
-      for (const row of rows) fitRow(row);
-    };
-
-    let raf = 0;
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(fitAll);
-    };
-
-    fitAll();
-    // Per-row observer: the row's width tracks the grid column it sits in.
-    if ("ResizeObserver" in window) {
-      const ro = new ResizeObserver(schedule);
-      for (const row of rows) ro.observe(row);
-    } else {
-      window.addEventListener("resize", schedule);
-    }
-    // Web fonts change chip widths on swap — refit once they're ready.
-    document.fonts?.ready.then(fitAll);
-  }
-</script>

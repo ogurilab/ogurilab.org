@@ -1,28 +1,71 @@
 ---
 import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
+import { loadStructure, loadTitleToSlug, navHref } from "@cosense-site-kit/theme-utils";
+import LogoMark from "./LogoMark.astro";
+
+interface Props {
+  /** The Cosense page this view was built from; shown as "Source on Cosense". */
+  sourceUrl?: string;
+}
+const { sourceUrl } = Astro.props;
 
 const year = new Date().getFullYear();
 const holder = options.copyrightHolder ?? options.siteTitle ?? site?.title ?? "";
 const holderUrl = options.copyrightUrl;
-const affiliation = options.affiliation;
+// Second line under the lab name: the configured affiliation, else the site
+// description (e.g. "Digital Culture Lab. Aichi Institute of Technology.").
+const tagline = options.affiliation ?? site?.description;
+
+// Same nav as the header, so the footer doubles as a sitemap at page end.
+const structure = await loadStructure();
+const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
+const titleToSlug = await loadTitleToSlug();
 ---
 <footer class="site-footer">
   <div class="site-footer-inner">
-    <span>
-      &copy; {year}{" "}
-      {holderUrl ? (
-        <a href={holderUrl} target="_blank" rel="noopener noreferrer">{holder}</a>
-      ) : (
-        holder
-      )}
-      {affiliation && <span class="site-footer-affiliation">· {affiliation}</span>}
-    </span>
-    <span>
-      Built with{" "}
-      <a href="https://github.com/shinyaoguri/cosense-site-kit" target="_blank" rel="noopener noreferrer">
-        cosense-site-kit
+    <div class="site-footer-main">
+      <a class="site-footer-brand" href={import.meta.env.BASE_URL}>
+        <LogoMark class="site-footer-mark" />
+        <span>
+          <span class="site-footer-name">{holder}</span>
+          {tagline && <span class="site-footer-tagline">{tagline}</span>}
+        </span>
       </a>
-    </span>
+
+      {navItems.length > 0 && (
+        <nav class="site-footer-nav" aria-label="Footer">
+          <ul>
+            {navItems.map((item) => (
+              <li><a href={navHref(item, titleToSlug)}>{item.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {sourceUrl && (
+        <div class="site-footer-source">
+          <span class="site-footer-label">このページの原稿</span>
+          <a href={sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
+        </div>
+      )}
+    </div>
+
+    <div class="site-footer-bottom">
+      <span>
+        &copy; {year}{" "}
+        {holderUrl ? (
+          <a href={holderUrl} target="_blank" rel="noopener noreferrer">{holder}</a>
+        ) : (
+          holder
+        )}
+      </span>
+      <span>
+        Built with{" "}
+        <a href="https://github.com/shinyaoguri/cosense-site-kit" target="_blank" rel="noopener noreferrer">
+          cosense-site-kit
+        </a>
+      </span>
+    </div>
   </div>
 </footer>

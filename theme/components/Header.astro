@@ -3,6 +3,7 @@ import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
 import { loadStructure, loadTitleToSlug, navHref } from "@cosense-site-kit/theme-utils";
 import Search from "./Search.astro";
+import { navGloss } from "../lib/nav-gloss";
 
 interface Props {
   currentPath?: string;
@@ -18,14 +19,22 @@ const structure = await loadStructure();
 const navItems = structure.nav.length > 0 ? structure.nav : options.nav;
 const titleToSlug = await loadTitleToSlug();
 
+// A small second-language gloss under each nav item (see lib/nav-gloss).
+const subLabel = (label: string, href: string) => navGloss(label, href, import.meta.env.BASE_URL);
+
+// On the home page the bar floats over the full-screen hero (fixed instead of
+// sticky), and on the first visit of a session it starts "parked" off-screen
+// until the reader enters the page (see the enter motion in home.astro).
+const isHome = currentPath === "/" || currentPath === import.meta.env.BASE_URL;
+
 const isActive = (href: string): boolean => {
   if (href === "/") return currentPath === "/";
   return currentPath === href || currentPath.startsWith(`${href}/`);
 };
 ---
-<header class="site-header">
+<header class:list={["site-header", { "site-header--overlay": isHome }]}>
   <div class="site-header-inner">
-    <a class="site-brand" href={import.meta.env.BASE_URL} aria-label={siteTitle}>
+    <a class="site-brand" href={import.meta.env.BASE_URL} aria-label={`${siteTitle}（ホーム）`} data-magnetic="0.12">
       {logo && (
         <img
           class="site-logo"
@@ -49,7 +58,7 @@ const isActive = (href: string): boolean => {
         <button
           type="button"
           class="site-nav-toggle"
-          aria-label="Toggle navigation"
+          aria-label="メニューを開く"
           aria-controls="site-nav-wrap"
           aria-expanded="false"
         >
@@ -63,19 +72,25 @@ const isActive = (href: string): boolean => {
             stroke-linecap="round"
             aria-hidden="true"
           >
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
+            <line class="nav-bar nav-bar--1" x1="3" y1="6" x2="21" y2="6" />
+            <line class="nav-bar nav-bar--2" x1="3" y1="12" x2="21" y2="12" />
+            <line class="nav-bar nav-bar--3" x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
         <nav class="site-nav-wrap" id="site-nav-wrap" aria-label="Primary">
           <ul class="site-nav">
             {navItems.map((item) => {
               const href = navHref(item, titleToSlug);
+              const sub = subLabel(item.label, href);
               return (
                 <li>
-                  <a href={href} data-magnetic="0.2" class:list={[{ "is-active": isActive(href) }]}>
-                    {item.label}
+                  <a href={href} data-magnetic="0.3" class:list={[{ "is-active": isActive(href) }]}>
+                    <span class="site-nav-main">{item.label}</span>
+                    {sub && (
+                      <span class={`site-nav-sub site-nav-sub--${sub.lang}`} lang={sub.lang} aria-hidden="true">
+                        {sub.text}
+                      </span>
+                    )}
                   </a>
                 </li>
               );
@@ -89,6 +104,23 @@ const isActive = (href: string): boolean => {
     {options.search && <Search />}
   </div>
 </header>
+{isHome && (
+  <script is:inline>
+    // Park the bar before first paint on the session's first home visit, so
+    // the hero opens with just the lab overview and "Scroll".
+    (function () {
+      var h = document.querySelector(".site-header--overlay");
+      if (!h) return;
+      try {
+        if (sessionStorage.getItem("dclab-entered")) return;
+      } catch (e) {
+        return;
+      }
+      if (window.scrollY > 40) return; // restored mid-page: already inside
+      h.classList.add("is-parked");
+    })();
+  </script>
+)}
 
 <script>
   // Header behaviour, progressively enhanced. `has-js` gates the collapsed
@@ -105,24 +137,25 @@ const isActive = (href: string): boolean => {
     const searchTrigger = header.querySelector<HTMLButtonElement>("#site-search-trigger");
     const overlay = document.getElementById("site-search-overlay");
     const backdrop = overlay?.querySelector<HTMLElement>(".search-overlay-backdrop") ?? null;
-    const box = overlay?.querySelector<HTMLElement>(".search-box") ?? null;
     const note = overlay?.querySelector<HTMLElement>(".search-box-note") ?? null;
     const bundlePath = overlay?.dataset.bundlePath ?? "/pagefind/";
 
+    // The bar's bottom corners square off while the menu is attached. On
+    // close they round again only after the menu has finished folding up,
+    // so the corners don't snap while it's still visible.
+    let cornerTimer = 0;
     const setNav = (open: boolean) => {
       navWrap?.classList.toggle("is-open", open);
+      window.clearTimeout(cornerTimer);
+      if (open) header.classList.add("is-menu-open");
+      else cornerTimer = window.setTimeout(() => header.classList.remove("is-menu-open"), 380);
       navToggle?.setAttribute("aria-expanded", String(open));
+      navToggle?.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
     };
     const focusInput = () =>
       requestAnimationFrame(() => overlay?.querySelector("input")?.focus());
     const setSearch = (open: boolean) => {
       if (!overlay) return;
-      if (open && box && searchTrigger) {
-        // Pin the box over the icon so it grows out of the button.
-        const r = searchTrigger.getBoundingClientRect();
-        box.style.top = `${r.top}px`;
-        box.style.right = `${window.innerWidth - r.right}px`;
-      }
       overlay.classList.toggle("is-open", open);
       searchTrigger?.setAttribute("aria-expanded", String(open));
       if (open) {
@@ -182,11 +215,69 @@ const isActive = (href: string): boolean => {
         setSearch(false);
       }
     });
+
     document.addEventListener("click", (e) => {
       // Close the nav menu on an outside click. The search overlay closes via
       // its own backdrop, so leave it alone here.
       const target = e.target as Node;
       if (!header.contains(target) && !overlay?.contains(target)) setNav(false);
     });
+
+    // Hide-on-scroll: the floating bar slides away while the reader scrolls
+    // down and comes back on any upward scroll. It never hides near the top of
+    // the page, while the menu or search is open, or while focus is inside the
+    // bar (keyboard users tabbing through the nav). Small jitters below
+    // SCROLL_DELTA are ignored so trackpad wobble doesn't make it flicker.
+    const SCROLL_DELTA = 6;
+    let lastY = window.scrollY;
+    let ticking = false;
+    const setHidden = (hidden: boolean) => {
+      header.classList.toggle("is-hidden", hidden);
+    };
+    const onScroll = () => {
+      ticking = false;
+      const y = Math.max(0, window.scrollY);
+      // Parked on the home intro: the enter motion owns the bar until then.
+      if (header.classList.contains("is-parked")) {
+        lastY = y;
+        return;
+      }
+      // Just arrived from the home scene: stay visible until this point.
+      const holdUntil = Number(header.dataset.holdUntilY ?? 0);
+      if (holdUntil && y < holdUntil) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+      const revealZone = header.offsetHeight * 1.5;
+      header.classList.toggle("is-at-top", y < 4);
+
+      const pinned =
+        y < revealZone ||
+        navWrap?.classList.contains("is-open") ||
+        overlay?.classList.contains("is-open") ||
+        header.contains(document.activeElement);
+      if (pinned) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+      const dy = y - lastY;
+      if (Math.abs(dy) < SCROLL_DELTA) return;
+      setHidden(dy > 0);
+      lastY = y;
+    };
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(onScroll);
+        }
+      },
+      { passive: true },
+    );
+    header.addEventListener("focusin", () => setHidden(false));
+    onScroll();
   }
 </script>

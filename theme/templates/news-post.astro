@@ -14,7 +14,7 @@ const publishedDay = formatDate(page.publishedAt);
 const updatedDay = formatDate(page.modifiedAt);
 const showUpdated = updatedDay && updatedDay !== publishedDay;
 ---
-<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
+<Layout title={page.title} sourceUrl={page.sourceUrl} description={page.summary} image={page.image} ogType="article">
   <article data-pagefind-body>
     <p class="post-backlink"><a href={path("news")}>← News</a></p>
     <header class="page-header">
@@ -31,9 +31,5 @@ const showUpdated = updatedDay && updatedDay !== publishedDay;
     <Backlinks backlinks={page.backlinks} />
 
     <Related title={page.title} links={page.links} exclude={page.backlinks} />
-
-    <footer class="source" data-pagefind-ignore>
-      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
-    </footer>
   </article>
 </Layout>

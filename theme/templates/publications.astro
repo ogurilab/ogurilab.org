@@ -3,6 +3,7 @@ import type { CollectionEntry } from "astro:content";
 import { parseCollection, renderInlineLinks } from "@cosense-site-kit/theme-utils";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import Layout from "../components/Layout.astro";
+import YearJump from "../components/YearJump.astro";
 
 // Publications follows the default theme's generic "collection" display: the
 // first YAML code block on the page becomes a set of data-driven list sections
@@ -27,15 +28,126 @@ const data = dataBlock && dataBlock.type === "code" ? parseCollection(dataBlock.
 const beforeBlocks = page.blocks.slice(0, dataIndex === -1 ? page.blocks.length : dataIndex);
 const afterBlocks = dataIndex === -1 ? [] : page.blocks.slice(dataIndex + 1);
 
-// A single section whose heading just repeats the page title (e.g. a
-// `publications:` block on the "Publications" page) would show the title
-// twice — suppress that lone <h2> and let the page header stand in. The filter
-// chips still render.
-const sections = data?.sections ?? [];
-const hideLoneHeading =
-  sections.length === 1 && sections[0].title.toLowerCase() === page.title.toLowerCase();
+const allSections = data?.sections ?? [];
+// Awards are pulled out of the list and shown first, as cards.
+const isAwards = (t: string) => /award|受賞/i.test(t);
+const awardSection = allSections.find((s) => isAwards(s.title));
+const sections = allSections.filter((s) => s !== awardSection);
+// Each award: "<award name>" + "<people>: <paper title>". The paper is linked
+// when the same title appears in the publication list with a URL.
+const urlByTitle = new Map<string, string>();
+for (const sec of sections)
+  for (const it of sec.items) if (it.kind === "citation" && it.url) urlByTitle.set(it.title.trim(), it.url);
+const awards = (awardSection?.items ?? []).map((it) => {
+  const text = it.kind === "citation" ? `${it.authors ?? ""}: ${it.title}` : it.description ?? "";
+  const name = it.kind === "citation" ? it.source ?? it.title : it.title;
+  const at = text.search(/[:：]/);
+  const people = at > 0 ? text.slice(0, at).trim() : "";
+  const paper = (at > 0 ? text.slice(at + 1) : text).trim();
+  const year = (`${it.label ?? ""} ${name}`.match(/20\d\d/) ?? [""])[0];
+  return { name, people, paper, year, url: urlByTitle.get(paper) };
+});
+// In the paper list the event is already the heading, so keep only the
+// prize itself: "ECシンポジウム2026 企業賞ミックウェア賞" → "企業賞ミックウェア賞",
+// "観光情報学会第21回全国大会大会奨励賞" → "大会奨励賞".
+const prizeOnly = (name: string) => {
+  const t = name.trim();
+  if (/\s/.test(t)) return t.split(/\s+/).pop() ?? t;
+  return t.match(/(大会[^大]*賞|[^会]+賞)$/)?.[1] ?? t;
+};
+const awardByPaper = new Map(awards.filter((a) => a.paper).map((a) => [a.paper, prizeOnly(a.name)]));
+const AWARD_TAG = "受賞";
+const awardOf = (it: Item) => (it.kind === "citation" ? awardByPaper.get(it.title.trim()) : undefined);
+const tagsOf = (it: Item) => (awardOf(it) ? [...it.tags, AWARD_TAG] : it.tags);
+// A section whose heading just repeats the page title (the `publications:`
+// block on the "Publications" page) would say "Publications" twice — drop that
+// <h2> and show only the item count beside the filters.
+const norm = (s: string) => s.trim().toLowerCase();
+const repeatsTitle = (title: string) => norm(title) === norm(page.title);
+// Year of an item: its `year`, else the first 20xx found in its source.
+const yearOf = (item: (typeof sections)[number]["items"][number]): string => {
+  if (item.kind === "citation" && item.year) return String(item.year).slice(0, 4);
+  const text = item.kind === "citation" ? `${item.source ?? ""} ${item.label ?? ""}` : `${item.label ?? ""}`;
+  return text.match(/20\d\d/)?.[0] ?? "その他";
+};
+const byYear = (section: (typeof sections)[number]) => {
+  const map = new Map<string, typeof section.items>();
+  for (const it of section.items) {
+    const y = yearOf(it);
+    if (!map.has(y)) map.set(y, []);
+    map.get(y)!.push(it);
+  }
+  return [...map.entries()].sort(([a], [b]) => (b === "その他" ? -1 : a === "その他" ? 1 : Number(b) - Number(a)));
+};
+// Tag chips/badges in Japanese where we know the meaning.
+const TAG_JA: Record<string, string> = {
+  "Peer Reviewed": "査読あり",
+  Invited: "招待講演",
+  Award: "受賞",
+  Awarded: "受賞",
+  International: "国際会議",
+};
+// Split a citation's source into the event it was presented at and the rest
+// (proceedings name, volume, pages): "第21回観光情報学会全国大会, 講演予稿集,
+// pp.65-66" → event "第21回観光情報学会全国大会", detail "講演予稿集, pp.65-66".
+// A trailing "論文集" / "予稿集" on the event is moved to the detail, and a
+// meeting code in the volume ("Vol.2026-DCC-43") is kept with the event so
+// different meetings of one society stay apart.
+const splitSource = (source?: string): { event: string; detail: string } => {
+  if (!source) return { event: "", detail: "" };
+  const parts = source.split(/\s*[,，]\s*/);
+  let event = parts.shift() ?? "";
+  const detail: string[] = [];
+  const m = event.match(/^(.*?)(講演)?(論文集|予稿集|講演集)$/);
+  if (m && m[1]) {
+    event = m[1];
+    detail.push(`${m[2] ?? ""}${m[3]}`);
+  }
+  const code = parts.join(" ").match(/Vol\.\s*\d{4}-([A-Z]{2,})-(\d+)/);
+  if (code && /研究報告$/.test(event)) {
+    // "情報処理学会研究報告, Vol.2026-DCC-43" → "第43回情報処理学会DCC研究会"
+    detail.unshift("研究報告");
+    event = `第${code[2]}回${event.replace(/研究報告$/, "")}${code[1]}研究会`;
+  } else if (code) {
+    event = `${event}（${code[1]}-${code[2]}）`;
+  }
+  return { event: event.trim(), detail: [...detail, ...parts].join(", ") };
+};
+type Item = (typeof sections)[number]["items"][number];
+const eventsOf = (list: Item[]) => {
+  const out: { event: string; items: Item[] }[] = [];
+  for (const it of list) {
+    const ev = it.kind === "citation" ? splitSource(it.source).event : "";
+    const last = out[out.length - 1];
+    if (last && last.event === ev) last.items.push(it);
+    else out.push({ event: ev, items: [it] });
+  }
+  return out;
+};
+const isFlat = (section: (typeof sections)[number]) => section.items.length <= 6;
+const yearsFor = (section: (typeof sections)[number]): [string, typeof section.items][] =>
+  isFlat(section) ? [["", section.items]] : byYear(section);
+const TITLE_JA: Record<string, string> = {
+  Awards: "受賞",
+  Talks: "講演",
+  Grants: "研究費",
+  Books: "著書",
+  Media: "メディア掲載",
+};
+const tagLabel = (t: string) => TAG_JA[t] ?? t;
+const countFor = (section: (typeof sections)[number], filter: string): number =>
+  filter === "All"
+    ? section.items.length
+    : section.items.filter((i) => tagsOf(i).includes(filter)).length;
+const filtersFor = (section: (typeof sections)[number]): string[] => {
+  const base = section.filters.length > 0 ? section.filters : ["All"];
+  const hasAward = section.items.some((i) => awardOf(i));
+  const out = hasAward && !base.includes(AWARD_TAG) ? [...base, AWARD_TAG] : base;
+  return out.length > 1 ? out : [];
+};
 ---
-<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
+
+<Layout title={page.title} sourceUrl={page.sourceUrl} description={page.summary} image={page.image} ogType="article" wide>
   <article class="collection" data-pagefind-body>
     <header class="page-header">
       <h1>{page.title}</h1>
@@ -45,65 +157,179 @@ const hideLoneHeading =
     {data ? (
       <Fragment>
         {beforeBlocks.length > 0 && <PageContent blocks={beforeBlocks} />}
-        {sections.map((section) => (
-        <section class:list={["c-section", { filterable: section.filters.length > 0 }]}>
-          <div class:list={["c-head", { "is-bare": hideLoneHeading }]}>
-            {!hideLoneHeading && <h2>{section.title}</h2>}
-            {section.filters.length > 0 && (
-              <div class="c-filters" role="group" aria-label={`Filter ${section.title}`}>
-                {section.filters.map((f, i) => (
-                  <button
-                    type="button"
-                    class:list={["c-filter", { "is-active": i === 0 }]}
-                    data-filter={f}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div
-            class:list={[
-              "c-items",
-              section.hasLabels ? `with-labels label-${section.labelStyle}` : "no-labels",
-            ]}
-          >
-            {section.items.map((item) => (
-              <div class="c-item" data-tags={`|${item.tags.join("|")}|`}>
-                {section.hasLabels && <span class="c-label">{item.label}</span>}
-                <span class="c-text">
-                  {item.kind === "citation" ? (
-                    <>
-                      {item.authors && <span class="c-meta">{item.authors}, </span>}
-                      {item.url ? (
-                        <a class="c-title" href={item.url} target="_blank" rel="noopener noreferrer">
-                          “{item.title}”
-                        </a>
+        {awards.length > 0 && (
+          <section class="awards" aria-labelledby="awards-title">
+            <h2 class="awards__head" id="awards-title">
+              受賞<span class="c-en">Awards</span><span class="c-count">{awards.length} 件</span>
+            </h2>
+            <ul class="awards__list">
+              {awards.map((a) => (
+                <li class="award">
+                  <svg class="award__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+                    <path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6" />
+                    <path d="M12 13v4M9 20h6M10 17h4" />
+                  </svg>
+                  <div class="award__body">
+                    {a.year && <p class="award__year">{a.year}</p>}
+                    <p class="award__name">{a.name}</p>
+                    {a.paper && (
+                      a.url ? (
+                        <a class="award__paper" href={a.url} target="_blank" rel="noopener noreferrer">「{a.paper}」<span aria-hidden="true">↗</span></a>
                       ) : (
-                        <span class="c-title">“{item.title}”</span>
-                      )}
-                      {item.source && <span class="c-meta">, {item.source}</span>}
-                      {item.year && <span class="c-meta"> ({item.year})</span>}
-                    </>
-                  ) : (
-                    <span
-                      set:html={
-                        renderInlineLinks(item.title) +
-                        (item.description ? `, ${renderInlineLinks(item.description)}` : "")
-                      }
-                    />
-                  )}
-                  {item.tags.map((t) => (
-                    <span class="c-badge">{t}</span>
+                        <p class="award__paper">「{a.paper}」</p>
+                      )
+                    )}
+                    {a.people && <p class="award__people">{a.people}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {sections.map((section) => {
+          // Short lists (e.g. awards) don't need year blocks: one list, the
+          // year shown inline.
+          const flat = isFlat(section);
+          const years = yearsFor(section);
+          return (
+          <section class:list={["c-section", "pubs", { filterable: section.filters.length > 0 }]} data-pubs>
+            <div class="c-head pubs__head">
+              {repeatsTitle(section.title) && awards.length > 0 ? (
+                <h2>
+                  論文・発表<span class="c-en">Papers</span>
+                  <span class="c-count"><span class="c-total-n">{section.items.length}</span> 件</span>
+                </h2>
+              ) : repeatsTitle(section.title) ? (
+                <p class="c-total"><span class="c-total-n">{section.items.length}</span> 件</p>
+              ) : (
+                <h2>
+                  {TITLE_JA[section.title] ?? section.title}
+                  {TITLE_JA[section.title] && <span class="c-en">{section.title}</span>}
+                  <span class="c-count">{section.items.length} 件</span>
+                </h2>
+              )}
+              {filtersFor(section).length > 0 && (
+                <div class="c-filters" role="group" aria-label="種類で絞り込み">
+                  {filtersFor(section).map((f, i) => (
+                    <button
+                      type="button"
+                      class:list={["c-filter", { "is-active": i === 0 }]}
+                      data-filter={f}
+                      aria-pressed={i === 0 ? "true" : "false"}
+                    >
+                      {f === "All" ? "すべて" : tagLabel(f)}
+                      <span class="c-filter-count">{countFor(section, f)}</span>
+                    </button>
                   ))}
-                </span>
+                </div>
+              )}
+            </div>
+            {!flat && years.length > 1 && (
+              <YearJump
+                class="pubs__years"
+                sections="[data-pubs] .pubs__year"
+                options={years.map(([y, list]) => ({ id: `py${y}`, label: y === "その他" ? y : `${y}年`, count: list.length }))}
+              />
+            )}
+
+            {years.map(([y, list]) => (
+              <div class:list={["pubs__year", { "gal-group news-year": !flat, "pubs__year--flat": flat }]} data-year-group={y} id={flat ? undefined : `py${y}`}>
+                {!flat && (
+                  <h3 class="gal-group__label">
+                    <span class="gal-group__name">{y}</span>
+                    <span class="gal-group__n"><span data-year-count>{list.length}</span> 件</span>
+                  </h3>
+                )}
+                {flat ? (
+                <ol class="c-items">
+                    {list.map((item) => (
+                      <li class="c-item" data-tags={`|${tagsOf(item).join("|")}|`}>
+                        <div class="c-body">
+                          {flat && yearOf(item) !== "その他" && <span class="c-year">{yearOf(item)}</span>}
+                          {item.kind === "citation" ? (
+                            <>
+                              {item.url ? (
+                                <a class="c-title" href={item.url} target="_blank" rel="noopener noreferrer">
+                                  {item.title}
+                                  <span class="c-ext" aria-hidden="true"> ↗</span>
+                                </a>
+                              ) : (
+                                <span class="c-title">{item.title}</span>
+                              )}
+                              {item.authors && <p class="c-authors">{item.authors}</p>}
+                              {(item.source || item.tags.length > 0) && (
+                                <p class="c-source">
+                                  {item.tags.map((tg) => <span class="c-badge">{tagLabel(tg)}</span>)}
+                                  {item.source}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span class="c-title" set:html={renderInlineLinks(item.title)} />
+                              {item.description && (
+                                <p class="c-source" set:html={renderInlineLinks(item.description)} />
+                              )}
+                              {item.tags.length > 0 && (
+                                <div class="c-badges">
+                                  {item.tags.map((tg) => <span class="c-badge">{tagLabel(tg)}</span>)}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div class="evs">
+                    {eventsOf(list).map((g) => (
+                      <div class="ev">
+                        {g.event && (
+                          <p class="ev__name">
+                            {g.event}
+                            {g.items.length > 1 && <span class="ev__n">{g.items.length} 件</span>}
+                          </p>
+                        )}
+                        <ol class="c-items ev__papers">
+                          {g.items.map((item) => item.kind === "citation" && (
+                            <li class="c-item" data-tags={`|${tagsOf(item).join("|")}|`}>
+                              <div class="c-body">
+                                {item.url ? (
+                                  <a class="c-title" href={item.url} target="_blank" rel="noopener noreferrer">
+                                    {item.title}
+                                    <span class="c-ext" aria-hidden="true"> ↗</span>
+                                  </a>
+                                ) : (
+                                  <span class="c-title">{item.title}</span>
+                                )}
+                                {item.authors && <p class="c-authors">{item.authors}</p>}
+                                {awardOf(item) && (
+                                  <p class="c-award">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z" /><path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6" /><path d="M12 13v4M9 20h6M10 17h4" /></svg>
+                                    {awardOf(item)} 受賞
+                                  </p>
+                                )}
+                                {(splitSource(item.source).detail || item.tags.length > 0) && (
+                                  <p class="c-source">
+                                    {item.tags.map((tg) => <span class="c-badge">{tagLabel(tg)}</span>)}
+                                    {splitSource(item.source).detail}
+                                  </p>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
-          </div>
-        </section>
-        ))}
+          </section>
+          );
+        })}
         {afterBlocks.length > 0 && <PageContent blocks={afterBlocks} />}
       </Fragment>
     ) : (
@@ -118,24 +344,57 @@ const hideLoneHeading =
 </Layout>
 
 <script>
-  // Per-section tag filter. "All" shows everything; any other chip shows only
-  // items whose data-tags contains that tag. Scoped to each filterable section
-  // so multiple lists on one page don't cross-filter. No-JS users see all rows.
-  document.querySelectorAll<HTMLElement>(".c-section.filterable").forEach((root) => {
-    const buttons = root.querySelectorAll<HTMLButtonElement>(".c-filter");
-    const items = root.querySelectorAll<HTMLElement>(".c-item");
-    buttons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const filter = btn.dataset.filter ?? "All";
-        buttons.forEach((b) => b.classList.toggle("is-active", b === btn));
-        items.forEach((item) => {
-          const tags = item.dataset.tags ?? "";
-          const show = filter === "All" || tags.includes(`|${filter}|`);
-          item.style.display = show ? "" : "none";
+  // Two filters per list, combined: a year (or all years) and a kind (all /
+  // peer reviewed / …). Years with nothing left after the kind filter are
+  // hidden, and every count follows what's listed. No-JS shows everything.
+  function initPubs(): void {
+    document.querySelectorAll<HTMLElement>("[data-pubs]").forEach((root) => {
+      if (root.dataset.ready) return;
+      root.dataset.ready = "1";
+      const kindBtns = [...root.querySelectorAll<HTMLButtonElement>(".c-filter")];
+
+      const groups = [...root.querySelectorAll<HTMLElement>("[data-year-group]")];
+      let kind = "All";
+      const press = (btns: HTMLButtonElement[], on: HTMLButtonElement) =>
+        btns.forEach((b) => {
+          b.classList.toggle("is-active", b === on);
+          b.setAttribute("aria-pressed", String(b === on));
         });
-      });
+      const apply = () => {
+        let shown = 0;
+        const perYear: Record<string, number> = {};
+        for (const g of groups) {
+          const y = g.dataset.yearGroup ?? "";
+          let n = 0;
+          g.querySelectorAll<HTMLElement>(".c-item").forEach((item) => {
+            const ok = kind === "All" || (item.dataset.tags ?? "").includes(`|${kind}|`);
+            item.hidden = !ok;
+            if (ok) n++;
+          });
+          g.querySelectorAll<HTMLElement>(".ev").forEach((ev) => {
+            ev.hidden = !ev.querySelector(".c-item:not([hidden])");
+          });
+          perYear[y] = n;
+          const count = g.querySelector("[data-year-count]");
+          if (count) count.textContent = String(n);
+          g.hidden = n === 0;
+          root.querySelector(`[data-yj-item="py${y}"]`)?.toggleAttribute("hidden", n === 0);
+          if (!g.hidden) shown += n;
+          g.classList.remove("is-in");
+          void g.offsetWidth;
+          if (!g.hidden) g.classList.add("is-in");
+        }
+        root.querySelectorAll<HTMLElement>("[data-yj-count]").forEach((el) => {
+          el.textContent = String(perYear[(el.dataset.yjCount ?? "").replace(/^py/, "")] ?? 0);
+        });
+        const total = root.querySelector<HTMLElement>(".c-total-n");
+        if (total) total.textContent = String(shown);
+      };
+      kindBtns.forEach((b) => b.addEventListener("click", () => { kind = b.dataset.filter ?? "All"; press(kindBtns, b); apply(); }));
     });
-  });
+  }
+  initPubs();
+  document.addEventListener("astro:page-load", initPubs);
 </script>
 
 <style>
@@ -145,120 +404,305 @@ const hideLoneHeading =
     margin: 0.5rem 0 0;
   }
 
-  .c-section {
-    margin-bottom: 2.5rem;
-  }
+  .c-section { margin-bottom: 3.5rem; }
+
+  /* Section head: title + count on the left, filters on the right. */
   .c-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.75rem 1.5rem;
     flex-wrap: wrap;
-    margin-bottom: 1rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--color-divider);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 2px solid var(--color-text);
   }
-  /* Lone heading suppressed: keep the divider + filters, drop the empty h2 slot. */
-  .c-head.is-bare {
-    justify-content: flex-end;
+  .c-total {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+  .c-total-n {
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--color-text);
   }
   .c-head h2 {
-    font-size: 1.05rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 1.25rem;
     margin: 0;
     padding: 0;
     border: 0;
   }
+  .c-count {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
 
-  /* Filter chips, modeled on the theme's tag pills. */
+  /* Filters as a compact segmented row; the active one is filled charcoal. */
   .c-filters {
     display: flex;
     gap: 0.375rem;
     flex-wrap: wrap;
   }
   .c-filter {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
     font-family: var(--font-sans);
-    font-size: 0.7rem;
-    line-height: 1.6;
-    padding: 0.1rem 0.6rem;
-    border: 0;
-    border-radius: 999px;
-    background: var(--color-tag-bg);
-    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.5;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
     cursor: pointer;
     transition:
       background 0.15s var(--ease),
-      color 0.15s var(--ease);
+      color 0.15s var(--ease),
+      border-color 0.15s var(--ease);
   }
   .c-filter:hover {
-    background: var(--color-bg-hover);
-    color: var(--color-text-soft);
+    border-color: var(--color-text-faint);
+    color: var(--color-text);
   }
   .c-filter.is-active {
-    background: var(--color-accent-soft);
-    color: var(--color-accent);
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-bg);
+  }
+  .c-filter-count {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    opacity: 0.7;
   }
 
   .c-items {
-    display: flex;
-    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
+  .c-item {
+    padding: 1.1rem 0 1.1rem 1rem;
+    border-left: 3px solid transparent;
+    transition: border-color 0.15s var(--ease);
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+  .c-item:last-child { border-bottom: 0; }
+  /* Cyan stem on the row under the pointer (rows also lean, see
+     components/Interactions.astro). */
+  /* Only rows whose title links somewhere get the hover stem. */
+  .c-item:has(a.c-title):hover { border-left-color: var(--color-accent-bright); }
+  .c-item[hidden] { display: none; }
 
-  /* Label-column layout (timeline: education, career, …). */
-  .c-items.with-labels {
-    gap: 0.5rem;
-  }
-  .with-labels .c-item {
-    display: flex;
-    gap: 0.75rem;
-    align-items: baseline;
-  }
-  .c-label {
-    flex-shrink: 0;
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .label-period .c-label {
-    min-width: 8.5rem;
-  }
-  .label-year .c-label {
-    width: 2.5rem;
-  }
-
-  /* Bullet-list layout (citations: publications, …). */
-  .c-items.no-labels {
-    gap: 0.6rem;
-  }
-  .no-labels .c-item {
-    position: relative;
-    padding-left: 1rem;
-  }
-  .no-labels .c-item::before {
-    content: "–";
-    position: absolute;
-    left: 0;
-    color: var(--color-text-muted);
-  }
-
-  .c-text {
-    color: var(--color-text-soft);
-    font-size: 0.9rem;
-    line-height: 1.65;
-  }
+  .c-body { min-width: 0; }
   .c-title {
+    display: inline;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.55;
     color: var(--color-text);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  a.c-title:hover { color: var(--color-accent); text-decoration: underline; }
+  .c-ext { color: var(--color-text-faint); font-weight: 400; }
+  .c-authors,
+  .c-source {
+    margin: 0.3rem 0 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--color-text-soft);
+  }
+  .c-source { color: var(--color-text-muted); font-size: 0.8125rem; }
+  .c-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
   }
   .c-badge {
-    display: inline-block;
-    margin-left: 0.4rem;
-    font-size: 0.65rem;
+    font-size: 0.6875rem;
     line-height: 1.5;
-    padding: 0.05rem 0.45rem;
-    border-radius: 999px;
-    background: var(--color-tag-bg);
-    color: var(--color-tag-text);
+    padding: 0 0.45rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
     white-space: nowrap;
-    vertical-align: middle;
   }
+
+  @media (max-width: 560px) {
+    .c-item { padding-left: 0.75rem; }
+  }
+
+  /* Year groups (same layout as the News page) */
+  .pubs__years { margin: 1.25rem 0 0.5rem; }
+  .pubs__year[hidden] { display: none; }
+  .pubs__year .c-items { margin-top: -1.1rem; }
+  .pubs__year.is-in { animation: pubs-in 0.5s var(--ease-out) both; }
+  @keyframes pubs-in { from { opacity: 0; translate: 0 8px; } }
+  .pubs__year--flat .c-items { margin-top: 0; }
+  .c-year {
+    display: inline-block;
+    margin-right: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+  .c-en {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+  .c-section + .c-section { margin-top: 1rem; }
+  /* Awards: a quiet list above the papers — no panels, just rows */
+  .awards { margin: 0.25rem 0 2.75rem; }
+  .awards__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.25rem;
+    font-size: 1.0625rem;
+  }
+  .awards__list { list-style: none; margin: 0; padding: 0; }
+  .award {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+  .award__icon {
+    flex: none;
+    align-self: flex-start;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.2rem;
+    fill: none;
+    stroke: var(--color-text-faint);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .award__body {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    column-gap: 0.5rem;
+  }
+  .award__year {
+    grid-row: 1 / span 3;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+  .award__name {
+    grid-column: 2;
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+  .award__paper {
+    grid-column: 2;
+    display: block;
+    margin: 0.1rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--color-text-soft);
+    text-decoration: none;
+  }
+  a.award__paper:hover { color: var(--color-accent); }
+  a.award__paper span { color: var(--color-text-faint); margin-left: 0.2em; }
+  .award__people {
+    grid-column: 2;
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  /* "this paper won an award" line in the list */
+  .c-award {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.25rem 0 0.05rem;
+    color: var(--color-accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .c-award svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Events as parents, their papers as children */
+  .evs { padding-top: 0.15rem; }
+  .ev[hidden] { display: none; }
+  .ev + .ev { margin-top: 1.4rem; }
+  .ev__name {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+    margin: 0 0 0.35rem;
+    padding-left: 1rem;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-text);
+  }
+  /* the event's marker: a small cyan square on the papers' rail */
+  .ev__name::before {
+    content: "";
+    position: absolute;
+    left: 0.1rem;
+    top: 0.55em;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 2px;
+    background: var(--color-accent-bright);
+  }
+  .ev__n {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-faint);
+  }
+  .ev__papers {
+    margin-left: 0.32rem;
+    padding-left: 0.95rem !important;
+    border-left: 1px solid var(--color-border);
+  }
+  .ev__papers .c-item {
+    padding: 0.6rem 0 0.6rem 0.6rem;
+    border-bottom: 0;
+  }
+  .ev__papers .c-title { font-size: 0.9375rem; font-weight: 600; }
+  .ev__papers .c-authors { font-size: 0.8125rem; margin-top: 0.15rem; }
+  .ev__papers .c-source { font-size: 0.75rem; margin-top: 0.15rem; }
+  .pubs__year:not(.pubs__year--flat) .c-items { margin-top: 0; }
+
+  /* venue line: badge first, then the venue */
+  .c-source .c-badge { margin-right: 0.5rem; vertical-align: 0.05em; }
 </style>

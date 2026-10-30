@@ -1,0 +1,149 @@
+---
+// Year pulldown shared by every year / 年度 control (News and Gallery jump to
+// a year; Publications and Research works filter by it), styled like the Members pulldown
+// (.mf* in global.css). It only handles the menu itself: opening, keyboard,
+// picking. On a pick it fires a bubbling `mf-change` event whose
+// `detail.value` is the chosen option's value; the page decides what to show.
+// A page can rewrite an option's count later (e.g. after another filter) by
+// setting the text of `[data-mf-count="<value>"]` — the button follows.
+interface Option {
+  value: string;
+  label: string;
+  count?: number;
+  /** Small heading shown above this option when it differs from the previous one. */
+  group?: string;
+}
+interface Props {
+  options: Option[];
+  value?: string;
+  label: string;
+  class?: string;
+}
+const { options, value = options[0]?.value, label, class: cls } = Astro.props;
+const current = options.find((o) => o.value === value) ?? options[0];
+let lastGroup: string | undefined;
+---
+<div class:list={["mf", "mf--year", cls]} data-mf-generic data-value={current?.value}>
+  <button type="button" class="mf__trigger" aria-haspopup="listbox" aria-expanded="false" aria-label={label}>
+    <svg class="mf__lead" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="5.5" width="16" height="14.5" rx="2" />
+      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+    </svg>
+    <span class="mf__current">{current?.label}</span>
+    {current?.count !== undefined && (
+      <span class="mf__badge"><span data-mf-badge>{current.count}</span><small>件</small></span>
+    )}
+    <svg class="mf__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+  </button>
+  <div class="mf__panel" role="listbox" tabindex="-1" aria-label={label}>
+    {options.map((o) => {
+      const head = o.group && o.group !== lastGroup ? o.group : undefined;
+      lastGroup = o.group ?? lastGroup;
+      return (
+        <Fragment>
+          {head && <p class="mf__group" aria-hidden="true">{head}</p>}
+          <div
+            class="mf__option"
+            role="option"
+            data-value={o.value}
+            data-label={o.label}
+            aria-selected={o.value === current?.value ? "true" : "false"}
+          >
+            <span class="mf__mark" aria-hidden="true"></span>
+            <span class="mf__text">{o.label}</span>
+            {o.count !== undefined && (
+              <span class="mf__count"><span data-mf-count={o.value}>{o.count}</span><small>件</small></span>
+            )}
+          </div>
+        </Fragment>
+      );
+    })}
+  </div>
+</div>
+
+<script>
+  function initYearSelects(): void {
+    document.querySelectorAll<HTMLElement>("[data-mf-generic]").forEach((root) => {
+      if (root.dataset.ready) return;
+      root.dataset.ready = "1";
+      const trigger = root.querySelector<HTMLButtonElement>(".mf__trigger")!;
+      const panel = root.querySelector<HTMLElement>(".mf__panel")!;
+      const current = root.querySelector<HTMLElement>(".mf__current")!;
+      const badge = root.querySelector<HTMLElement>("[data-mf-badge]");
+      const options = [...root.querySelectorAll<HTMLElement>(".mf__option")];
+      let active = 0;
+      const countOf = (o: HTMLElement) => o.querySelector("[data-mf-count]")?.textContent ?? "";
+      const syncBadge = () => {
+        const sel = options.find((o) => o.getAttribute("aria-selected") === "true");
+        if (badge && sel) badge.textContent = countOf(sel);
+      };
+      // keep the button's count in step when a page rewrites option counts
+      new MutationObserver(syncBadge).observe(panel, { subtree: true, characterData: true, childList: true });
+
+      const highlight = (i: number) => {
+        active = (i + options.length) % options.length;
+        options.forEach((o, k) => o.classList.toggle("is-active", k === active));
+        options[active].scrollIntoView({ block: "nearest" });
+      };
+      const open = () => {
+        root.classList.add("is-open");
+        trigger.setAttribute("aria-expanded", "true");
+        highlight(Math.max(0, options.findIndex((o) => o.getAttribute("aria-selected") === "true")));
+        panel.focus({ preventScroll: true });
+      };
+      const close = (refocus = false) => {
+        root.classList.remove("is-open");
+        trigger.setAttribute("aria-expanded", "false");
+        if (refocus) trigger.focus({ preventScroll: true });
+      };
+      const choose = (o: HTMLElement) => {
+        options.forEach((x) => x.setAttribute("aria-selected", String(x === o)));
+        root.dataset.value = o.dataset.value;
+        current.textContent = o.dataset.label ?? "";
+        syncBadge();
+        badge?.parentElement?.classList.remove("is-bump");
+        void badge?.offsetWidth;
+        badge?.parentElement?.classList.add("is-bump");
+        close(true);
+        root.dispatchEvent(new CustomEvent("mf-change", { bubbles: true, detail: { value: o.dataset.value } }));
+      };
+
+      // A page can move the selection without a pick (e.g. to follow scrolling):
+      // root.dispatchEvent(new CustomEvent("mf-set", { detail: { value } }))
+      root.addEventListener("mf-set", (e) => {
+        const v = (e as CustomEvent<{ value: string }>).detail.value;
+        const o = options.find((x) => x.dataset.value === v);
+        if (!o || o.getAttribute("aria-selected") === "true") return;
+        options.forEach((x) => x.setAttribute("aria-selected", String(x === o)));
+        root.dataset.value = v;
+        current.textContent = o.dataset.label ?? "";
+        syncBadge();
+      });
+
+      trigger.addEventListener("click", () => (root.classList.contains("is-open") ? close() : open()));
+      trigger.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          open();
+        }
+      });
+      options.forEach((o, i) => {
+        o.addEventListener("click", () => choose(o));
+        o.addEventListener("pointermove", () => active !== i && highlight(i));
+      });
+      panel.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") { e.preventDefault(); highlight(active + 1); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); highlight(active - 1); }
+        else if (e.key === "Home") { e.preventDefault(); highlight(0); }
+        else if (e.key === "End") { e.preventDefault(); highlight(options.length - 1); }
+        else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(options[active]); }
+        else if (e.key === "Escape" || e.key === "Tab") close(e.key === "Escape");
+      });
+      document.addEventListener("pointerdown", (e) => {
+        if (!root.contains(e.target as Node)) close();
+      });
+    });
+  }
+  initYearSelects();
+  document.addEventListener("astro:page-load", initYearSelects);
+</script>

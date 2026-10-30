@@ -1,0 +1,299 @@
+---
+// "Jump to a year" menu for long year-grouped pages (News, Gallery).
+// Deliberately unlike the filter controls: no box, just a quiet text link
+// with a "jump down" mark. Hovering it (or focusing / tapping it) drops a
+// light list of years; each one is a link that glides to that year. Nothing
+// is hidden — it only moves the page. While scrolling, the label follows the
+// year on screen (nothing is shown before the first section is reached).
+interface Option {
+  id: string;
+  label: string;
+  count?: number;
+  unit?: string;
+  /** Indent this entry under the one above it. */
+  sub?: boolean;
+}
+interface Props {
+  options: Option[];
+  /** CSS selector of the year sections (their ids match the options). */
+  sections: string;
+  label?: string;
+  class?: string;
+}
+const { options, sections, label = "年から探す", class: cls } = Astro.props;
+---
+<nav class:list={["yj", cls]} aria-label={label} data-yj data-sections={sections}>
+  <button type="button" class="yj__trigger" aria-expanded="false">
+    <svg class="yj__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M6 20h12" /></svg>
+    <span class="yj__cap">{label}</span>
+    <span class="yj__current"></span>
+  </button>
+  <div class="yj__panel">
+    <ul class="yj__menu">
+      {options.map((o) => (
+        <li data-yj-item={o.id} class:list={{ "is-sub": o.sub }}>
+          <a class="yj__link" href={`#${o.id}`}>
+            <span class="yj__year">{o.label}</span>
+            {o.count !== undefined && (
+              <span class="yj__n"><span data-yj-count={o.id}>{o.count}</span>{o.unit ?? "件"}</span>
+            )}
+            <svg class="yj__arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v13M6.5 12.5 12 18l5.5-5.5" /></svg>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>
+
+<script>
+  function initYearJumps(): void {
+    document.querySelectorAll<HTMLElement>("[data-yj]").forEach((root) => {
+      if (root.dataset.ready) return;
+      root.dataset.ready = "1";
+      const trigger = root.querySelector<HTMLButtonElement>(".yj__trigger")!;
+      const current = root.querySelector<HTMLElement>(".yj__current")!;
+      const links = [...root.querySelectorAll<HTMLAnchorElement>(".yj__link")];
+      const sections = [...document.querySelectorAll<HTMLElement>(root.dataset.sections ?? "")];
+
+      // open on tap / keyboard too (hover is handled in CSS)
+      const setOpen = (on: boolean) => {
+        root.classList.toggle("is-open", on);
+        trigger.setAttribute("aria-expanded", String(on));
+      };
+      trigger.addEventListener("click", () => setOpen(!root.classList.contains("is-open")));
+      document.addEventListener("pointerdown", (e) => {
+        if (!root.contains(e.target as Node)) setOpen(false);
+      });
+      root.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          setOpen(false);
+          trigger.focus();
+        }
+      });
+      // after a pick, fold the menu even though the pointer is still over it
+      root.addEventListener("pointerleave", () => root.classList.remove("is-done"));
+
+      const mark = (id: string | null) => {
+        if (!id) current.textContent = "";
+        links.forEach((a) => {
+          const on = a.hash === `#${id}`;
+          if (on) {
+            a.setAttribute("aria-current", "true");
+            current.textContent = a.querySelector(".yj__year")?.textContent ?? "";
+          } else a.removeAttribute("aria-current");
+        });
+      };
+
+      let jumping = false;
+      const jump = (target: HTMLElement) => {
+        const offset = target.getBoundingClientRect().top < 0 ? 110 : 32; // header returns when going up
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const dest = () => Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+        jumping = true;
+        let aim = dest();
+        window.scrollTo({ top: aim, behavior: reduce ? "auto" : "smooth" });
+        // content above may still change size while gliding (e.g. photos that
+        // fail to load are removed), so keep re-aiming until arrived
+        let started = performance.now();
+        const stop = () => (started = -Infinity);
+        window.addEventListener("wheel", stop, { once: true, passive: true });
+        window.addEventListener("touchstart", stop, { once: true, passive: true });
+        const follow = () => {
+          const now = dest();
+          if (Math.abs(now - aim) > 8) {
+            aim = now;
+            window.scrollTo({ top: aim, behavior: reduce ? "auto" : "smooth" });
+          }
+          const atEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+          if (Math.abs(window.scrollY - aim) < 4 || atEnd || performance.now() - started > 4000) {
+            jumping = false;
+            return;
+          }
+          requestAnimationFrame(follow);
+        };
+        requestAnimationFrame(follow);
+      };
+
+      links.forEach((a) =>
+        a.addEventListener("click", (e) => {
+          const target = sections.find((s) => `#${s.id}` === a.hash);
+          if (!target) return;
+          e.preventDefault();
+          mark(target.id);
+          setOpen(false);
+          root.classList.add("is-done");
+          window.setTimeout(() => root.classList.remove("is-done"), 1500);
+          (document.activeElement as HTMLElement | null)?.blur();
+          jump(target);
+        }),
+      );
+
+      // Nothing is shown next to the label until the reader has actually
+      // scrolled into one of the sections.
+      let ticking = false;
+      const spy = () => {
+        ticking = false;
+        if (jumping) return;
+        let cur: HTMLElement | undefined;
+        for (const s of sections) if (!s.hidden && s.getBoundingClientRect().top <= 160) cur = s;
+        mark(cur ? cur.id : null);
+      };
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(spy);
+          }
+        },
+        { passive: true },
+      );
+    });
+  }
+  initYearJumps();
+  document.addEventListener("astro:page-load", initYearJumps);
+</script>
+
+<style>
+  .yj {
+    position: relative;
+    display: inline-block;
+    z-index: 6;
+  }
+  /* The trigger: plain text with a "jump down" mark — not a boxed button,
+     so it doesn't read as a filter. */
+  .yj__trigger {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.35rem 0.1rem;
+    border: 0;
+    border-bottom: 1px dashed var(--color-border);
+    background: none;
+    font: inherit;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
+  }
+  .yj__mark {
+    align-self: center;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .yj__cap { font-size: 0.8125rem; }
+  .yj__current:empty { display: none; }
+  .yj__current {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .yj:hover .yj__trigger,
+  .yj.is-open .yj__trigger,
+  .yj__trigger:focus-visible {
+    outline: none;
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent-bright);
+  }
+
+  /* The list: a light sheet under the trigger. The panel's top padding is a
+     bridge, so the pointer can travel from the trigger into the list. */
+  .yj__panel {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    padding-top: 0.4rem;
+    opacity: 0;
+    translate: 0 -4px;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.2s var(--ease),
+      translate 0.3s var(--ease-out),
+      visibility 0s linear 0.2s;
+  }
+  .yj:hover:not(.is-done) .yj__panel,
+  .yj:focus-within:not(.is-done) .yj__panel,
+  .yj.is-open .yj__panel {
+    opacity: 1;
+    translate: 0 0;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity 0.2s var(--ease),
+      translate 0.3s var(--ease-out);
+  }
+  .yj__menu {
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem;
+    min-width: 11rem;
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    box-shadow: 0 16px 34px -18px rgb(34 38 38 / 0.3);
+  }
+  .yj__menu li[hidden] { display: none; }
+  .yj__menu li.is-sub .yj__link { padding-left: 1.4rem; }
+  .yj__menu li.is-sub .yj__year { font-weight: 500; }
+  .yj__link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius);
+    color: var(--color-text-soft);
+    text-decoration: none;
+    transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+  }
+  .yj__year {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .yj__n {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-text-faint);
+  }
+  .yj__arrow {
+    align-self: center;
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.35;
+    transition: opacity 0.2s var(--ease), translate 0.3s var(--ease-out);
+  }
+  .yj__link:hover,
+  .yj__link:focus-visible {
+    outline: none;
+    background: var(--color-bg-soft);
+    color: var(--color-accent);
+  }
+  .yj__link:hover .yj__arrow,
+  .yj__link:focus-visible .yj__arrow {
+    opacity: 1;
+    translate: 0 2px;
+  }
+  .yj__link[aria-current="true"] .yj__year { color: var(--color-text); }
+  .yj__link[aria-current="true"]::before {
+    content: "";
+    align-self: center;
+    width: 4px;
+    height: 4px;
+    margin-left: -0.25rem;
+    margin-right: -0.4rem;
+    border-radius: 50%;
+    background: var(--color-accent-bright);
+  }
+</style>

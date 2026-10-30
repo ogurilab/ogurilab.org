@@ -24,8 +24,8 @@
   .toc-indicator {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding-right: 0.625rem;
+    gap: 15px;
+    padding: 0.5rem 0.625rem 0.5rem 0;
     transition: opacity 0.2s ease;
     pointer-events: auto;
   }
@@ -48,9 +48,10 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    background: rgb(255 255 255 / 0.96);
+    /* Token-based so the panel follows the dark skin too. */
+    background: color-mix(in srgb, var(--color-bg) 96%, transparent);
     backdrop-filter: blur(8px);
-    border-radius: 6px;
+    border-radius: var(--radius);
     box-shadow: 0 4px 16px rgb(15 15 15 / 0.08), 0 1px 3px rgb(15 15 15 / 0.06);
     border: 1px solid var(--color-border-soft);
     padding: 0.5rem 0.75rem;
@@ -83,21 +84,64 @@
 </style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const toc = document.querySelector(".toc");
-    const indicator = document.querySelector(".toc-indicator");
-    const list = document.querySelector(".toc-list");
-    if (!toc || !indicator || !list) return;
-    // `.sx__head h2` are the `sections` template's section headings, which it
-    // renders itself rather than through .page-content.
-    const headings = document.querySelectorAll<HTMLHeadingElement>(
-      ".page-content h2, .page-content h3, .sx__head h2",
+  // Builds the bars from the page's section headings. Shown on every page
+  // that actually needs scrolling; removed when the page fits on one screen
+  // or has no headings. Runs on each page load (View Transitions included).
+  function initToc(): void {
+    const toc = document.querySelector<HTMLElement>(".toc");
+    const indicator = document.querySelector<HTMLElement>(".toc-indicator");
+    const list = document.querySelector<HTMLElement>(".toc-list");
+    if (!toc || !indicator || !list || toc.dataset.ready) return;
+    toc.dataset.ready = "1";
+
+    // Article headings, the sections template's headings, any other section
+    // heading in the main column, and the year labels of News / Gallery /
+    // Publications.
+    const SELECTOR = ".page-content h2, .page-content h3, .site-main h2, .site-main .gal-group__label";
+    const headings = [...document.querySelectorAll<HTMLElement>(SELECTOR)].filter(
+      (h) => h.offsetParent && !h.closest("[hidden], .site-header, .site-footer, .toc, .to-top-wrap"),
     );
-    if (headings.length === 0) { toc.remove(); return; }
+    const scrolls = document.documentElement.scrollHeight > window.innerHeight * 1.25;
+    if (headings.length < 2 || !scrolls) {
+      toc.remove();
+      return;
+    }
+    const labelOf = (h: HTMLElement) => {
+      const name = h.querySelector(".gal-group__name");
+      if (name) return (name.textContent ?? "").trim();
+      const c = h.cloneNode(true) as HTMLElement;
+      c.querySelectorAll("[class*='count'], .c-en").forEach((x) => x.remove());
+      return (c.textContent ?? "").replace(/\s+/g, " ").trim();
+    };
+
+    // Glide to a block, re-aiming while content above it changes size
+    // (e.g. Gallery drops photos that fail to load as they come into view).
+    const glideTo = (target: HTMLElement) => {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const offset = target.getBoundingClientRect().top < 0 ? 110 : 32; // header returns going up
+      const dest = () => Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+      let aim = dest();
+      window.scrollTo({ top: aim, behavior: reduce ? "auto" : "smooth" });
+      let started = performance.now();
+      const stop = () => (started = -Infinity);
+      window.addEventListener("wheel", stop, { once: true, passive: true });
+      window.addEventListener("touchstart", stop, { once: true, passive: true });
+      const follow = () => {
+        const now = dest();
+        if (Math.abs(now - aim) > 8) {
+          aim = now;
+          window.scrollTo({ top: aim, behavior: reduce ? "auto" : "smooth" });
+        }
+        const atEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+        if (Math.abs(window.scrollY - aim) < 4 || atEnd || performance.now() - started > 4000) return;
+        requestAnimationFrame(follow);
+      };
+      requestAnimationFrame(follow);
+    };
 
     headings.forEach((h, i) => {
       if (!h.id) h.id = `heading-${i}`;
-      const isH3 = h.tagName === "H3";
+      const isH3 = h.tagName === "H3" && !h.classList.contains("gal-group__label");
       const bar = document.createElement("div");
       bar.className = `toc-bar ${isH3 ? "is-h3" : "is-h2"}`;
       bar.dataset.target = h.id;
@@ -106,15 +150,14 @@
       li.className = `toc-item ${isH3 ? "is-h3" : ""}`;
       const a = document.createElement("a");
       a.href = `#${h.id}`;
-      a.textContent = h.textContent ?? "";
+      a.textContent = labelOf(h);
       a.className = "toc-link";
       a.dataset.target = h.id;
       a.addEventListener("click", (e) => {
         e.preventDefault();
-        // No explicit `behavior`: it resolves to the root's `scroll-behavior`,
-        // which global.css turns off under prefers-reduced-motion. Hard-coding
-        // "smooth" here forced the animation on readers who asked for none.
-        h.scrollIntoView({ block: "start" });
+        // the section (year block / sections block) rather than its sticky label
+        const target = (h.closest(".gal-group, .sx") as HTMLElement | null) ?? h;
+        glideTo(target);
         history.pushState(null, "", `#${h.id}`);
       });
       li.appendChild(a);
@@ -123,6 +166,7 @@
 
     let active: string | null = null;
     const setActive = (id: string) => {
+      if (active === id) return;
       if (active) {
         indicator.querySelector(`[data-target="${active}"]`)?.classList.remove("is-active");
         list.querySelector(`[data-target="${active}"]`)?.classList.remove("is-active");
@@ -131,12 +175,29 @@
       list.querySelector(`[data-target="${id}"]`)?.classList.add("is-active");
       active = id;
     };
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
+    // The active one is the last heading (or year block) that has reached the
+    // upper part of the screen. Measured on scroll, since year labels are
+    // sticky and would always look "in view" to an observer.
+    const blockOf = (h: HTMLElement) => (h.closest(".gal-group") as HTMLElement | null) ?? h;
+    let ticking = false;
+    const spy = () => {
+      ticking = false;
+      let cur = headings[0];
+      for (const h of headings) if (blockOf(h).getBoundingClientRect().top <= window.innerHeight * 0.3) cur = h;
+      setActive(cur.id);
+    };
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(spy);
+        }
       },
-      { rootMargin: "-72px 0px -70% 0px", threshold: 0 },
+      { passive: true },
     );
-    for (const h of headings) io.observe(h);
-  });
+    spy();
+  }
+  initToc();
+  document.addEventListener("astro:page-load", initToc);
 </script>

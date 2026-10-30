@@ -1,13 +1,13 @@
 ---
-// Header search trigger — just the icon button. The actual search UI (the
-// expanding box + dim backdrop) is rendered at body level by SearchOverlay so
-// it can layer above the backdrop-filtered header; the header script wires this
-// button to it.
+// Header search trigger — just the icon button. The search panel
+// itself is rendered at body level by SearchOverlay so it can layer above the
+// backdrop-filtered header; the header script wires this button to it.
 ---
 <button
   type="button"
   class="site-search-toggle"
   id="site-search-trigger"
+  data-magnetic="0.35"
   aria-label="Search"
   aria-controls="site-search-overlay"
   aria-expanded="false"

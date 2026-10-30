@@ -2,14 +2,16 @@
 import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
 import { getCollection } from "astro:content";
+import { getImage } from "astro:assets";
 import Layout from "../components/Layout.astro";
-import ShaderHero from "../components/ShaderHero.astro";
+import LogoMark from "../components/LogoMark.astro";
 import { hasTag, loadStructure, path } from "@cosense-site-kit/theme-utils";
-import { firstParagraph } from "../lib/content";
+import { firstParagraph, inlineText } from "../lib/content";
 import { newsSummary, formatNewsDate } from "../lib/news";
 import { allPhotosFrom, responsiveImage, type Photo } from "../lib/photos";
+import { gyazoId } from "../lib/gyazo";
 
-// Restrained home: a full-screen shader hero, then two quiet blocks — recent
+// Restrained home: a hero (title + lead on the dotted ground), then two quiet blocks — recent
 // news and a photo gallery that adapts to any number of images. Navigation is
 // left to the header nav; the home page doesn't repeat it.
 
@@ -50,11 +52,28 @@ const news = posts.slice(0, structure.posts?.limit ?? 5).map((n) => ({
 }));
 
 // ----- Gallery preview --------------------------------------------------
-// The images pasted on the home page (`.site` home.page). If that page has no
-// images, fall back to a random handful of news post header images. Cap with
-// `gallery: { limit: N }` in the .site YAML.
-const galleryLimit = cfg.gallery?.limit ?? 6;
-const homePhotos = homeEntry ? allPhotosFrom(homeEntry.data.blocks) : [];
+// The images pasted on the home page (`.site` home.page), topped up with
+// news post header images. The three flowing strips need plenty of photos,
+// so at least 24 are used; `gallery: { limit: N }` in the .site YAML can
+// only raise that.
+const galleryLimit = Math.max(cfg.gallery?.limit ?? 0, 24);
+// Photos pasted on the home page carry no link of their own. Link each to the
+// (newest) news post that uses the same picture, so every strip photo can be
+// clicked; one that no post uses opens the Gallery page instead.
+const photoKey = (src: string) => gyazoId(src) ?? src;
+const postByPhoto = new Map<string, string>();
+for (const e of all
+  .filter((e) => hasTag(e.data.tags, newsTag))
+  .sort((a, b) => (newsSummary(b).date?.getTime() ?? 0) - (newsSummary(a).date?.getTime() ?? 0))) {
+  for (const p of allPhotosFrom(e.data.blocks)) {
+    const k = photoKey(p.src);
+    if (!postByPhoto.has(k)) postByPhoto.set(k, path(e.data.slug));
+  }
+}
+const homePhotos = (homeEntry ? allPhotosFrom(homeEntry.data.blocks) : []).map((p) => ({
+  ...p,
+  href: p.href ?? postByPhoto.get(photoKey(p.src)) ?? path("gallery"),
+}));
 const newsHeaders: Photo[] = posts
   .filter((p) => p.image)
   .map((p) => ({ ...responsiveImage(p.image as string), alt: p.title, href: path(p.slug) }));
@@ -67,107 +86,288 @@ const shuffledHeaders = (() => {
   }
   return a;
 })();
-const gallery = (homePhotos.length > 0 ? homePhotos : shuffledHeaders).slice(0, galleryLimit);
+// Home-page photos first, then news header images (shuffled), without
+// repeats — so the strips have enough variety even when the home page only
+// has a few pictures.
+const gallery = (() => {
+  const seen = new Set<string>();
+  const out: Photo[] = [];
+  for (const p of [...homePhotos, ...shuffledHeaders]) {
+    if (seen.has(p.src)) continue;
+    seen.add(p.src);
+    out.push(p);
+  }
+  return out.slice(0, galleryLimit);
+})();
+// The gallery flows left in three endless strips.
+// Photos are dealt round-robin; with fewer than three, each strip shows all
+// of them, starting at a different one. Each strip repeats its photos until it
+// is comfortably wider than a screen, then the whole set is doubled so the
+// loop can wrap at exactly -50% without a seam.
+const MIN_PER_LOOP = 7;
+// Strip photos are only ~150px tall, so ask for small files (240/480px wide)
+// instead of the 960–1600px ones used elsewhere.
+const small = (p: Photo): Photo => {
+  if (/gyazo\.com\//.test(p.src)) return { ...p, ...responsiveImage(p.src, [240, 480]) };
+  if (/^https:\/\/wsrv\.nl\//.test(p.src)) {
+    const at = (w: number) => p.src.replace(/([?&])w=\d+/, `$1w=${w}`);
+    return { ...p, src: at(480), srcset: `${at(240)} 240w, ${at(480)} 480w` };
+  }
+  return p;
+};
+// Fetched and re-encoded at build time (small WebP files served from this
+// site), so the strips load fast instead of waiting on Gyazo's on-the-fly
+// thumbnails. A photo that can't be fetched is simply left out. Images from
+// hosts Astro isn't allowed to fetch (see image.domains in theme/index.ts)
+// fall back to the small remote URL. (Build only — see below.)
+const OPTIMIZABLE = /^https:\/\/(?:i\.)?gyazo\.com\/|^https:\/\/wsrv\.nl\//;
+const optimize = async (photo: Photo): Promise<Photo | null> => {
+  const p = small(photo);
+  // Only in a production build: in `astro dev` this would re-fetch every
+  // photo on each page load, so dev just uses the small remote files.
+  if (!import.meta.env.PROD || !OPTIMIZABLE.test(p.src)) return p;
+  try {
+    const big = await getImage({ src: p.src, inferSize: true, width: 480, format: "webp", quality: 72 });
+    const w = Number(big.attributes.width) || 480;
+    const h = Number(big.attributes.height) || 360;
+    const half = await getImage({
+      src: p.src,
+      width: 240,
+      height: Math.round((h * 240) / w),
+      format: "webp",
+      quality: 72,
+    });
+    return { ...p, src: big.src, srcset: `${half.src} 240w, ${big.src} 480w` };
+  } catch {
+    return null;
+  }
+};
+const flowPhotos = (await Promise.all(gallery.map(optimize))).filter((p): p is Photo => p !== null);
+
+const ROWS = 3;
+const flowRows: Photo[][] =
+  flowPhotos.length === 0
+    ? []
+    : flowPhotos.length < ROWS
+      ? Array.from({ length: ROWS }, (_, r) => flowPhotos.map((_, i) => flowPhotos[(i + r) % flowPhotos.length]))
+      : Array.from({ length: ROWS }, (_, r) => flowPhotos.filter((_, i) => i % ROWS === r));
+const loopOf = (row: Photo[]) => {
+  const out: Photo[] = [];
+  while (out.length < MIN_PER_LOOP) out.push(...row);
+  return out;
+};
+// ----- Hero ----------------------------------------------------------------
+// One quiet screen: the lab name and lead, and on the right the lab's "d"
+// mark, drawn once as a line when the page opens.
+const LOGO_D = "M188.51,94.78v90.92h-56.44c-31.17,0-56.44,25.27-56.44,56.44v106.63c0,31.17,25.27,56.44,56.44,56.44h56.44c31.17,0,56.44-25.27,56.44-56.44v-25.09h-56.44v4c0,11.65-9.44,21.09-21.09,21.09h-14.26c-11.65,0-21.09-9.44-21.09-21.09v-64.45c0-11.65,9.44-21.09,21.09-21.09h14.26c11.65,0,21.09,9.44,21.09,21.09v4h56.44v-25.09h0V94.78h-56.44Z";
+// ----- About block (under the news) -------------------------------------
+// Drawn from the Cosense "About" page: under its "Mission" heading, the
+// sub-heading is the one-line statement and the paragraph after it the lead
+// (its first sentence); under "Vision", each sub-heading + paragraph is a
+// pillar. Links on to the full page.
+const aboutItem = (structure.nav.length > 0 ? structure.nav : options.nav).find(
+  (item) => /^about$/i.test(item.label.trim()) && "page" in item,
+);
+const aboutEntry = find(aboutItem && "page" in aboutItem ? aboutItem.page : "About");
+const about = (() => {
+  const blocks = aboutEntry?.data.blocks ?? [];
+  let topDepth = 0;
+  let section: "mission" | "vision" | null = null;
+  let statement = "";
+  let lead = "";
+  const pillars: { title: string; body: string }[] = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.type === "heading") {
+      const text = inlineText(b.children).trim();
+      if (/mission|vision/i.test(text)) {
+        topDepth = b.depth;
+        section = /mission/i.test(text) ? "mission" : "vision";
+        continue;
+      }
+      if (b.depth <= topDepth) {
+        section = null; // the next top-level section
+        continue;
+      }
+      const next = blocks[i + 1];
+      const body = next && next.type === "paragraph" ? inlineText(next.children).trim() : "";
+      if (section === "mission" && !statement) {
+        statement = text;
+        lead = body.split(/(?<=。)/)[0] ?? "";
+      } else if (section === "vision") {
+        pillars.push({ title: text, body });
+      }
+    }
+  }
+  return { statement, lead, pillars, href: aboutEntry ? path(aboutEntry.data.slug) : undefined };
+})();
 ---
 <Layout title={siteTitle} description={siteDescription} bare hideToc>
   <script is:inline>document.documentElement.classList.add("js-reveal");</script>
 
   <section class="hero" data-pagefind-body>
-    <ShaderHero />
-    <div class="hero__scrim" aria-hidden="true"></div>
     <div class="hero__inner">
+      <div class="hero__copy">
       {eyebrow && <p class="hero__eyebrow">{eyebrow}</p>}
       <h1 class="hero__title">{displayTitle}</h1>
       {paragraphs.length > 0 ? (
         <div class="hero__lead">
           {paragraphs.map((p) => <p>{p}</p>)}
-        </div>
+      </div>
       ) : (
         siteDescription && <p class="hero__lead">{siteDescription}</p>
       )}
+      </div>
+      <svg class="hero__mark" viewBox="70 90 180 320" aria-hidden="true">
+        <path class="hero__mark-line" d={LOGO_D} pathLength="1" />
+      </svg>
       <a class="hero__scroll" href="#main" aria-label="下へスクロール">
-        <span>Scroll</span>
-        <svg width="14" height="22" viewBox="0 0 14 22" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M7 1v18M1 13l6 7 6-7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        <span class="hero__scroll-label">Scroll</span>
+        <svg class="hero__scroll-arrow" width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M8 2v19M2 15l6 6 6-6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </a>
     </div>
   </section>
 
   <div id="main">
-    {news.length > 0 && (
+    {(news.length > 0 || about.statement || about.pillars.length > 0) && (
       <section class="block">
-        <div class="wrap">
-          <div class="sect">
-            <h2 class="sect__en">News</h2>
-            <p class="sect__ja">最近の活動</p>
-          </div>
-          <ul class="postlist" data-reveal>
-            {news.map((n) => {
-              const thumb = n.image ? responsiveImage(n.image) : null;
-              const tags = n.tags.filter((t) => t !== newsTag);
-              // Many posts open with a paragraph that repeats their title; drop
-              // the summary in that case so the card isn't the same line twice.
-              const summary =
-                n.description && n.description.slice(0, 16) !== n.title.slice(0, 16)
-                  ? n.description
-                  : null;
-              return (
-                <li class="postlist__item">
-                  <a class="postlist__thumb" href={path(n.slug)} aria-hidden="true" tabindex="-1">
-                    {thumb ? (
-                      <img src={thumb.src} srcset={thumb.srcset} sizes="72px" alt="" loading="lazy" decoding="async" />
-                    ) : (
-                      <span class="postlist__ph">{Array.from(n.title.trim())[0] ?? "·"}</span>
-                    )}
-                  </a>
-                  <div class="postlist__body">
-                    <a class="postlist__title" href={path(n.slug)}>{n.title}</a>
-                    {summary && <p class="postlist__summary">{summary}</p>}
-                    <div class="postlist__meta">
-                      {n.date && (
+        <div class="duo">
+          {news.length > 0 && (
+            <div class="sheet duo__news" data-reveal>
+              <div class="sect">
+                <h2 class="sect__en">News</h2>
+                <p class="sect__ja">最近の活動</p>
+              </div>
+              <ul class="postlist">
+                {news.map((n) => {
+                  const thumb = n.image ? responsiveImage(n.image) : null;
+                  const tags = n.tags.filter((t) => t !== newsTag);
+                  const [y, m, d] = formatNewsDate(n.date).split("/");
+                  return (
+                    <li class="postlist__item">
+                      {n.date && y && m && d ? (
                         <time class="postlist__date" datetime={n.date.toISOString()}>
-                          {formatNewsDate(n.date)}
+                          <span class="postlist__year">{y}</span>
+                          <span class="postlist__md">{m}.{d}</span>
                         </time>
+                      ) : (
+                        <span class="postlist__date postlist__date--none" aria-hidden="true"></span>
                       )}
-                      {tags.map((t) => <span class="postlist__tag">#{t}</span>)}
-                    </div>
+                      <a class="postlist__thumb" href={path(n.slug)} aria-hidden="true" tabindex="-1">
+                        {thumb ? (
+                          <img src={thumb.src} srcset={thumb.srcset} sizes="64px" alt="" loading="lazy" decoding="async" />
+                        ) : (
+                          <span class="postlist__ph"><LogoMark class="thumb-mark" /></span>
+                        )}
+                      </a>
+                      <div class="postlist__body">
+                        <a class="postlist__title" href={path(n.slug)}>{n.title}</a>
+                        {n.description && n.description.slice(0, 16) !== n.title.slice(0, 16) && (
+                          <p class="postlist__summary">{n.description}</p>
+                        )}
+                        {tags.length > 0 && (
+                          <div class="postlist__meta">
+                            {tags.map((t) => <span class="postlist__tag">#{t}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div class="sheet__foot">
+                <a class="more" href={path("news")}>すべて見る<span aria-hidden="true">→</span></a>
+              </div>
+            </div>
+          )}
+
+          {(about.statement || about.pillars.length > 0) && (
+            <div class="sheet duo__about" data-reveal>
+              <div class="sect">
+                <h2 class="sect__en">About</h2>
+                <p class="sect__ja">研究室について</p>
+              </div>
+              <div class="about">
+                {about.statement && (
+                  <div class="about__mission">
+                    <p class="about__eyebrow">Mission</p>
+                    <p class="about__statement">{about.statement}</p>
+                    {about.lead && <p class="about__lead">{about.lead}</p>}
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-          <a class="more" href={path("news")}>すべて見る<span aria-hidden="true">→</span></a>
+                )}
+                {about.pillars.length > 0 && (
+                  <div class="about__vision">
+                    <p class="about__eyebrow">Vision</p>
+                    <ol class="about__pillars">
+                      {about.pillars.map((pl, i) => (
+                        <li class="about__pillar">
+                          <span class="about__pillar-no">{String(i + 1).padStart(2, "0")}</span>
+                          <div>
+                            <h3 class="about__pillar-title">{pl.title}</h3>
+                            {pl.body && <p class="about__pillar-body">{pl.body}</p>}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+              {about.href && (
+                <div class="sheet__foot">
+                  <a class="more" href={about.href}>研究室について詳しく<span aria-hidden="true">→</span></a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     )}
 
-    {gallery.length > 0 && (
-      <section class="block block--tint">
-        <div class="wrap">
+    {flowRows.length > 0 && (
+      <section class="flow" aria-labelledby="flow-title">
+        <noscript><style>.flow { display: none; }</style></noscript>
+        <div class="flow__head" data-reveal>
           <div class="sect">
-            <h2 class="sect__en">Gallery</h2>
+            <h2 class="sect__en" id="flow-title">Gallery</h2>
             <p class="sect__ja">研究室の様子</p>
           </div>
-          <div class="masonry" data-reveal>
-            {gallery.map((p, i) => {
-              const img = (
-                <img
-                  src={p.src}
-                  srcset={p.srcset}
-                  sizes="(max-width: 560px) 50vw, (max-width: 900px) 33vw, 22vw"
-                  alt={p.alt}
-                  loading={i < 6 ? "eager" : "lazy"}
-                  decoding="async"
-                />
-              );
-              return (
-                <figure class="masonry__cell">
-                  {p.href ? <a href={p.href}>{img}</a> : img}
-                </figure>
-              );
-            })}
-          </div>
+        </div>
+        <div class="flow__rows" data-reveal>
+          {flowRows.map((row) => {
+            const loop = loopOf(row);
+            return (
+              <div class="flow__row" style={`--dur:${loop.length * 30}s`}>
+                <ul class="flow__track">
+                  {[0, 1].map((copy) =>
+                    loop.map((p) => {
+                      const img = (
+                        <img
+                          data-src={p.src}
+                          data-srcset={p.srcset}
+                          sizes="240px"
+                          alt={copy === 0 ? p.alt : ""}
+                          decoding="async"
+                        />
+                      );
+                      return (
+                        <li class="flow__item" aria-hidden={copy === 1 ? "true" : undefined}>
+                          {p.href ? (
+                            <a href={p.href} tabindex={copy === 1 ? -1 : undefined}>{img}</a>
+                          ) : (
+                            img
+                          )}
+                        </li>
+                      );
+                    }),
+                  )}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+        <div class="flow__foot">
           <a class="more" href={path("gallery")}>すべて見る<span aria-hidden="true">→</span></a>
         </div>
       </section>
@@ -177,6 +377,196 @@ const gallery = (homePhotos.length > 0 ? homePhotos : shuffledHeaders).slice(0, 
 </Layout>
 
 <script>
+  // ----- Hero -----
+  // On a session's first home visit the header starts parked (inline script
+  // in Header.astro) so the first screen is just the lab; it drops in once
+  // the reader scrolls down past the first third of the screen, and from
+  // then on behaves as on every other page. The "d" mark on the right draws
+  // itself once — after the loading screen, if that's showing.
+  (() => {
+    const hero = document.querySelector<HTMLElement>(".hero");
+    const header = document.querySelector<HTMLElement>(".site-header");
+    const root = document.documentElement;
+    if (!hero) return;
+
+    const unpark = () => {
+      if (!header?.classList.contains("is-parked")) return;
+      header.classList.remove("is-parked");
+      try {
+        sessionStorage.setItem("dclab-entered", "1");
+      } catch {
+        /* storage blocked: the header just parks again next visit */
+      }
+    };
+    if (header?.classList.contains("is-parked")) {
+      const onScroll = () => {
+        if (window.scrollY > window.innerHeight * 0.33) {
+          unpark();
+          window.removeEventListener("scroll", onScroll);
+        }
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    }
+
+    // Glide from the first screen down to the content (the news).
+    const goMain = () => {
+      const main = document.getElementById("main");
+      const top = main
+        ? main.getBoundingClientRect().top + window.scrollY - (header?.offsetHeight ?? 0) - 24
+        : hero.offsetTop + hero.offsetHeight;
+      unpark();
+      window.scrollTo({ top, behavior: "smooth" });
+    };
+
+    // While the "d" draws (wide viewports, at the top, motion allowed), the
+    // page stays put. Trying to scroll makes the line finish in a one-second
+    // sweep; scrolling works normally from the moment it's complete (input
+    // made while held is simply dropped). Clicking "Scroll" does the same and
+    // then glides on to the news. Input is swallowed rather than hiding the
+    // scrollbar, so nothing shifts; a hard cap releases the hold regardless.
+    const mark = hero.querySelector<SVGElement>(".hero__mark");
+    const line = hero.querySelector<SVGPathElement>(".hero__mark-line");
+    const shouldHold =
+      !!mark &&
+      !!line &&
+      getComputedStyle(mark).display !== "none" &&
+      window.scrollY < 40 &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let held = false;
+    let hurried = false;
+    let goAfter = false;
+
+    const release = () => {
+      if (!held) return;
+      held = false;
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", pin);
+      if (goAfter) goMain();
+    };
+    // finish the line from wherever it is now
+    const fastForward = () => {
+      if (!line) return;
+      const now = getComputedStyle(line).strokeDashoffset;
+      line.style.transition = "none";
+      line.style.strokeDashoffset = now;
+      line.getBoundingClientRect(); // commit the frozen value
+      line.style.transition = "stroke-dashoffset 1s cubic-bezier(0.33, 1, 0.68, 1)";
+      line.style.strokeDashoffset = "0";
+      window.setTimeout(release, 1050); // in case transitionend doesn't fire
+    };
+    const hurry = () => {
+      if (hurried) return;
+      hurried = true;
+      if (hero.classList.contains("is-drawn")) fastForward();
+      // not drawing yet (loading screen still up): draw() goes fast instead
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!held) return;
+      e.preventDefault();
+      if (Math.abs(e.deltaY) > 0) hurry();
+    };
+    let touchY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      touchY = e.touches[0]?.clientY ?? 0;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!held) return;
+      e.preventDefault();
+      const y = e.touches[0]?.clientY ?? touchY;
+      if (Math.abs(y - touchY) > 8) hurry();
+    };
+    const DOWN_KEYS = new Set([" ", "PageDown", "ArrowDown", "End"]);
+    const UP_KEYS = new Set(["PageUp", "ArrowUp", "Home"]);
+    const onKey = (e: KeyboardEvent) => {
+      if (!held || (e.target as HTMLElement)?.closest?.("input, textarea")) return;
+      if (DOWN_KEYS.has(e.key) || UP_KEYS.has(e.key)) {
+        e.preventDefault();
+        hurry();
+      }
+    };
+    const pin = () => {
+      if (held && window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+
+    if (shouldHold) {
+      held = true;
+      window.addEventListener("wheel", onWheel, { passive: false });
+      window.addEventListener("touchstart", onTouchStart, { passive: true });
+      window.addEventListener("touchmove", onTouchMove, { passive: false });
+      window.addEventListener("keydown", onKey);
+      window.addEventListener("scroll", pin, { passive: true });
+      line!.addEventListener("transitionend", release);
+      window.setTimeout(release, 12000);
+    }
+
+    // draw the mark once the loading screen (if any) has gone
+    const draw = () => {
+      hero.classList.add("is-drawn");
+      if (hurried) fastForward();
+    };
+    if (root.classList.contains("is-intro")) {
+      const mo = new MutationObserver(() => {
+        if (!root.classList.contains("is-intro")) {
+          mo.disconnect();
+          window.setTimeout(draw, 150);
+        }
+      });
+      mo.observe(root, { attributes: true, attributeFilter: ["class"] });
+    } else {
+      window.setTimeout(draw, 250);
+    }
+
+    // "Scroll": if the line is still drawing, finish it first, then glide on
+    hero.querySelector<HTMLAnchorElement>(".hero__scroll")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (held) {
+        goAfter = true;
+        hurry();
+      } else {
+        goMain();
+      }
+    });
+  })();
+
+  // ----- Gallery strips -----
+  // The strip photos only start downloading when the gallery comes near the
+  // screen (so they don't slow the first view), fade in as each arrives, and
+  // the strips only move while they're on screen.
+  (() => {
+    const flow = document.querySelector<HTMLElement>(".flow");
+    if (!flow) return;
+    const imgs = Array.from(flow.querySelectorAll<HTMLImageElement>("img[data-src]"));
+    const load = () => {
+      for (const img of imgs) {
+        img.addEventListener("load", () => img.classList.add("is-loaded"), { once: true });
+        if (img.dataset.srcset) img.srcset = img.dataset.srcset;
+        img.src = img.dataset.src ?? "";
+        if (img.complete && img.naturalWidth) img.classList.add("is-loaded");
+      }
+    };
+    if (!("IntersectionObserver" in window)) {
+      load();
+      flow.classList.add("is-running");
+      return;
+    }
+    let loaded = false;
+    new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !loaded) {
+          loaded = true;
+          load();
+        }
+        flow.classList.toggle("is-running", e.isIntersecting);
+      },
+      { rootMargin: "1200px 0px" },
+    ).observe(flow);
+  })();
+
   // Reveal blocks as they scroll into view. Hidden only once the inline
   // js-reveal class lands (JS-off stays visible); reduced motion skips it.
   const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");

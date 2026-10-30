@@ -160,6 +160,13 @@ export default function themeLab(opts: ThemeLabOptions = {}): AstroIntegration {
       "astro:config:setup": ({ injectRoute, updateConfig, config }) => {
         updateConfig({
           vite: { plugins: [optionsVirtualModule(VIRTUAL_ID, options)] },
+          // Let astro:assets fetch and optimize photos from these hosts at
+          // build time (the home gallery strips; see templates/home.astro).
+          image: {
+            domains: ["gyazo.com", "wsrv.nl"],
+            // Gyazo thumbnails redirect to a CDN subdomain
+            remotePatterns: [{ protocol: "https", hostname: "**.gyazo.com" }],
+          },
         });
 
         // Full-text search: add the Pagefind integration so it indexes the
