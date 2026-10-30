@@ -1,6 +1,6 @@
 /* theme-lab — academic / research-lab visual identity.
-   Restrained navy accent, Shippori Mincho display headings over an M PLUS 2
-   body, generous horizontal rhythm. Tuned for content-dense lab sites: members
+   Charcoal-and-cyan palette and squared, small-radius corners taken from the
+   lab logo; M PLUS 2 throughout, M PLUS 1 Code for dates / labels. Tuned for content-dense lab sites: members
    lists, publication entries, news.
 
    The palette is expressed entirely as `:root` design tokens so a preset
@@ -9,32 +9,42 @@
 
 :root {
   /* ----- Palette (light skin) ----- */
+  /* Neutrals follow the logo's charcoal (#222626) — a slightly green-grey,
+     not the blue-grey of the old navy skin. */
   --color-bg: #ffffff;
-  --color-bg-soft: #f8f9fb;          /* card / code / surface fill */
-  --color-bg-hover: #eef1f5;         /* hover surface */
-  --color-text: #1f2937;
-  --color-text-soft: #4b5563;
-  --color-text-muted: #6b7280;
-  --color-text-faint: #9ca3af;
-  --color-border: #e5e7eb;
-  --color-border-soft: #f1f3f5;
-  --color-divider: rgb(31 41 55 / 0.08);
+  --color-bg-soft: #f6f7f7;          /* card / code / surface fill */
+  --color-bg-hover: #edefef;         /* hover surface */
+  --color-text: #222626;             /* = logo ink */
+  --color-text-soft: #4a5050;
+  --color-text-muted: #687070;
+  --color-text-faint: #9ea4a4;
+  --color-border: #e2e5e5;
+  --color-border-soft: #eff1f1;
+  --color-divider: rgb(34 38 38 / 0.08);
 
-  --color-accent: #1e3a8a;           /* deep navy: academic, restrained */
-  --color-accent-hover: #1e40af;
-  --color-accent-soft: #dbeafe;
+  /* Cyan accent. #0891b2 is the brand cyan, but on white it only reaches
+     ~3.7:1, so text-bearing accents use the deeper #0e7490 (~5.4:1, AA). */
+  --color-accent: #0e7490;
+  --color-accent-hover: #155e75;
+  --color-accent-soft: #cffafe;
+  --color-accent-bright: #0891b2;    /* non-text marks: bars, rings, focus */
 
-  /* Inline code: rose text on a soft neutral fill */
-  --color-code-bg: rgb(31 41 55 / 0.07);
-  --color-code-text: #be123c;
+  /* Inline code: accent text on a soft neutral fill */
+  --color-code-bg: rgb(34 38 38 / 0.07);
+  --color-code-text: #0e7490;
 
   /* Callout / quote backgrounds */
-  --color-callout-bg: #f8f9fb;
-  --color-callout-border: #eceef1;
+  --color-callout-bg: #f6f7f7;
+  --color-callout-border: #eceeee;
+
+  /* Ground (地) vs sheet (文): the page ground is a pale grey with a faint
+     dot grid; text sits on white sheets laid over it. */
+  --color-ground: #eef0f0;
+  --color-ground-dot: rgb(34 38 38 / 0.11);
 
   /* Tag chip */
-  --color-tag-bg: rgb(31 41 55 / 0.06);
-  --color-tag-text: #4b5563;
+  --color-tag-bg: rgb(34 38 38 / 0.06);
+  --color-tag-text: #4a5050;
 
   /* Sticky header backdrop (semi-transparent over the page) */
   --color-header-bg: rgb(255 255 255 / 0.85);
@@ -46,6 +56,15 @@
   --width-content: 48rem;
   --width-wide: 64rem;
 
+  /* Corners — taken from the logo's "d": a squared counter with small rounded
+     corners. Every box uses one of these instead of ad-hoc px / pills. */
+  --radius-sm: 3px;                  /* chips, badges, inline code */
+  --radius: 6px;                     /* buttons, nav items, code blocks */
+  --radius-lg: 10px;                 /* cards, images, overlays */
+
+  /* The logo's heavy stem, reused as a band under the header / section marks. */
+  --bar: 4px;
+
   /* Type — Japanese-first web fonts (loaded in components/Layout.astro):
      M PLUS 2 body, Shippori Mincho serif display, M PLUS 1 Code mono. The
      system stacks follow as fallbacks while the web fonts load / if blocked. */
@@ -53,12 +72,15 @@
     "Yu Gothic UI", "Helvetica Neue", sans-serif;
   --font-serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho",
     "Times New Roman", serif;
-  --font-display: var(--font-serif);
+  /* Headings in the sans, matching the logo's gothic wordmark. */
+  --font-display: var(--font-sans);
   --font-mono: "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Consolas,
     monospace;
 
   /* Motion */
   --ease: cubic-bezier(0.16, 0.84, 0.44, 1);
+  /* a long, soft landing for things that arrive (page / scroll reveals) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * { box-sizing: border-box; }
@@ -66,7 +88,12 @@
 html {
   font-family: var(--font-sans);
   color: var(--color-text);
-  background: var(--color-bg);
+  /* The ground: a dot grid, like graph paper / a pixel lattice. It stays put
+     (fixed) while the white sheets of text scroll over it. */
+  background-color: var(--color-ground);
+  background-image: radial-gradient(var(--color-ground-dot) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+  background-attachment: fixed;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -74,7 +101,7 @@ html {
   /* Anchor jumps land under a sticky header otherwise. Applies to every
      in-page target — the home page's Scroll button, TOC entries, headings
      linked from elsewhere. */
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 6.5rem;
 }
 
 /* In-page anchors glide rather than cut. Declared here rather than per link so
@@ -112,22 +139,163 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
 }
 
+/* ===================== Ground lens ===================== */
+
+/* Bigger dots that only show in a soft circle around the pointer (position
+   from components/Interactions.astro via --lx / --ly). Two layers: a mid-size
+   ring and a larger core, so the dots grow toward the centre. Same 22px grid
+   and the same fixed origin as the html ground, so every big dot sits exactly
+   on a small one. z-index -1 paints it above the ground but under all page
+   content — the white sheets cover it. */
+.ground-lens {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+}
+.ground-lens.is-on { opacity: 1; }
+.ground-lens::before,
+.ground-lens::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-size: 22px 22px;
+}
+.ground-lens::before {
+  background-image: radial-gradient(var(--color-ground-dot) 1.7px, transparent 2.1px);
+  -webkit-mask-image: radial-gradient(circle 190px at var(--lx, -999px) var(--ly, -999px), #000 0%, transparent 100%);
+  mask-image: radial-gradient(circle 190px at var(--lx, -999px) var(--ly, -999px), #000 0%, transparent 100%);
+}
+.ground-lens::after {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--color-accent-bright) 45%, var(--color-ground-dot)) 2.6px,
+    transparent 3px
+  );
+  -webkit-mask-image: radial-gradient(circle 95px at var(--lx, -999px) var(--ly, -999px), #000 0%, transparent 100%);
+  mask-image: radial-gradient(circle 95px at var(--lx, -999px) var(--ly, -999px), #000 0%, transparent 100%);
+}
+
+/* ===================== Image fallback ===================== */
+
+/* Stand-in for a photo that's missing or failed to load (see the inline
+   script in components/Layout.astro and the placeholders in the templates):
+   the logo's "d" mark, small and quiet on a soft surface. A failed <img>
+   keeps its own classes, so sized slots keep their shape. */
+.img-fallback {
+  display: grid !important;
+  place-items: center;
+  width: 100%;
+  min-height: 5rem;
+  aspect-ratio: 4 / 3;
+  background: var(--color-bg-soft);
+  color: var(--color-text-faint);
+  overflow: hidden;
+}
+.img-fallback__mark,
+.member-photo-placeholder .thumb-mark,
+.profile__photo--ph .thumb-mark {
+  height: 32%;
+  max-height: 3.5rem;
+  width: auto;
+  opacity: 0.55;
+}
+/* a missing picture inside an article: a modest panel, not a full-size one */
+.page-content .img-fallback {
+  max-height: 14rem;
+  aspect-ratio: 16 / 9;
+  margin: 1rem 0;
+  border-radius: var(--radius);
+}
+/* inside fixed-size slots (thumbnails, avatars) fill the slot instead */
+.postlist__thumb .img-fallback,
+.news-card__thumb .img-fallback,
+.pin__cell .img-fallback,
+.sx__card-thumb .img-fallback {
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+/* avatars keep their own fixed size and circle */
+.member-photo.img-fallback,
+.profile__photo.img-fallback {
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 50%;
+}
+
 /* ===================== Header ===================== */
 
+/* Floating bar: detached from the viewport edges with a gap, rounded like the
+   rest of the UI, and lifted with a soft shadow. It stays sticky, slides away
+   while the reader scrolls down and returns on any upward scroll (the
+   `is-hidden` class is driven by the script in components/Header.astro). */
 .site-header {
+  --header-gap: 0.75rem;
   position: sticky;
-  top: 0;
+  top: var(--header-gap);
   z-index: 20;
+  width: min(calc(var(--width-wide) + 1rem), calc(100% - 2 * var(--header-gap)));
+  margin: var(--header-gap) auto 0;
   background: var(--color-header-bg);
-  backdrop-filter: saturate(180%) blur(8px);
-  -webkit-backdrop-filter: saturate(180%) blur(8px);
-  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  /* Heavy charcoal band on top, after the logo's stem. */
+  border: 1px solid var(--color-border);
+  border-top: var(--bar) solid var(--color-text);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgb(34 38 38 / 0.04),
+    0 8px 24px rgb(34 38 38 / 0.08);
+  /* Slide only — fading a backdrop-filtered bar makes the blur drop out at the
+     first frame, which reads as the bar blinking away. */
+  transition:
+    transform 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+    box-shadow 0.3s var(--ease),
+    border-radius 0.25s var(--ease),
+    visibility 0s;
+  /* Kept as its own layer during page transitions, so it doesn't flash with
+     the content (see "Page transitions" below). */
+  view-transition-name: site-header;
+}
+.site-header.is-hidden {
+  transform: translateY(calc(-100% - var(--header-gap) - 1.5rem));
+  pointer-events: none;
+  /* Drop out of the tab order only once the slide has finished. */
+  visibility: hidden;
+  transition:
+    transform 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+    box-shadow 0.3s var(--ease),
+    visibility 0s linear 0.45s;
+}
+/* Home: the bar floats over the full-screen hero instead of taking space
+   above it (fixed rather than sticky; visually identical once scrolled). */
+.site-header--overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+}
+/* Home intro, first visit: parked above the screen until the reader enters. */
+.site-header.is-parked {
+  transform: translateY(calc(-100% - var(--header-gap) - 1.5rem));
+  visibility: hidden;
+  box-shadow: none;
+}
+/* Flat (no shadow) while it rests at the very top of the page. */
+.site-header.is-at-top {
+  box-shadow: 0 1px 2px rgb(34 38 38 / 0.04);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .site-header.is-hidden { transition: none; }
 }
 
 .site-header-inner {
   max-width: var(--width-wide);
   margin: 0 auto;
-  padding: 0.875rem 1.5rem;
+  padding: 0.75rem 1.25rem 0.75rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -139,6 +307,7 @@ h1, h2, h3, h4, h5, h6 {
 .site-header:not(.has-js) .site-header-inner { flex-wrap: wrap; }
 
 .site-brand {
+  position: relative;
   display: inline-flex;
   align-items: center;
   font-family: var(--font-display);
@@ -147,8 +316,18 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: none;
   /* Push the nav + controls to the right edge. */
   margin-right: auto;
+  /* a little hit-area padding, offset so the logo stays where it was */
+  padding: 0.3rem 0.6rem;
+  margin-left: -0.6rem;
+  border-radius: var(--radius);
+  transition: background 0.2s var(--ease);
 }
-.site-brand:hover { text-decoration: none; }
+/* Feels pressable: a soft surface on hover, the logo nudges up and dips on
+   press, plus the magnetic lean from Interactions.astro (data-magnetic). */
+.site-brand:hover { text-decoration: none; background: var(--color-bg-hover); }
+.site-brand .site-logo { transition: transform 0.25s var(--ease); }
+.site-brand:hover .site-logo { transform: translateY(-1px); }
+.site-brand:active .site-logo { transform: translateY(1px) scale(0.98); }
 
 /* Logo image (theme option `logo`). Replaces the title text; the text returns
    as a fallback if the image 404s (`.logo-failed`, set by the img's onerror). */
@@ -178,16 +357,20 @@ h1, h2, h3, h4, h5, h6 {
 .site-nav-wrap { display: flex; }
 .site-nav {
   display: flex;
-  gap: 0.25rem;
+  gap: 0;
   list-style: none;
-  margin: 0;
+  margin: 0 0 0 2.5rem; /* keep clear of the logo */
   padding: 0;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 .site-nav a {
-  display: inline-block;
-  padding: 0.375rem 0.625rem;
-  border-radius: 4px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  line-height: 1.3;
+  padding: 0.4rem 0.6rem 0.55rem;
+  border-radius: var(--radius);
   color: var(--color-text-soft);
   text-decoration: none;
   white-space: nowrap;
@@ -198,7 +381,52 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
   text-decoration: none;
 }
-.site-nav a.is-active { color: var(--color-accent); }
+.site-nav a { position: relative; }
+/* Main label over a small gloss in the other language (Header.astro): an
+   English label gets Japanese, a Japanese one gets mono English. */
+.site-nav-sub {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+  transition: color 0.15s var(--ease);
+}
+.site-nav-sub--en { font-family: var(--font-mono); letter-spacing: 0.06em; }
+.site-nav-sub--ja { letter-spacing: 0.08em; }
+.site-nav a:hover .site-nav-sub { color: var(--color-text-muted); }
+.site-nav a.is-active .site-nav-sub { color: var(--color-accent-bright); }
+/* Current section: accent text plus a short cyan stem under the label. */
+.site-nav a.is-active { color: var(--color-accent); font-weight: 600; }
+.site-nav a.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.15rem;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-accent-bright);
+}
+@media (max-width: 1080px) {
+  /* In the dropdown the stem sits at the row's left edge instead. */
+  .site-nav a.is-active { background: var(--color-bg-soft); }
+  .site-nav a.is-active::after {
+    left: 0;
+    right: auto;
+    top: 0.625rem;
+    bottom: 0.625rem;
+    width: 3px;
+    height: auto;
+  }
+}
+
+/* Keyboard focus: one consistent cyan ring everywhere (mouse clicks don't
+   show it, thanks to :focus-visible). */
+:focus-visible {
+  outline: 2px solid var(--color-accent-bright);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 
 /* Search + hamburger toggles — compact icon buttons. They only appear once JS
    can drive them. */
@@ -207,11 +435,11 @@ h1, h2, h3, h4, h5, h6 {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--color-text-soft);
   cursor: pointer;
@@ -223,60 +451,75 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
 }
 .site-header.has-js .site-search-toggle { display: inline-flex; }
-.site-search { display: inline-flex; align-items: center; }
+/* The magnifier leans toward the pointer (data-magnetic) and gives a little
+   squish when it's under it — a soft, rubbery "munyu". */
+.site-search-toggle svg { transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.site-search-toggle:hover svg { transform: scale(1.12) rotate(-8deg); }
+.site-search-toggle:active svg { transform: scale(0.9, 0.86); transition-duration: 0.12s; }
 
-/* Search overlay — opened from the header icon. A dim backdrop covers the page
-   while the search box expands horizontally from the icon's position. Lives at
-   body level (not inside the backdrop-filtered header) so it can layer above
-   both the page and the header. */
+/* Search panel (SearchOverlay.astro) — command-palette style: a dim,
+   blurred backdrop and a centred panel that drops in slightly, with the same
+   charcoal top band as the header. Lives at body level so it can layer above
+   the backdrop-filtered header. */
 .search-overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.18s var(--ease), visibility 0.18s var(--ease);
+  transition: opacity 0.2s var(--ease), visibility 0.2s var(--ease);
 }
 .search-overlay.is-open { visibility: visible; opacity: 1; }
 .search-overlay-backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(15 23 42 / 0.4);
+  background: color-mix(in srgb, var(--color-text) 35%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 .search-box {
   position: absolute;
-  top: 0.875rem;
-  right: 1.5rem;
-  width: 2.25rem;
-  max-width: calc(100vw - 1.5rem);
-  max-height: 80vh;
+  top: min(12vh, 7rem);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: min(40rem, calc(100vw - 1.5rem));
+  max-height: min(76vh, 44rem);
+  display: flex;
+  flex-direction: column;
   overflow: hidden auto;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgb(15 23 42 / 0.22);
-  padding: 0.75rem;
-  transition: width 0.22s var(--ease);
+  border-top: var(--bar) solid var(--color-text);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 70px -20px rgb(15 23 42 / 0.45);
+  transform: translateY(-0.75rem) scale(0.98);
+  transition: transform 0.3s var(--ease);
 }
-.search-overlay.is-open .search-box {
-  width: min(34rem, calc(100vw - 1.5rem));
+.search-overlay.is-open .search-box { transform: none; }
+.search-box__head {
+  display: flex;
+  align-items: center;
+  padding: 0.9rem 1.25rem 0.25rem;
 }
+.search-box__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+#cosense-search { padding: 0.5rem 1.25rem 0.75rem; }
 .search-box-note {
-  margin: 0.25rem 0.25rem 0;
+  margin: 0 1.25rem 0.75rem;
   font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
 .search-box-note[hidden] { display: none; }
-
 @media (max-width: 600px) {
-  .search-box {
-    left: 0.75rem !important;
-    right: 0.75rem !important;
-    width: auto !important;
-  }
+  .search-box { top: 0.75rem; max-height: calc(100svh - 1.5rem); }
 }
 
-/* Pagefind UI, restyled to match the theme. */
 #cosense-search {
   --pagefind-ui-scale: 0.8;
   --pagefind-ui-primary: var(--color-accent);
@@ -285,11 +528,23 @@ h1, h2, h3, h4, h5, h6 {
   --pagefind-ui-border: var(--color-border);
   --pagefind-ui-tag: var(--color-bg-soft);
   --pagefind-ui-border-width: 1px;
-  --pagefind-ui-border-radius: 8px;
+  --pagefind-ui-border-radius: var(--radius-lg);
   --pagefind-ui-font: var(--font-sans);
 }
-#cosense-search .pagefind-ui__search-input { background: var(--color-bg-soft); font-weight: 400; }
+#cosense-search .pagefind-ui__search-input {
+  background: var(--color-bg-soft);
+  font-weight: 400;
+  height: 3.25rem;
+  font-size: 1.05rem;
+}
+#cosense-search .pagefind-ui__search-input:focus {
+  outline: none;
+  border-color: var(--color-accent-bright);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-bright) 20%, transparent);
+}
 #cosense-search .pagefind-ui__search-input:focus { background: var(--color-bg); }
+/* Results as rows that light up with a cyan stem on hover. */
+#cosense-search .pagefind-ui__results { margin-top: 0.25rem; }
 #cosense-search .pagefind-ui__search-clear {
   background: transparent;
   color: var(--color-text-muted);
@@ -303,7 +558,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 #cosense-search .pagefind-ui__result {
   border-top: 1px solid var(--color-divider);
-  padding: 1rem 0;
+  padding: 0.85rem 0.75rem 0.85rem 0.85rem;
+  border-left: 3px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+#cosense-search .pagefind-ui__result:hover,
+#cosense-search .pagefind-ui__result:focus-within {
+  background: var(--color-bg-soft);
+  border-left-color: var(--color-accent-bright);
 }
 #cosense-search .pagefind-ui__result-link {
   color: var(--color-text);
@@ -316,16 +579,17 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-accent-soft);
   background: color-mix(in srgb, var(--color-accent) 18%, transparent);
   color: inherit;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   padding: 0 0.1em;
 }
 
 /* Collapse to the hamburger while the inline nav still fits on one row. The
    brand (logo ~280px) + nav (~476px) + search icon + gaps need ~800px, so the
    switch has to happen well above the old 720px or the bar wrapped to 2 rows
-   in the 721–880px band. */
-@media (max-width: 900px) {
-  .site-header-inner { padding: 0.75rem 1.25rem; }
+   in the 721–880px band; with the two-line labels and the search pill the
+   bar needs ~1080px. */
+@media (max-width: 1080px) {
+  .site-header-inner { padding: 0.625rem 0.75rem 0.625rem 1.125rem; }
 
   /* No-JS fallback: nav wraps to its own full-width row and stays visible. */
   .site-nav-wrap { flex-basis: 100%; }
@@ -339,20 +603,82 @@ h1, h2, h3, h4, h5, h6 {
      ahead of the toggle with `order` (default order is 0). */
   .site-header.has-js .site-search-toggle { order: 1; }
   .site-header.has-js .site-nav-toggle { order: 2; }
+  /* The menu unfolds from the bar itself: same surface, attached to its
+     bottom edge, so bar + menu read as one card. It wipes open downward
+     (clip-path) rather than popping; visibility keeps it out of the tab
+     order when shut. */
   .site-header.has-js .site-nav-wrap {
     position: absolute;
     top: 100%;
-    left: 0;
-    right: 0;
+    left: -1px;
+    right: -1px;
     z-index: 29;
-    display: none;
+    display: block;
     flex-basis: auto;
-    padding: 0.75rem 1.25rem;
+    padding: 0.25rem 0.5rem 0.6rem;
+    /* solid: a backdrop blur doesn't work inside the bar's own blurred layer,
+       so a see-through menu would let the page text show through */
     background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
-    box-shadow: 0 12px 28px rgb(15 23 42 / 0.14);
+    border: 1px solid var(--color-border);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    box-shadow: 0 18px 30px -16px rgb(34 38 38 / 0.18);
+    visibility: hidden;
+    clip-path: inset(0 0 100% 0);
+    transition:
+      clip-path 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 0.4s;
   }
-  .site-header.has-js .site-nav-wrap.is-open { display: block; }
+  .site-header.has-js .site-nav-wrap.is-open {
+    visibility: visible;
+    clip-path: inset(0 0 0 0);
+    transition:
+      clip-path 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s;
+  }
+  /* While open, the bar's bottom corners square off so the menu joins it, and
+     a hairline separates the two. */
+  .site-header.is-menu-open {
+    background: var(--color-bg);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .site-header.has-js .site-nav-wrap::before {
+    content: "";
+    display: block;
+    height: 1px;
+    margin: 0 0.25rem 0.35rem;
+    background: var(--color-border-soft);
+  }
+  /* items drift in just after the wipe */
+  .site-header.has-js .site-nav > li {
+    opacity: 0;
+    translate: 0 -4px;
+    transition: opacity 0.2s var(--ease), translate 0.3s var(--ease-out);
+  }
+  .site-header.has-js .site-nav-wrap.is-open .site-nav > li {
+    opacity: 1;
+    translate: 0 0;
+    transition-delay: calc(var(--i, 0) * 30ms + 60ms);
+  }
+  .site-header.has-js .site-nav > li:nth-child(2) { --i: 1; }
+  .site-header.has-js .site-nav > li:nth-child(3) { --i: 2; }
+  .site-header.has-js .site-nav > li:nth-child(4) { --i: 3; }
+  .site-header.has-js .site-nav > li:nth-child(5) { --i: 4; }
+  .site-header.has-js .site-nav > li:nth-child(6) { --i: 5; }
+  .site-header.has-js .site-nav > li:nth-child(7) { --i: 6; }
+
+  /* Hamburger → ×: the outer bars swing into a cross, the middle one fades. */
+  .site-nav-toggle .nav-bar {
+    transform-box: view-box;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s var(--ease);
+  }
+  .site-nav-toggle .nav-bar--1 { transform-origin: 12px 6px; }
+  .site-nav-toggle .nav-bar--2 { transform-origin: 12px 12px; }
+  .site-nav-toggle .nav-bar--3 { transform-origin: 12px 18px; }
+  .site-nav-toggle[aria-expanded="true"] .nav-bar--1 { transform: translateY(6px) rotate(45deg); }
+  .site-nav-toggle[aria-expanded="true"] .nav-bar--2 { opacity: 0; transform: scaleX(0.2); }
+  .site-nav-toggle[aria-expanded="true"] .nav-bar--3 { transform: translateY(-6px) rotate(-45deg); }
 
   /* In the dropdown each item owns its whole row. The desktop rule leaves these
      inline-block, so the hit area was only as wide as the label (56–103px of a
@@ -360,49 +686,158 @@ h1, h2, h3, h4, h5, h6 {
      under the 44px minimum. */
   .site-nav a {
     display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
     min-height: 2.75rem;
     padding: 0.5rem 0.75rem;
-    border-radius: 6px;
+    border-radius: var(--radius);
   }
 }
 
 /* ===================== Main column ===================== */
 
+/* The text sheet (文): a white page laid on the dotted ground, with the same
+   side gap and corner radius as the floating header. Article pages get a
+   reading-width sheet; `wide` pages (lists, members, publications) match the
+   header's width. */
 .site-main {
-  flex: 1;
-  width: 100%;
-  max-width: var(--width-content);
-  margin: 0 auto;
-  padding: 3rem 1.5rem 4rem;
+  --sheet-pad: clamp(1.25rem, 5vw, 3.5rem);
+  flex: 1 0 auto;
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-content) + 2 * var(--sheet-pad));
+  margin: 1.5rem auto 0;
+  padding: clamp(2rem, 5vw, 3.25rem) var(--sheet-pad) clamp(3rem, 6vw, 4.5rem);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgb(34 38 38 / 0.04),
+    0 18px 48px -12px rgb(34 38 38 / 0.10);
 }
-.site-main.wide { max-width: var(--width-wide); }
-/* Home: the page owns its own measure (full-bleed hero + gateway sections). */
-.site-main.bare { max-width: none; padding: 0; }
-
-@media (max-width: 540px) {
-  .site-main { padding: 2.5rem 1.25rem 4rem; }
+.site-main.wide { max-width: calc(var(--width-wide) + 1rem); }
+/* Home / gallery: the page owns its own measure (full-bleed hero + sections),
+   so no sheet — those pages place their own sheets (see Home: content blocks). */
+.site-main.bare {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* ===================== Footer ===================== */
 
+/* A full-width closing band: brand on the left, the site nav as a compact
+   sitemap, and this page's Cosense source; a hairline row below carries the
+   copyright. The heavy top stem mirrors the header's. */
 .site-footer {
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg-soft);
+  margin-top: 2rem;
+  border-top: var(--bar) solid var(--color-text);
+  background: var(--color-bg);
+  color: var(--color-text-soft);
+  font-size: 0.875rem;
 }
 .site-footer-inner {
   max-width: var(--width-wide);
   margin: 0 auto;
-  padding: 1.75rem 1.5rem;
-  font-size: 0.8125rem;
+  padding: clamp(2.5rem, 6vh, 3.75rem) 1.5rem 1.75rem;
+}
+.site-footer a { color: inherit; }
+
+.site-footer-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem 3rem;
+  align-items: start;
+}
+
+.site-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  text-decoration: none;
+  color: var(--color-text);
+}
+.site-footer-mark {
+  flex: 0 0 auto;
+  height: 2.75rem;
+  width: auto;
+}
+.site-footer-name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  line-height: 1.4;
+}
+.site-footer-tagline {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
   color: var(--color-text-muted);
+}
+
+/* Two short columns of links. */
+.site-footer-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 0.5rem 2rem;
+}
+.site-footer-nav a,
+.site-footer-source a {
+  display: inline-block;  /* so the magnetic lean (a transform) applies */
+  text-decoration: none;
+  transition: color 0.15s var(--ease);
+}
+.site-footer-nav a:hover,
+.site-footer-source a:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.site-footer-source {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.site-footer-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+.site-footer-source a { font-weight: 500; color: var(--color-text); }
+
+.site-footer-bottom {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem 1.5rem;
+  margin-top: clamp(2rem, 5vh, 3rem);
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
-.site-footer-inner a { color: inherit; text-decoration: underline; }
-.site-footer-affiliation { color: var(--color-text-muted); }
+.site-footer-bottom a { text-decoration: underline; text-decoration-color: var(--color-text-faint); }
+
+@media (max-width: 760px) {
+  .site-footer-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .site-footer-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .site-footer-main { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }
+  .site-footer-bottom { flex-direction: column; }
+}
 
 /* ===================== Page header ===================== */
 
@@ -477,7 +912,7 @@ article > .page-header { margin-bottom: 1.5rem; }
 .page-content blockquote {
   margin: 1.25rem 0;
   padding: 0.25rem 0 0.25rem 1rem;
-  border-left: 3px solid var(--color-accent-soft);
+  border-left: var(--bar) solid var(--color-accent-soft);
   color: var(--color-text-soft);
   font-style: italic;
 }
@@ -491,7 +926,7 @@ article > .page-header { margin-bottom: 1.5rem; }
   color: var(--color-code-text);
   background: var(--color-code-bg);
   padding: 0.15em 0.4em;
-  border-radius: 4px;
+  border-radius: var(--radius);
   white-space: break-spaces;
 }
 .page-content pre {
@@ -500,7 +935,7 @@ article > .page-header { margin-bottom: 1.5rem; }
   padding: 1rem 1.25rem;
   background: var(--color-bg-soft);
   border: 1px solid var(--color-border-soft);
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow-x: auto;
   font-size: 0.8125rem;
   line-height: 1.6;
@@ -543,7 +978,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   background: var(--color-bg-soft);
   border: 1px solid var(--color-border-soft);
   border-bottom: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   text-transform: lowercase;
@@ -563,7 +998,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-size: 0.6875rem;
   color: var(--color-text-soft);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius);
   opacity: 0;
   transition: opacity 0.15s var(--ease), background 0.15s var(--ease);
 }
@@ -587,7 +1022,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   width: auto;
   height: auto;
   margin: 1rem auto;
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .page-content img.inline-image {
   display: inline-block;
@@ -595,7 +1030,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   max-height: 1.6em;
   width: auto;
   margin: 0 0.2em;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .page-content .embed {
@@ -603,7 +1038,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   width: 100%;
   aspect-ratio: var(--embed-ratio, 16 / 9);
   margin: 1.25rem 0;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-bg-soft);
 }
@@ -623,7 +1058,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   margin: 1.25rem 0;
   font-size: 0.875rem;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 .page-content th,
@@ -666,7 +1101,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.125rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--color-tag-bg);
   color: var(--color-tag-text);
   text-decoration: none;
@@ -721,7 +1156,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   display: inline-block;
   padding: 0.25rem 0.625rem;
   background: var(--color-bg-soft);
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 0.8125rem;
   color: var(--color-text-soft);
   text-decoration: none;
@@ -735,7 +1170,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   display: inline-block;
   margin-bottom: 0.5rem;
   padding: 0.125rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -753,7 +1188,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   padding: 0.75rem 0.875rem;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgb(15 23 42 / 0.18);
   font-size: 0.85rem;
   color: var(--color-text);
@@ -765,7 +1200,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   width: 100%;
   max-height: 9rem;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius);
   margin-bottom: 0.4rem;
 }
 .link-preview__summary {
@@ -800,72 +1235,108 @@ html[data-theme="dark"] .page-content .astro-code span {
 .tag-page-list a { font-weight: 500; text-decoration: none; }
 .tag-page-list a:hover { color: var(--color-accent); }
 
-/* ===================== Pointer flourishes ===================== */
+/* ===================== Scroll reveal ===================== */
 
-/* Magnetic targets lean toward the pointer. The easing lives in the rAF loop in
-   theme/components/Interactions.astro, which rewrites `transform` every frame —
-   a CSS transition on top of that restarts a fresh 300ms interpolation on every
-   write, turning a smooth lean into a lurch. So there deliberately isn't one. */
-[data-magnetic] {
-  will-change: transform;
+/* Blocks below the fold slide up into place as they're scrolled to (driven by
+   components/Interactions.astro, which also clears these classes afterwards).
+   The curve matches the header's slide so the whole site moves alike. */
+/* `translate` (not `transform`) so it composes with the magnetic lean,
+   which writes `transform` inline — the two never fight mid-reveal. */
+.sr {
+  opacity: 0;
+  translate: 0 22px;
+  transition:
+    opacity 0.9s var(--ease-out) var(--sr-delay, 0ms),
+    translate 1.1s var(--ease-out) var(--sr-delay, 0ms);
+}
+.sr.sr-in {
+  opacity: 1;
+  translate: 0 0;
 }
 
-/* Trailing cursor ring (theme/components/Interactions.astro). Additive: the
-   native cursor stays; this only shows on fine pointers without reduced motion.
-   JS drives position via transform; size/opacity are CSS state. */
-.cursor-ring {
-  position: fixed;
+/* ===================== Page transitions ===================== */
+
+/* Moving between pages: the header stays put (it has its own
+   view-transition-name), the old page's content fades away, and the new
+   page's content rises into place — the dotted ground never moves.
+   Browsers without cross-document view transitions get the same rise on
+   arrival, plus a short fade-out on leave (components/Interactions.astro). */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: vt-fade-out 0.3s var(--ease-out) both; }
+::view-transition-new(root) { animation: none; }
+::view-transition-group(site-header) { animation-duration: 0.45s; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* the sheet settles in… */
+  .site-main:not(.bare) { animation: page-sheet-in 0.8s var(--ease-out) backwards; }
+  /* …and what's on it rises up, one block after another */
+  .site-main > *,
+  .site-main > article > *,
+  .site-main > .gallery-page > * {
+    animation: page-rise-in 1s var(--ease-out) backwards;
+    animation-delay: calc(0.05s + var(--rise-i, 0) * 0.07s);
+  }
+  .site-main > article > :nth-child(2),
+  .site-main > :nth-child(2) { --rise-i: 1; }
+  .site-main > article > :nth-child(3),
+  .site-main > :nth-child(3) { --rise-i: 2; }
+  .site-main > article > :nth-child(4),
+  .site-main > :nth-child(4) { --rise-i: 3; }
+  .site-main > article > :nth-child(n + 5),
+  .site-main > :nth-child(n + 5) { --rise-i: 4; }
+  .site-footer { animation: page-sheet-in 0.8s var(--ease-out) 0.2s backwards; }
+  /* first visit: hold the rise until the loading screen starts to lift */
+  html.is-intro:not(.is-intro-out) .site-main > *,
+  html.is-intro:not(.is-intro-out) .site-main > article > * { animation-play-state: paused; }
+
+  /* leaving, where view transitions aren't available */
+  html.is-leaving .site-main,
+  html.is-leaving .site-footer {
+    opacity: 0;
+    transition: opacity 0.22s var(--ease-out);
+  }
+}
+@keyframes page-sheet-in { from { opacity: 0; translate: 0 12px; } }
+@keyframes page-rise-in { from { opacity: 0; translate: 0 22px; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root) { animation: none; }
+}
+
+/* ===================== Nav hover highlight ===================== */
+
+/* One soft pill that glides between desktop nav items under the pointer
+   (driven by components/Interactions.astro). Once it's wired up, the links'
+   own hover fills step aside so only the pill shows. */
+.site-nav { position: relative; }
+.site-nav-highlight {
+  position: absolute;
   top: 0;
   left: 0;
-  z-index: 60;
-  width: 32px;
-  height: 32px;
-  border: 1.5px solid var(--color-accent);
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  mix-blend-mode: multiply;
-  transition:
-    opacity 0.3s var(--ease),
-    width 0.25s var(--ease),
-    height 0.25s var(--ease),
-    background-color 0.25s var(--ease);
-}
-.cursor-ring.is-active { opacity: 0.5; }
-.cursor-ring.is-over {
-  width: 52px;
-  height: 52px;
-  background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
-}
-.cursor-ring.is-down {
-  width: 24px;
-  height: 24px;
-}
-
-/* ===================== Home: shader background ===================== */
-
-/* Full-bleed GPU field behind the portal (components/ShaderHero.astro).
-   Decorative only; the portal keeps its own legibility scrim above it. */
-.shader-bg {
-  position: absolute;
-  inset: 0;
   z-index: 0;
+  border-radius: var(--radius);
+  background: var(--color-bg-hover);
+  opacity: 0;
+  pointer-events: none;
+  list-style: none;
+  transition:
+    transform 0.32s var(--ease),
+    width 0.32s var(--ease),
+    height 0.32s var(--ease),
+    opacity 0.2s var(--ease);
 }
-.shader-bg canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+.site-nav-highlight.is-visible { opacity: 1; }
+.site-nav-highlight.no-slide { transition: opacity 0.2s var(--ease); }
+.site-nav > li:not(.site-nav-highlight) { position: relative; z-index: 1; }
+@media (min-width: 1081px) {
+  .site-nav.has-highlight a:hover { background: transparent; }
 }
-/* Fallback when WebGL is unavailable / Save-Data / context lost. */
-.shader-bg--static {
-  background:
-    radial-gradient(120% 95% at 12% 18%, var(--color-accent-soft), transparent 55%),
-    radial-gradient(90% 80% at 88% 92%, var(--color-accent-soft), transparent 60%),
-    var(--color-bg);
+@media (max-width: 1080px) {
+  .site-nav-highlight { display: none; }
 }
-.shader-bg--static canvas { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-highlight { transition: opacity 0.15s linear; }
+}
 
 /* ===================== Home: reveal on scroll ===================== */
 
@@ -873,66 +1344,29 @@ html[data-theme="dark"] .page-content .astro-code span {
    js-reveal class lands, so JS-off stays fully visible. */
 .js-reveal [data-reveal] {
   opacity: 0;
-  transform: translateY(1.5rem);
-  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+  translate: 0 22px;
+  transition: opacity 0.9s var(--ease-out), translate 1.1s var(--ease-out);
 }
 .js-reveal [data-reveal].is-visible {
   opacity: 1;
-  transform: none;
+  translate: 0 0;
 }
 @media (prefers-reduced-motion: reduce) {
-  .js-reveal [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .js-reveal [data-reveal] { opacity: 1; translate: none; transition: none; }
 }
 
 /* ===================== Home: hero (first screen) ===================== */
 
-/* Full-screen shader hero. The page scrolls past it to the gateway sections. */
+/* First screen: one quiet screen on the dotted ground — the lab name and
+   lead, a row of links to the main pages, and on the right the lab's "d"
+   mark, drawn once as a line when the page opens (.is-drawn, from
+   home.astro). The header floats over it (and on a session's first visit
+   only drops in once the reader scrolls). */
 .hero {
   position: relative;
-  overflow: hidden;
+  min-height: 100svh;
   display: flex;
-  /* One screen tall, minus the sticky header (~header height). */
-  min-height: calc(100svh - 3.9rem);
-  padding-block: clamp(2rem, 5vh, 3.5rem);
-}
-.hero__scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  /* Opaque under the text (lower-left), clearing toward the upper right so the
-     field is actually visible. The previous 160deg ran the other way — densest
-     in the empty upper-left corner, thinnest right where the text sits — which
-     both hid the shader and did the least for legibility.
-
-     Stops are placed against measured text extent, not by eye: the title and
-     lead reach ~0.45 along this gradient axis, so the scrim holds >=74% bg
-     through 48% and only then clears. At 74% the smallest text (text-soft on
-     the darkest linework the field can produce) still measures ~5:1, while the
-     upper right — which no text occupies — drops to ~11% and shows the field. */
-  background: linear-gradient(
-    38deg,
-    color-mix(in srgb, var(--color-bg) 92%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg) 74%, transparent) 48%,
-    color-mix(in srgb, var(--color-bg) 24%, transparent) 78%,
-    transparent 100%
-  );
-}
-/* Narrow viewports: the hero text spans nearly the full width, so a diagonal
-   scrim no longer matches the text's shape — it runs out of cover exactly where
-   the lead wraps furthest right (measured 4.4:1 at 390px, under AA). Bottom-up
-   is the shape that fits: dense across the text band, clearing upward where the
-   field has the screen to itself. */
-@media (max-width: 900px) {
-  .hero__scrim {
-    background: linear-gradient(
-      to top,
-      color-mix(in srgb, var(--color-bg) 93%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 85%, transparent) 58%,
-      color-mix(in srgb, var(--color-bg) 18%, transparent) 84%,
-      transparent 100%
-    );
-  }
+  overflow-x: clip;
 }
 .hero__inner {
   position: relative;
@@ -940,17 +1374,40 @@ html[data-theme="dark"] .page-content .astro-code span {
   width: 100%;
   max-width: var(--width-wide);
   margin: 0 auto;
-  padding-inline: 1.5rem;
+  padding: 7rem 1.5rem 6.5rem;
   display: flex;
-  flex-direction: column;
-  /* Anchor the text to the lower-left of the screen. */
-  justify-content: flex-end;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+}
+
+/* A "clearing" in the dot grid behind the text: a patch of plain ground
+   colour whose edges feather out, so the dots (and the pointer lens)
+   dissolve around the words instead of a box being drawn. */
+.hero__copy {
+  position: relative;
+  isolation: isolate;
+  flex: 0 1 40rem;
+  min-width: 0;
+}
+.hero__copy::before {
+  content: "";
+  position: absolute;
+  inset: -3.5rem -2rem -3rem -4rem;
+  z-index: -1;
+  background: var(--color-ground);
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .hero__copy::before { inset: -2.5rem -1rem -2rem -1.5rem; }
 }
 .hero__eyebrow {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1rem;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -958,50 +1415,105 @@ html[data-theme="dark"] .page-content .astro-code span {
 .hero__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 4.2vw, 2.75rem);
-  line-height: 1.18;
+  font-size: clamp(1.5rem, 6.4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
   word-break: auto-phrase;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 .hero__lead {
-  max-width: 40rem;
-  margin-top: clamp(0.9rem, 2vh, 1.4rem);
+  max-width: 36rem;
+  margin-top: clamp(1.25rem, 3vh, 1.75rem);
   color: var(--color-text-soft);
-  font-size: 0.875rem;
-  line-height: 1.9;
+  font-size: clamp(0.875rem, 1.25vw, 1rem);
+  line-height: 1.95;
 }
-.hero__lead p { margin: 0.4rem 0 0; }
+.hero__lead p { margin: 0.6rem 0 0; }
 .hero__lead p:first-child { margin-top: 0; }
-.hero__scroll {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-top: clamp(1.5rem, 4vh, 2.5rem);
-  /* text-soft, not text-muted: at 11px this is small text, so it needs 4.5:1
-     against the shader field showing through the scrim — muted only reached
-     ~4.0:1 there. */
-  color: var(--color-text-soft);
-  text-decoration: none;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  align-self: flex-start;
+
+/* The mark: drawn once as a thin line, then left resting. */
+.hero__mark {
+  flex: 0 0 auto;
+  height: min(58svh, 28rem);
+  width: auto;
+  aspect-ratio: 180 / 320;
+  overflow: visible;
+  margin-right: 2rem;
 }
-.hero__scroll:hover { color: var(--color-accent); }
+.hero__mark-line {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 4s cubic-bezier(0.6, 0, 0.3, 1);
+}
+.hero.is-drawn .hero__mark-line { stroke-dashoffset: 0; }
+@media (max-width: 1080px) {
+  .hero__mark { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__mark-line { transition: none; stroke-dashoffset: 0; }
+}
+
+/* "Scroll" + a bobbing arrow, centred at the bottom of the first screen. */
+.hero__scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1.75rem;
+  width: max-content;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.2s var(--ease);
+}
+.hero__scroll:hover { color: var(--color-accent); text-decoration: none; }
+.hero__scroll-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+  text-transform: uppercase;
+}
+.hero__scroll-arrow { display: block; }
 @media (prefers-reduced-motion: no-preference) {
-  .hero__scroll svg { animation: hero-bob 1.8s var(--ease) infinite; }
+  .hero__scroll-arrow { animation: hero-bob 1.8s var(--ease) infinite; }
   @keyframes hero-bob {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(4px); }
+    50% { transform: translateY(5px); }
   }
 }
 
 /* ===================== Home: content blocks ===================== */
 
-.block { padding-block: clamp(3.5rem, 9vh, 6.5rem); }
-/* A soft tint band to separate the gallery from the plain-white blocks. */
-.block--tint { background: var(--color-bg-soft); }
+.block { padding-block: clamp(1rem, 3vh, 1.75rem); }
+.block:first-child { padding-top: clamp(2rem, 5vh, 3rem); }
+.block:last-child { padding-bottom: clamp(2.5rem, 6vh, 4rem); }
+/* Each home section is its own white sheet on the dotted ground — the same
+   material as the article pages, so the site reads as one set of papers. */
+.block > .wrap {
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-wide) + 1rem);
+  padding: clamp(2rem, 5vw, 3.25rem) clamp(1.25rem, 5vw, 3.5rem);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgb(34 38 38 / 0.04),
+    0 18px 48px -12px rgb(34 38 38 / 0.10);
+}
+/* The gallery sheet is the quiet one: tinted, no shadow. */
+.block--tint > .wrap { background: var(--color-bg-soft); box-shadow: none; }
 .wrap {
   max-width: var(--width-wide);
   margin: 0 auto;
@@ -1009,7 +1521,12 @@ html[data-theme="dark"] .page-content .astro-code span {
 }
 
 /* Section header: large English word over a small Japanese subtitle. */
-.sect { margin-bottom: clamp(2rem, 4vw, 3rem); }
+.sect {
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  /* Section headers hang off a heavy vertical stem, like the logo's "d". */
+  padding-left: 1rem;
+  border-left: var(--bar) solid var(--color-text);
+}
 .sect__en {
   margin: 0;
   font-family: var(--font-display);
@@ -1026,24 +1543,93 @@ html[data-theme="dark"] .page-content .astro-code span {
 }
 
 /* ----- News list (thumbnail + title + summary + date/tags) ----- */
-.postlist { list-style: none; margin: 0; padding: 0; }
+/* A timeline: one continuous vertical line down the left of the list, with
+   a hollow dot at each post's date. The line (and the dots on it) are cyan at
+   the newest post and fade toward grey going back in time. Only the post
+   under the pointer lights up: its dot fills and gets a soft halo. */
+.postlist {
+  --tl-x: 0.45rem; /* the line's centre, from the list's left edge */
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.postlist::before {
+  content: "";
+  position: absolute;
+  top: 1.4rem;
+  bottom: 0;
+  left: calc(var(--tl-x) - 1px);
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-accent-bright) 0%,
+    color-mix(in srgb, var(--color-accent-bright) 55%, var(--color-border)) 35%,
+    color-mix(in srgb, var(--color-accent-bright) 20%, var(--color-border)) 70%,
+    var(--color-border) 92%,
+    transparent 100%
+  );
+}
 .postlist__item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.9rem 0;
-  border-bottom: 1px solid var(--color-border-soft);
+  padding: 0.9rem 0 0.9rem 1.75rem;
 }
-.postlist__item:last-child { border-bottom: 0; }
+/* row separators start right of the timeline, so the line runs unbroken */
+.postlist__item + .postlist__item::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1.75rem;
+  right: 0;
+  height: 1px;
+  background: var(--color-border-soft);
+}
+/* the dot */
+.postlist__item::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--tl-x) - 0.375rem);
+  top: 50%;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: -0.375rem;
+  border-radius: 50%;
+  background: var(--color-bg);
+  --dot: var(--color-accent-bright);
+  border: 2px solid var(--dot);
+  box-sizing: border-box;
+  transition:
+    transform 0.25s var(--ease),
+    background 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+/* dots follow the line's fade: cyan for the newest, greyer further back */
+.postlist__item:nth-child(2)::before { --dot: color-mix(in srgb, var(--color-accent-bright) 70%, var(--color-text-faint)); }
+.postlist__item:nth-child(3)::before { --dot: color-mix(in srgb, var(--color-accent-bright) 45%, var(--color-text-faint)); }
+.postlist__item:nth-child(4)::before { --dot: color-mix(in srgb, var(--color-accent-bright) 25%, var(--color-text-faint)); }
+.postlist__item:nth-child(n + 5)::before { --dot: var(--color-text-faint); }
+/* the one under the pointer lights up */
+.postlist__item:hover::before {
+  border-color: var(--color-accent-bright);
+  background: var(--color-accent-bright);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent-bright) 22%, transparent);
+  transform: scale(1.2);
+}
 .postlist__thumb {
   --thumb: clamp(56px, 12vw, 76px);
   flex: 0 0 auto;
   width: var(--thumb);
   height: var(--thumb);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-bg-soft);
   display: block;
+  text-decoration: none;
 }
 .postlist__thumb img {
   width: 100%;
@@ -1057,13 +1643,11 @@ html[data-theme="dark"] .page-content .astro-code span {
   place-items: center;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--color-bg-soft), var(--color-border-soft));
-  color: var(--color-text-muted);
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1;
+  background: var(--color-bg-soft);
+  color: var(--color-text-faint);
   user-select: none;
 }
+.postlist__ph .thumb-mark { height: 42%; width: auto; }
 .postlist__body {
   display: flex;
   flex-direction: column;
@@ -1101,13 +1685,94 @@ html[data-theme="dark"] .page-content .astro-code span {
   gap: 0.3rem 0.7rem;
   margin-top: 0.15rem;
 }
+/* Date column: the day ("10.29") large in the mono face, the year small above
+   it, right beside its dot on the timeline.
+   On narrow screens it folds into a single "2026.10.29" line above the title. */
 .postlist__date {
+  flex: 0 0 4.75rem;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+.postlist__year {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.postlist__md {
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.postlist__date--none { visibility: hidden; }
+@media (max-width: 560px) {
+  .postlist__item { flex-wrap: wrap; row-gap: 0.5rem; }
+  /* Basis 0 so a long title wraps inside the body instead of pushing the
+     whole body onto a row of its own under the thumbnail. */
+  .postlist__body { flex: 1 1 0; }
+  .postlist__date {
+    flex: 1 0 100%;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: baseline;
+  }
+  /* the dot sits beside the date line, not the middle of the row */
+  .postlist__item::before { top: 1.45rem; margin-top: -0.375rem; }
+  .postlist__year::after { content: "."; }
+  .postlist__year { font-size: 0.875rem; color: var(--color-text); }
+  .postlist__md { font-size: 0.875rem; font-weight: 600; }
+  .postlist__date--none { display: none; }
 }
 .postlist__tag { font-size: 0.6875rem; color: var(--color-accent); }
+
+/* News archive page: the same timeline, one list per year. Older years run
+   on a plain grey line with grey dots; only the newest year carries the
+   cyan fade. */
+.news-page__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-bottom: clamp(1.5rem, 4vw, 2.25rem);
+}
+.news-page__head .sect { margin-bottom: 0; }
+.news-page__count {
+  margin-left: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-text-faint);
+}
+.news-year .postlist { margin-top: -0.9rem; }
+/* 年度 chips switch the list; the picked one is filled. */
+button.gallery-page__year { background: var(--color-bg); cursor: pointer; font: inherit; font-family: var(--font-mono); font-size: 0.8125rem; font-weight: 600; }
+.gallery-page__year.is-active {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.gallery-page__year.is-active .gallery-page__year-n { color: rgb(255 255 255 / 0.6); }
+.gallery-page__year.is-active:hover { color: var(--color-bg); }
+.news-years [hidden] { display: none !important; }
+.news-year .gal-group__n { white-space: nowrap; }
+.news-years.is-filtered .news-year { margin-top: 0; }
+.news-years.is-switching > .news-year:not([hidden]) {
+  animation: members-in 0.5s var(--ease-out) both;
+}
+/* The year label only needs room for "2026", so the timeline sits close to it. */
+@media (min-width: 721px) {
+  .gal-group.news-year { grid-template-columns: 4.75rem minmax(0, 1fr); column-gap: 0.75rem; }
+}
+.postlist--past::before {
+  background: linear-gradient(to bottom, var(--color-border) 0%, var(--color-border) 92%, transparent 100%);
+}
+.postlist--past .postlist__item::before { --dot: var(--color-text-faint); }
 
 .more {
   display: inline-flex;
@@ -1123,6 +1788,80 @@ html[data-theme="dark"] .page-content .astro-code span {
 .more:hover { color: var(--color-accent); }
 .more:hover span { transform: translateX(0.25rem); }
 
+/* ----- About (mission statement + vision pillars) ----- */
+.about {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3rem);
+}
+.about__eyebrow {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+/* The statement, set large like a pull quote, on the heavy stem. */
+.about__statement {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: var(--bar) solid var(--color-accent-bright);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3.6vw, 2.25rem);
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+.about__lead {
+  max-width: 44rem;
+  margin: 1rem 0 0;
+  padding-left: calc(1rem + var(--bar));
+  font-size: 0.9375rem;
+  line-height: 1.9;
+  color: var(--color-text-soft);
+}
+/* Vision: three numbered pillars side by side. */
+.about__pillars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.about__pillar {
+  position: relative;
+  padding: 1.25rem 1.25rem 1.35rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border-soft);
+}
+.about__pillar-no {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-accent-bright);
+}
+.about__pillar-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+.about__pillar-body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.8;
+  color: var(--color-text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ----- Gallery masonry (any number of images) ----- */
 /* column-width driven, so the column count adapts to the viewport and any image
    count reads well; break-inside keeps each photo whole and its aspect ratio. */
@@ -1137,7 +1876,7 @@ html[data-theme="dark"] .page-content .astro-code span {
 .masonry__cell img {
   width: 100%;
   display: block;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--color-bg-hover);
   transition: opacity 0.2s var(--ease);
 }
@@ -1149,64 +1888,293 @@ html[data-theme="dark"] .page-content .astro-code span {
   .masonry__cell { margin-bottom: 0.5rem; }
 }
 
+/* ===================== Home: News / About sheets + flowing gallery ===================== */
+
+/* News, then About: two white sheets. */
+.duo {
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-wide) + 1rem);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.sheet {
+  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1.25rem, 4vw, 3rem);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgb(34 38 38 / 0.04),
+    0 18px 48px -12px rgb(34 38 38 / 0.10);
+}
+/* "See all" links sit at the bottom right of each sheet / the gallery. */
+.sheet__foot,
+.flow__foot {
+  display: flex;
+  justify-content: flex-end;
+}
+.sheet__foot .more { margin-top: 1.25rem; }
+.flow__foot {
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-wide) + 1rem);
+  margin: 0 auto;
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
+}
+.flow__foot .more { margin-top: 1.25rem; }
+.sheet .sect { margin-bottom: clamp(1.25rem, 3vw, 1.75rem); }
+.sheet .sect__en { font-size: clamp(1.5rem, 3.4vw, 2.25rem); }
+.flow__head .sect { margin-bottom: 1.25rem; }
+.flow__head .sect__en { font-size: clamp(1.5rem, 3.4vw, 2.25rem); }
+/* News inside a sheet: a little tighter than the stand-alone list */
+.sheet .postlist__item { padding-block: 0.75rem; }
+.sheet .postlist__thumb { --thumb: clamp(52px, 10vw, 64px); }
+.sheet .postlist__summary { -webkit-line-clamp: 1; line-clamp: 1; }
+.sheet .about { gap: clamp(1.5rem, 4vw, 2.25rem); }
+.sheet .about__statement { font-size: clamp(1.375rem, 3vw, 1.875rem); word-break: auto-phrase; text-wrap: balance; }
+.sheet .about__pillar-body { -webkit-line-clamp: 3; line-clamp: 3; }
+
+/* ----- Gallery: endless strips flowing sideways on the dotted ground ----- */
+/* Not a sheet: the photos drift across the page itself, at their own aspect
+   ratio (fixed height, no cropping), fading out at both edges. All strips drift left. Pointer over a
+   strip pauses it; reduced motion turns it into a plain scrollable row. */
+.flow {
+  --flow-h: clamp(6.25rem, 10.5vw, 9.25rem);
+  --flow-gap: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(2.5rem, 7vh, 4.5rem) 0 clamp(3.5rem, 9vh, 6rem);
+  overflow-x: clip;
+}
+.flow__head {
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-wide) + 1rem);
+  margin: 0 auto;
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
+}
+/* kept to the same width as the News / About sheets */
+.flow__rows {
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-wide) + 1rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.25rem, 0.6vw, 0.5rem); /* rows sit closer than the photos in a row */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+.flow__row { overflow: hidden; }
+.flow__track {
+  display: flex;
+  gap: var(--flow-gap);
+  width: max-content;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  animation: flow-left var(--dur, 60s) linear infinite;
+  animation-play-state: paused;
+}
+.flow.is-running .flow__track { animation-play-state: running; }
+.flow.is-running .flow__row:hover .flow__track { animation-play-state: paused; }
+@keyframes flow-left { from { transform: translateX(0); } to { transform: translateX(calc(-50% - var(--flow-gap) / 2)); } }
+/* rows start at different points so the photos don't line up in columns */
+.flow__row:nth-child(2) .flow__track { animation-delay: calc(var(--dur, 60s) * -0.33); }
+.flow__row:nth-child(3) .flow__track { animation-delay: calc(var(--dur, 60s) * -0.66); }
+.flow__item { flex: 0 0 auto; }
+.flow__item:has(.img-fallback) { display: none; }
+.flow__item a { display: block; border-radius: var(--radius-lg); }
+.flow__item img {
+  display: block;
+  height: var(--flow-h);
+  width: auto;
+  min-width: calc(var(--flow-h) * 1.33); /* a placeholder width until it loads */
+  opacity: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-soft);
+  box-shadow: 0 10px 24px -14px rgb(34 38 38 / 0.35);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), opacity 0.6s var(--ease);
+}
+.flow__item img.is-loaded { opacity: 1; min-width: 0; }
+.flow__item a:hover img {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 18px 34px -16px rgb(34 38 38 / 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow__row { overflow-x: auto; }
+  .flow__track { animation: none; }
+  .flow__item[aria-hidden="true"] { display: none; }
+}
+
 /* ===================== Gallery page (/gallery) ===================== */
 
-.gallery-page { padding: clamp(2.5rem, 6vh, 4.5rem) clamp(1rem, 3vw, 2.5rem) clamp(4rem, 9vh, 6rem); }
-.gallery-page__head {
-  max-width: var(--width-wide);
-  margin: 0 auto clamp(2rem, 5vh, 3.25rem);
+/* An album on one white sheet, the same width as the other wide pages:
+   title + year chips, then each year as a section — its label in a narrow
+   column on the left (it stays in view while that year scrolls past), the
+   photos in a masonry wall on the right. */
+.gallery-page {
+  width: calc(100% - 1.5rem);
+  max-width: calc(var(--width-wide) + 1rem);
+  margin: 1.5rem auto 0;
+  padding: clamp(2rem, 5vw, 3.25rem) clamp(1.25rem, 4vw, 3rem) clamp(3rem, 6vw, 4.5rem);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px rgb(34 38 38 / 0.04),
+    0 18px 48px -12px rgb(34 38 38 / 0.10);
 }
-.gallery-page__eyebrow {
-  margin: 0 0 0.6rem;
-  font-size: 0.6875rem;
+.gallery-page__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+.gallery-page__head .sect { margin-bottom: 0; }
+.gallery-page__count {
+  margin-left: 0.6rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+}
+/* year chips */
+.gallery-page__years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.gallery-page__year {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
   font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.gallery-page__year:hover {
+  text-decoration: none;
+  border-color: var(--color-accent-bright);
   color: var(--color-accent);
 }
-.gallery-page__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.9rem, 5vw, 3rem);
-  font-weight: 700;
-  line-height: 1.1;
-}
+.gallery-page__year-n { font-size: 0.6875rem; font-weight: 500; color: var(--color-text-faint); }
 .gallery-page__empty { color: var(--color-text-muted); }
 
-/* Masonry (Pinterest-style): CSS columns keep each image at its own aspect
-   ratio, so the wall reads as irregular. Each tile carries its real ratio as an
-   inline `aspect-ratio`, so it reserves the correct height before the image
-   loads — the layout never jumps, and native lazy-loading only fetches tiles as
-   they scroll near. Column width (not count) is fixed, so it stays responsive. */
+/* one year */
+.gal-group {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 0 clamp(1rem, 3vw, 2rem);
+  padding-top: clamp(1.5rem, 4vw, 2.25rem);
+  border-top: 1px solid var(--color-border-soft);
+}
+.gal-group + .gal-group { margin-top: clamp(1.5rem, 4vw, 2.25rem); }
+.gal-group__label {
+  position: sticky;
+  top: 6.5rem;
+  align-self: start;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-left: 0.85rem;
+  border-left: var(--bar) solid var(--color-text);
+}
+.gal-group__name {
+  font-family: var(--font-mono);
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.gal-group__sub { font-size: 0.75rem; font-weight: 500; color: var(--color-text-muted); }
+.gal-group__n {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-faint);
+}
+@media (max-width: 720px) {
+  .gal-group { grid-template-columns: minmax(0, 1fr); }
+  .gal-group__label {
+    position: static;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Masonry: CSS columns keep each photo at its own aspect ratio (each tile
+   carries its real ratio inline, so it reserves its height before loading
+   and lazy-loading only fetches what scrolls near). */
 .pin {
-  columns: clamp(15rem, 24vw, 21rem);
-  column-gap: clamp(0.5rem, 1vw, 0.85rem);
+  columns: 13.5rem;
+  column-gap: 0.75rem;
 }
 .pin__cell {
+  position: relative;
   display: block;
-  margin-bottom: clamp(0.5rem, 1vw, 0.85rem);
+  margin-bottom: 0.75rem;
   break-inside: avoid;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--color-bg-soft);
+  text-decoration: none;
 }
+.pin__cell:has(.img-fallback) { display: none; }
 .pin__cell img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  /* Hide alt text for a broken image so the tile stays a clean placeholder
-     (screen readers still get the alt). */
-  color: transparent;
-  transition: transform 0.6s var(--ease);
+  color: transparent; /* hide alt text of a broken image */
+  transition: transform 0.7s var(--ease-out);
 }
-.pin__cell:hover img { transform: scale(1.05); }
+.pin__cell:hover img { transform: scale(1.04); }
+/* caption: the source post, sliding up on hover */
+.pin__cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 2rem 0.85rem 0.7rem;
+  background: linear-gradient(to top, rgb(20 24 24 / 0.72), rgb(20 24 24 / 0));
+  color: #fff;
+  opacity: 0;
+  translate: 0 0.5rem;
+  transition: opacity 0.35s var(--ease-out), translate 0.45s var(--ease-out);
+  pointer-events: none;
+}
+.pin__cell:hover .pin__cap,
+.pin__cell:focus-visible .pin__cap { opacity: 1; translate: 0 0; }
+.pin__day {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+.pin__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 /* Fade each image in as it (lazily) loads. Gated by js-reveal so no-JS shows
    images immediately; reduced motion skips the fade. */
-.js-reveal .pin__cell img { opacity: 0; transition: opacity 0.5s var(--ease), transform 0.6s var(--ease); }
+.js-reveal .pin__cell img { opacity: 0; transition: opacity 0.35s var(--ease-out), transform 0.7s var(--ease-out); }
 .js-reveal .pin__cell img.is-loaded { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .js-reveal .pin__cell img { opacity: 1; transition: transform 0.6s var(--ease); }
+  .js-reveal .pin__cell img { opacity: 1; transition: none; }
 }
 @media (max-width: 560px) {
   .pin { columns: 2; column-gap: 0.5rem; }
@@ -1234,10 +2202,9 @@ html[data-theme="dark"] .page-content .astro-code span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
+  color: var(--color-text-faint);
+  background: var(--color-bg-soft);
+  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 .profile__name {
   margin: 0;
@@ -1248,78 +2215,449 @@ html[data-theme="dark"] .page-content .astro-code span {
 
 /* ===================== Members ===================== */
 
-.members-group { margin-bottom: 3rem; }
+/* Group heading: label + member count on a heavy charcoal stem. */
+.members-group { margin-bottom: 2.75rem; }
 .members-group h2 {
-  font-family: var(--font-serif);
-  font-size: 1.125rem;
-  margin: 0 0 1rem;
-  padding: 0 0 0.375rem;
-  border-bottom: 2px solid var(--color-accent);
-  display: inline-block;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+  padding: 0.1rem 0 0.1rem 0.75rem;
+  border-left: var(--bar) solid var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
 }
-/* Column counts are pinned per breakpoint (desktop 4 / tablet 3 / mobile 2)
-   rather than left to auto-fill, so the density is predictable at every width
-   instead of drifting with the container's exact pixel width. */
+.members-count {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+/* Toolbar: totals on the left, cohort pulldown on the right. */
+.members-toolbar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: -0.5rem 0 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+.members-total {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+.members-total strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text);
+}
+/* Cohort pulldown: a custom listbox so the open list matches the site. */
+.mf {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.mf__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 13.5rem;
+  padding: 0.55rem 0.8rem 0.55rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(34 38 38 / 0.04);
+  transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.mf__trigger:hover { border-color: var(--color-text-faint); box-shadow: 0 6px 18px -10px rgb(34 38 38 / 0.25); }
+.mf__trigger:focus-visible,
+.mf.is-open .mf__trigger {
+  outline: none;
+  border-color: var(--color-accent-bright);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+.mf__lead {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-left: 0.2rem;
+  stroke: var(--color-text-muted);
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mf__current { flex: 1; text-align: left; font-weight: 600; }
+.mf__badge {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.members-count small,
+.mf__badge small,
+.mf__count small {
+  margin-left: 0.1em;
+  font-family: var(--font-sans);
+  font-size: 0.85em;
+}
+.mf__badge.is-bump { animation: mf-bump 0.5s var(--ease-out); }
+@keyframes mf-bump {
+  from { color: var(--color-accent-bright); }
+}
+.mf__chev {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: rotate 0.35s var(--ease-out);
+}
+.mf.is-open .mf__chev { rotate: 180deg; }
+
+.mf__panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: max(100%, 15rem);
+  max-height: min(24rem, 60vh);
+  overflow-y: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: 0 22px 44px -18px rgb(34 38 38 / 0.28), 0 2px 6px rgb(34 38 38 / 0.05);
+  outline: none;
+  opacity: 0;
+  translate: 0 -6px;
+  scale: 0.98;
+  transform-origin: top right;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.22s var(--ease),
+    translate 0.35s var(--ease-out),
+    scale 0.35s var(--ease-out),
+    visibility 0s linear 0.22s;
+}
+.mf.is-open .mf__panel {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.22s var(--ease),
+    translate 0.35s var(--ease-out),
+    scale 0.35s var(--ease-out);
+}
+.mf__group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.55rem 0.6rem 0.25rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--color-border-soft);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+.mf__group span { font-family: var(--font-sans); letter-spacing: 0.04em; }
+.mf__option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--color-text-soft);
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.mf__option.is-active { background: var(--color-bg-soft); color: var(--color-text); }
+.mf__option[aria-selected="true"] { color: var(--color-accent); font-weight: 600; }
+/* Check mark for the picked row; a small dot for the year rows. */
+.mf__mark {
+  position: relative;
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.mf__option[aria-selected="true"] .mf__mark::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.05rem;
+  width: 0.35rem;
+  height: 0.6rem;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  rotate: 45deg;
+}
+.mf__option--year { padding-left: 1.4rem; }
+.mf__option--year:not([aria-selected="true"]) .mf__mark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+.mf__text { flex: 1; }
+.mf__count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+}
+.mf__option[aria-selected="true"] .mf__count { color: var(--color-accent-bright); }
+@media (max-width: 560px) {
+  .mf__panel { left: 0; right: auto; transform-origin: top left; }
+}
+
+.members-groups {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: clamp(2rem, 6vw, 4.5rem);
+}
+.members-groups > .members-group { flex: 1 1 100%; min-width: 0; }
+.members-groups [hidden] { display: none !important; }
+.members-groups.is-switching > :not([hidden]) {
+  animation: members-in 0.5s var(--ease-out, ease-out) both;
+}
+@keyframes members-in {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* Alumni: a separate soft panel below the current members, so the line
+   between "now" and "after graduation" reads at a glance. */
+.members-group--alumni {
+  margin-top: 1.25rem;
+  padding: clamp(1.25rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem) clamp(1rem, 2.5vw, 1.5rem);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border-soft);
+}
+.members-alumni-eyebrow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.members-alumni-eyebrow span {
+  font-family: var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--color-text-faint);
+}
+.members-group--alumni h2 { border-left-color: var(--color-text-faint); color: var(--color-text-soft); }
+.members-group--alumni .member-card.has-page:hover { background: var(--color-bg); }
+.members-group--alumni .member-photo-placeholder { background: var(--color-bg); }
+.alumni-year {
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--color-border);
+}
+.alumni-year + .alumni-year { margin-top: 1.25rem; }
+
+/* Alumni: one quiet sub-list per graduation year. */
+.alumni-year__label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-soft);
+}
+.alumni-year__label .members-count { font-size: 0.75rem; color: var(--color-text-faint); }
+
+/* Column counts are pinned per breakpoint so the density is predictable. */
 .members-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
 }
+.members-list--compact { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 @media (max-width: 900px) {
-  .members-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .members-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .members-list--compact { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
-  .members-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-  /* Two columns leave ~165px per card, too narrow for the avatar-beside-text
-     row: stack the avatar above the text so names keep their full width. */
-  .member-card { flex-direction: column; gap: 0.5rem; }
+  .members-list,
+  .members-list--compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem 0.5rem; }
 }
-.member-card { display: flex; gap: 0.875rem; align-items: flex-start; }
-/* Avatar wrapped in a link to the member's page (when one exists). */
+
+/* Card: no frame — just avatar, name and role. A faint fill appears on hover
+   only when the member has a page (the whole card is then the link). */
+.member-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 0.85rem 0.5rem 0.6rem;
+  border-radius: var(--radius-lg);
+  transition: background-color 0.25s var(--ease);
+}
+/* Every current-member card reserves room for a 1-line bio and the link
+   icons, so all hover frames are the same size whether or not a member
+   filled those in. (Alumni cards show neither, so they stay compact.) */
+.member-card:not(.member-card--compact) { min-height: 12.95rem; }
+@media (max-width: 560px) {
+  .member-card:not(.member-card--compact) { min-height: 11.85rem; }
+}
+.member-card.has-page:hover { background: var(--color-bg-soft); }
+.member-card.has-page:hover .member-name { color: var(--color-accent); }
+.member-card.has-page:hover .member-photo { box-shadow: 0 0 0 2px var(--color-accent-bright); }
+.member-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 0;
+  width: 100%;
+  flex: 1;
+}
+
 .member-avatar-link {
   display: inline-flex;
   flex-shrink: 0;
   border-radius: 50%;
   text-decoration: none;
 }
-.member-name a { color: inherit; text-decoration: none; }
-.member-name a:hover { color: var(--color-accent); }
-.member-photo {
-  width: 4rem;
-  height: 4rem;
+.member-photo,
+.member-photo-placeholder {
+  width: 5rem;
+  height: 5rem;
   border-radius: 50%;
-  object-fit: cover;
   flex-shrink: 0;
+}
+.member-card--compact .member-photo,
+.member-card--compact .member-photo-placeholder { width: 3.75rem; height: 3.75rem; }
+.member-card--compact { gap: 0.45rem; padding: 0.75rem 0.25rem; }
+.member-card--compact .member-name { font-size: 0.875rem; }
+.member-photo {
+  object-fit: cover;
   background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+  transition: box-shadow 0.25s var(--ease);
 }
 .member-photo-placeholder {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: var(--color-bg-soft);
+  color: var(--color-text-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-serif);
-  font-size: 1.25rem;
-}
-/* Shrink the avatar in the 2-column mobile grid. Must come after the 4rem base
-   rules above: same specificity, so source order decides the winner. */
-@media (max-width: 560px) {
-  .member-photo,
-  .member-photo-placeholder { width: 3rem; height: 3rem; }
-  .member-photo-placeholder { font-size: 1rem; }
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
-.member-name { font-weight: 600; font-size: 0.9375rem; margin: 0; color: var(--color-text); }
-.member-role { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.125rem 0; }
-.member-bio { font-size: 0.8125rem; color: var(--color-text-soft); margin: 0.375rem 0 0; line-height: 1.55; }
-.member-links { margin-top: 0.375rem; display: flex; gap: 0.625rem; font-size: 0.75rem; }
+.member-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  transition: color 0.2s var(--ease);
+}
+.member-name a { color: inherit; text-decoration: none; }
+.member-name a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.member-role {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.member-bio {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.member-links {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.15rem;
+  margin-top: 0.15rem;
+}
+/* Small icon links right under the role — no frame, just the glyph. */
+.member-links a {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.2s var(--ease), background-color 0.2s var(--ease);
+}
+.member-links a:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.member-links svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.member-links svg.is-filled { fill: currentColor; stroke: none; width: 0.95rem; height: 0.95rem; }
+
+@media (max-width: 560px) {
+  .member-photo,
+  .member-photo-placeholder { width: 4rem; height: 4rem; }
+  .member-card--compact .member-photo,
+  .member-card--compact .member-photo-placeholder { width: 3.25rem; height: 3.25rem; }
+  .member-name { font-size: 0.875rem; }
+}
 
 /* News feed (index page): node.com-style card grid — thumbnail on top, text
    below, laid out as a responsive grid. The compact `.news-list` above stays
@@ -1341,7 +2679,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   color: inherit;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease),
     border-color 0.2s var(--ease);
@@ -1365,16 +2703,24 @@ html[data-theme="dark"] .page-content .astro-code span {
   display: block;
   transition: transform 0.4s var(--ease);
 }
+/* No photo: the logo's "d" mark, small and quiet on the soft surface, so a
+   photo-less card still reads as the lab's own rather than a blank. */
 .news-card__thumb--empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  line-height: 1;
-  border-bottom-color: transparent;
+  background: var(--color-bg-soft);
+}
+.news-card__thumb--empty .thumb-mark {
+  height: 30%;
+  width: auto;
+  color: var(--color-text-faint);
+  opacity: 0.55;
+  transition: opacity 0.25s var(--ease), transform 0.4s var(--ease);
+}
+.news-card__link:hover .news-card__thumb--empty .thumb-mark {
+  opacity: 0.8;
+  transform: scale(1.05);
 }
 .news-card__link:hover .news-card__thumb img { transform: scale(1.05); }
 .news-card__body {
@@ -1438,7 +2784,7 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-size: 0.7rem;
   line-height: 1;
   padding: 0.3em 0.6em;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--color-tag-bg);
   color: var(--color-tag-text);
   white-space: nowrap;
@@ -1462,7 +2808,7 @@ html[data-theme="dark"] .page-content .astro-code span {
 .pagination__link {
   display: inline-block;
   padding: 0.375rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-soft);
@@ -1517,18 +2863,8 @@ html[data-theme="dark"] .page-content .astro-code span {
   font-size: 0.6875rem;
   background: var(--color-accent-soft);
   color: var(--color-accent);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
-
-/* ===================== Source link footer (per page) ===================== */
-
-.source {
-  margin-top: 2.5rem;
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
-}
-.source a { color: var(--color-text-muted); }
-.source a:hover { color: var(--color-text-soft); }
 
 /* ===================== Selection ===================== */
 
@@ -1536,3 +2872,30 @@ html[data-theme="dark"] .page-content .astro-code span {
   background: var(--color-accent-soft);
   color: var(--color-text);
 }
+
+/* ----- Year pulldowns (components/YearSelect.astro) ----- */
+.works__years,
+.pubs__years { margin: 0 0 1.25rem; }
+.pubs__years { margin-top: 1.25rem; }
+/* pulldowns sitting on the left open toward the right */
+.works__years .mf__panel,
+.pubs__years .mf__panel { left: 0; right: auto; transform-origin: top left; }
+.gal-group[hidden] { display: none !important; }
+.gal-group.is-in { animation: members-in 0.5s var(--ease-out) both; }
+.gallery-page.is-one-year .gal-group { margin-top: 0; }
+.mf__option[hidden] { display: none; }
+.mf__badge.is-bump,
+.mf__badge > .is-bump { animation: mf-bump 0.5s var(--ease-out); }
+
+/* Gallery: the year label only needs room for "2026", so the photos start
+   close to it (same spacing as News). */
+@media (min-width: 721px) {
+  .gallery-page .gal-group { grid-template-columns: 4.75rem minmax(0, 1fr); column-gap: 1rem; }
+}
+
+/* the publications year menu sits on the left, so it opens to the right */
+.yj.pubs__years { margin: 1rem 0 0.25rem; }
+.yj.pubs__years .yj__panel { left: 0; right: auto; }
+
+/* Members: the jump menu sits at the right end of the toolbar */
+.members-toolbar .yj { margin-left: auto; }

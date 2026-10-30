@@ -2,12 +2,15 @@
 import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
 import Header from "./Header.astro";
+import Intro from "./Intro.astro";
 import Footer from "./Footer.astro";
 import TableOfContents from "./TableOfContents.astro";
 import CodeBlockEnhancer from "./CodeBlockEnhancer.astro";
 import LinkPreview from "./LinkPreview.astro";
 import SearchOverlay from "./SearchOverlay.astro";
 import Interactions from "./Interactions.astro";
+import BackToTop from "./BackToTop.astro";
+import LogoMark from "./LogoMark.astro";
 import KaTeXLink from "@cosense-site-kit/theme-utils/components/KaTeXLink.astro";
 import { loadStructure, path } from "@cosense-site-kit/theme-utils";
 import { resolveActiveSkin } from "../presets";
@@ -31,6 +34,8 @@ interface Props {
   image?: string;
   /** OpenGraph type. "article" for content pages, "website" for indexes. */
   ogType?: "website" | "article";
+  /** Cosense page this view comes from; linked from the site footer. */
+  sourceUrl?: string;
 }
 
 const {
@@ -42,6 +47,7 @@ const {
   hideFooter = false,
   image,
   ogType = "website",
+  sourceUrl,
 } = Astro.props;
 
 const siteTitle =
@@ -57,7 +63,13 @@ const lang = site?.lang ?? "ja";
 // favicon). Built here so every template that uses Layout gets cards for free.
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
 // Favicon: theme option wins over the framework's `.site`-resolved icon.
-const faviconHref = options.favicon ?? site?.icon;
+const faviconBase = options.favicon ?? site?.icon;
+// Browsers cache favicons separately and stubbornly (a reload doesn't
+// refresh them), so a local favicon gets a version in its URL — bump
+// FAVICON_VERSION after replacing the file to make every browser fetch it again.
+const FAVICON_VERSION = "2";
+const faviconHref =
+  faviconBase && faviconBase.startsWith("/") ? `${faviconBase}?v=${FAVICON_VERSION}` : faviconBase;
 const imageSrc = image ?? faviconHref;
 const ogImage = imageSrc && Astro.site ? new URL(imageSrc, Astro.site).href : imageSrc;
 const jsonLd = {
@@ -94,7 +106,7 @@ const htmlStyle = [
     {metaDescription && <meta name="description" content={metaDescription} />}
     {canonical && <link rel="canonical" href={canonical} />}
     {faviconHref && <link rel="icon" href={faviconHref} />}
-    {options.favicon && <link rel="apple-touch-icon" href={options.favicon} />}
+    {options.favicon && <link rel="apple-touch-icon" href={faviconHref} />}
     {hasFeed && (
       <link
         rel="alternate"
@@ -133,17 +145,75 @@ const htmlStyle = [
     {fontHref && <link href={fontHref} rel="stylesheet" />}
     <KaTeXLink />
     <title>{fullTitle}</title>
+    <script is:inline>
+      // Broken images → the lab's logo mark. Registered in <head> (capture
+      // phase, since image errors don't bubble) so it catches every failure,
+      // even ones that happen before the page finishes parsing. The failed
+      // <img> is swapped for a placeholder that keeps its classes (so sized
+      // slots — avatars, thumbnails, gallery tiles — keep their shape) and
+      // shows the mark from <template id="img-fallback-tpl"> at the end of
+      // <body>. Skipped: the header logo (own fallback), inline icons, and
+      // /gallery photos (that page drops a broken photo and recounts).
+      (function () {
+        var SKIP = ".site-logo, .icon, .inline-image, .pin__cell img";
+        function swap(img) {
+          if (!img.isConnected || img.dataset.fallback) return;
+          img.dataset.fallback = "1";
+          var tpl = document.getElementById("img-fallback-tpl");
+          if (!tpl) return; // not parsed yet: picked up at DOMContentLoaded
+          var ph = document.createElement("span");
+          ph.className = (img.className ? img.className + " " : "") + "img-fallback";
+          ph.setAttribute("role", "img");
+          ph.setAttribute("aria-label", img.alt || "");
+          var w = img.getAttribute("width"), h = img.getAttribute("height");
+          if (w && h) ph.style.aspectRatio = w + " / " + h;
+          ph.appendChild(tpl.content.cloneNode(true));
+          img.replaceWith(ph);
+        }
+        function check(img) {
+          if (img.matches(SKIP)) return;
+          if (!img.getAttribute("src") && !img.getAttribute("srcset")) return;
+          swap(img);
+        }
+        document.addEventListener(
+          "error",
+          function (e) {
+            var t = e.target;
+            if (t && t.tagName === "IMG") {
+              t.removeAttribute("data-fallback");
+              check(t);
+            }
+          },
+          true,
+        );
+        document.addEventListener("DOMContentLoaded", function () {
+          document.querySelectorAll("img").forEach(function (img) {
+            if (img.dataset.fallback === "1" && img.isConnected) {
+              img.removeAttribute("data-fallback");
+              check(img);
+            } else if (img.complete && img.naturalWidth === 0 && img.getAttribute("src")) {
+              check(img);
+            }
+          });
+        });
+      })();
+    </script>
   </head>
   <body>
+    <Intro />
     <Header currentPath={Astro.url.pathname} />
     {options.search && <SearchOverlay />}
     <main class:list={["site-main", { wide, bare }]}>
       <slot />
     </main>
-    {!hideFooter && <Footer />}
-    {!hideToc && <TableOfContents />}
+    {!hideFooter && <Footer sourceUrl={sourceUrl} />}
+    {/* On every page; it removes itself when the page fits on one screen or
+        has no section headings. (`hideToc` is kept for compatibility.) */}
+    <TableOfContents />
     <CodeBlockEnhancer />
     <LinkPreview />
     <Interactions />
+    <BackToTop />
+    <template id="img-fallback-tpl"><LogoMark class="img-fallback__mark" /></template>
   </body>
 </html>

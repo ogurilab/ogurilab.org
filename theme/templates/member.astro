@@ -6,7 +6,8 @@ import Layout from "../components/Layout.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import Backlinks from "@cosense-site-kit/theme-utils/components/Backlinks.astro";
 import Related from "@cosense-site-kit/theme-utils/components/Related.astro";
-import { asGroups, extractMembers, initialsOf, type Member } from "../lib/members";
+import { asGroups, extractMembers, type Member } from "../lib/members";
+import LogoMark from "../components/LogoMark.astro";
 
 // Per-person profile. Applied to a Cosense page tagged `#member`. Just a photo +
 // name header; below that it renders exactly like any other page (content,
@@ -50,14 +51,14 @@ const dropFirstImage = (blocks: CosenseBlock[]): CosenseBlock[] => {
 };
 const body = avatarFromBody ? dropFirstImage(page.blocks) : page.blocks;
 ---
-<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
+<Layout title={page.title} sourceUrl={page.sourceUrl} description={page.summary} image={page.image} ogType="article">
   <article data-pagefind-body>
     <header class="profile__head">
       {photo ? (
         <img class="profile__photo" src={photo} alt={page.title} loading="eager" decoding="async" />
       ) : (
         <span class="profile__photo profile__photo--ph" aria-hidden="true">
-          {initialsOf(page.title)}
+          <LogoMark class="thumb-mark" />
         </span>
       )}
       <h1 class="profile__name">{page.title}</h1>
@@ -68,9 +69,5 @@ const body = avatarFromBody ? dropFirstImage(page.blocks) : page.blocks;
     <Backlinks backlinks={page.backlinks} />
 
     <Related title={page.title} links={page.links} exclude={page.backlinks} />
-
-    <footer class="source" data-pagefind-ignore>
-      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
-    </footer>
   </article>
 </Layout>

@@ -23,7 +23,7 @@ const showUpdated = updatedDay && updatedDay !== publishedDay;
 // its normalization stay in sync with theme-default and theme-utils.
 const showDates = !hidesDates(page.tags ?? []);
 ---
-<Layout title={page.title} description={page.summary} image={page.image} ogType="article">
+<Layout title={page.title} sourceUrl={page.sourceUrl} description={page.summary} image={page.image} ogType="article">
   <article data-pagefind-body>
     <header class="page-header">
       {page.draft && <span class="draft-badge">Draft · preview only</span>}
@@ -39,9 +39,5 @@ const showDates = !hidesDates(page.tags ?? []);
     <Backlinks backlinks={page.backlinks} />
 
     <Related title={page.title} links={page.links} exclude={page.backlinks} />
-
-    <footer class="source" data-pagefind-ignore>
-      <a href={page.sourceUrl} target="_blank" rel="noopener noreferrer">Source on Cosense ↗</a>
-    </footer>
   </article>
 </Layout>

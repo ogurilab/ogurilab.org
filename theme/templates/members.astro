@@ -4,7 +4,9 @@ import type { CollectionEntry } from "astro:content";
 import Layout from "../components/Layout.astro";
 import PageContent from "@cosense-site-kit/theme-utils/components/PageContent.astro";
 import { path } from "@cosense-site-kit/theme-utils";
-import { asGroups, extractMembers, initialsOf } from "../lib/members";
+import { asGroups, extractMembers } from "../lib/members";
+import LogoMark from "../components/LogoMark.astro";
+import YearJump from "../components/YearJump.astro";
 
 interface Props { entry: CollectionEntry<"pages"> }
 const { entry } = Astro.props;
@@ -30,54 +32,165 @@ for (const e of all) {
     imageByTitle.set(e.data.title, e.data.image);
   }
 }
+
+// ---- Cohort filter ----
+// Current members keep their groups (教員 / 大学院生 / 学部4年…). The alumni
+// group ("卒業生", or any group whose members all read "NNNN年度卒") is split
+// into one sub-list per graduation year, newest first. The pulldown then
+// shows: すべて / 在籍メンバー / 2025年度卒 / 2024年度卒 …
+const yearOf = (role?: string) => role?.match(/(\d{4})\s*年度\s*卒/)?.[1];
+const isAlumni = (g: { name: string; members: { role?: string }[] }) =>
+  /卒業|alumni/i.test(g.name) || (g.members.length > 0 && g.members.every((m) => yearOf(m.role)));
+const current = groups.filter((g) => !isAlumni(g));
+const alumniGroups = groups.filter(isAlumni);
+const alumniName = alumniGroups[0]?.name ?? "卒業生";
+const alumniByYear = new Map<string, typeof groups[number]["members"]>();
+for (const g of alumniGroups)
+  for (const m of g.members) {
+    const y = yearOf(m.role) ?? "その他";
+    if (!alumniByYear.has(y)) alumniByYear.set(y, []);
+    alumniByYear.get(y)!.push(m);
+  }
+const alumniYears = [...alumniByYear.keys()].sort((a, b) => (b === "その他" ? -1 : a === "その他" ? 1 : Number(b) - Number(a)));
+const currentCount = current.reduce((n, g) => n + g.members.length, 0);
+const alumniCount = [...alumniByYear.values()].reduce((n, ms) => n + ms.length, 0);
+const yearLabel = (y: string) => (y === "その他" ? "その他" : `${y}年度卒`);
+type M = typeof groups[number]["members"][number];
+const avatarOf = (m: M) => m.photo ?? imageByTitle.get(m.name);
+const linkKind = (label: string, url: string) => {
+  const t = `${label} ${url}`.toLowerCase();
+  if (t.includes("github")) return "github";
+  if (/(^|[\s/.])(x|twitter)\.com|\btwitter\b|^x\b/.test(t)) return "x";
+  if (/web|site|home|blog|ホーム|サイト/.test(t)) return "web";
+  return "link";
+};
+const hrefOf = (m: M) => {
+  const s = slugByTitle.get(m.name);
+  return s ? path(s) : undefined;
+};
 ---
-<Layout title={displayTitle} description={page.summary} image={page.image} wide hideToc>
+<Layout title={displayTitle} sourceUrl={page.sourceUrl} description={page.summary} image={page.image} wide hideToc>
   <article data-pagefind-body>
     <header class="page-header">
       <h1>{displayTitle}</h1>
     </header>
 
     {data ? (
-      groups.map((group) => (
-        <section class="members-group">
-          {group.name && <h2>{group.name}</h2>}
-          <ul class="members-list">
-            {group.members.map((m) => {
-              // Explicit photo wins; otherwise the member's name-page first image.
-              const photo = m.photo ?? imageByTitle.get(m.name);
-              const memberSlug = slugByTitle.get(m.name);
-              const memberHref = memberSlug ? path(memberSlug) : undefined;
-              const avatar = photo ? (
-                <img class="member-photo" src={photo} alt={m.name} loading="lazy" decoding="async" />
-              ) : (
-                <span class="member-photo-placeholder">{initialsOf(m.name)}</span>
-              );
-              return (
-              <li class="member-card">
-                {memberHref ? (
-                  <a class="member-avatar-link" href={memberHref} aria-label={m.name}>{avatar}</a>
-                ) : avatar}
-                <div>
-                  <p class="member-name">
-                    {memberHref ? <a href={memberHref}>{m.name}</a> : m.name}
-                  </p>
-                  {m.role && <p class="member-role">{m.role}</p>}
-                  {m.bio && <p class="member-bio">{m.bio}</p>}
-                  {(m.links?.length || m.email) && (
-                    <div class="member-links">
-                      {m.email && <a href={`mailto:${m.email}`}>Email</a>}
-                      {m.links?.map((l) => (
-                        <a href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>
-                      ))}
-                    </div>
+      <Fragment>
+        <div class="members-toolbar">
+          <p class="members-total">
+            在籍 <strong>{currentCount}</strong> 名
+            {alumniCount > 0 && <Fragment>・卒業生 <strong>{alumniCount}</strong> 名</Fragment>}
+          </p>
+          <YearJump
+            class="members-jump"
+            label="区分から探す"
+            sections=".members-group, .alumni-year"
+            options={[
+              ...current.map((g, i) => ({ id: `mg-${i}`, label: g.name || "メンバー", count: g.members.length, unit: "名" })),
+              ...(alumniCount > 0 ? [{ id: "mg-alumni", label: alumniName, count: alumniCount, unit: "名" }] : []),
+              ...alumniYears.map((y) => ({ id: `mg-y${y}`, label: yearLabel(y), count: alumniByYear.get(y)!.length, unit: "名", sub: true })),
+            ]}
+          />
+        </div>
+
+        <div class="members-groups">
+        {current.map((group, gi) => (
+          <section id={`mg-${gi}`} class:list={["members-group", { "members-group--small": group.members.length <= 2 }]} data-cohort="current" style={group.members.length <= 2 ? `--n:${group.members.length}` : undefined}>
+            {group.name && (
+              <h2>
+                {group.name}
+                <span class="members-count">{group.members.length}<small>名</small></span>
+              </h2>
+            )}
+            <ul class="members-list">
+              {group.members.map((m) => (
+                <li class:list={["member-card", { "has-page": hrefOf(m) }]}>
+                  {avatarOf(m) ? (
+                    <img class="member-photo" src={avatarOf(m)} alt={m.name} loading="lazy" decoding="async" />
+                  ) : (
+                    <span class="member-photo-placeholder" aria-hidden="true"><LogoMark class="thumb-mark" /></span>
                   )}
-                </div>
-              </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))
+                  <div class="member-body">
+                    <p class="member-name">
+                      {hrefOf(m) ? <a href={hrefOf(m)}>{m.name}</a> : m.name}
+                    </p>
+                    {m.role && <p class="member-role">{m.role}</p>}
+                    {m.bio && <p class="member-bio">{m.bio}</p>}
+                    {(m.links?.length || m.email) && (
+                      <div class="member-links">
+                        {m.email && (
+                          <a href={`mailto:${m.email}`} aria-label="Email" title="Email">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></svg>
+                          </a>
+                        )}
+                        {m.links?.map((l) => {
+                          const k = linkKind(l.label, l.url);
+                          return (
+                            <a href={l.url} target="_blank" rel="noopener noreferrer" aria-label={l.label} title={l.label}>
+                              {k === "github" && (
+                                <svg class="is-filled" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.1-1.47-1.1-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z" /></svg>
+                              )}
+                              {k === "x" && (
+                                <svg class="is-filled" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                              )}
+                              {k === "web" && (
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></svg>
+                              )}
+                              {k === "link" && (
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14 20 4M14 4h6v6M18 13.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5.5" /></svg>
+                              )}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+
+        {alumniCount > 0 && (
+          <section id="mg-alumni" class="members-group members-group--alumni" data-cohort="alumni">
+            <p class="members-alumni-eyebrow">Alumni<span>卒業したメンバー</span></p>
+            <h2>
+              {alumniName}
+              <span class="members-count">{alumniCount}<small>名</small></span>
+            </h2>
+            {alumniYears.map((y) => (
+              <div class="alumni-year" id={`mg-y${y}`} data-year={`y${y}`}>
+                <h3 class="alumni-year__label">
+                  {yearLabel(y)}
+                  <span class="members-count">{alumniByYear.get(y)!.length}<small>名</small></span>
+                </h3>
+                <ul class="members-list members-list--compact">
+                  {alumniByYear.get(y)!.map((m) => (
+                    <li class:list={["member-card", "member-card--compact", { "has-page": hrefOf(m) }]}>
+                      {avatarOf(m) ? (
+                        <img class="member-photo" src={avatarOf(m)} alt={m.name} loading="lazy" decoding="async" />
+                      ) : (
+                        <span class="member-photo-placeholder" aria-hidden="true"><LogoMark class="thumb-mark" /></span>
+                      )}
+                      <div class="member-body">
+                        <p class="member-name">
+                          {hrefOf(m) ? <a href={hrefOf(m)}>{m.name}</a> : m.name}
+                        </p>
+                        {m.role && !yearOf(m.role) && <p class="member-role">{m.role}</p>}
+                        {m.role && yearOf(m.role) && /\((.+)\)/.test(m.role) && (
+                          <p class="member-role">{m.role.match(/\((.+)\)/)![1]}</p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+        )}
+        </div>
+      </Fragment>
     ) : (
       <>
         <p class="summary">
@@ -89,3 +202,4 @@ for (const e of all) {
     )}
   </article>
 </Layout>
+

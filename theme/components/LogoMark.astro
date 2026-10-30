@@ -1,0 +1,14 @@
+---
+// The "d" mark from the lab logo (public/logo.svg), inlined so it takes the
+// surrounding text colour (currentColor) — used as the stand-in image on news
+// entries that have no photo. Size it with CSS (height; width follows).
+interface Props { class?: string }
+const { class: className } = Astro.props;
+---
+<svg
+  class={className}
+  viewBox="70 90 180 320"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+><path d="M188.51,94.78v90.92h-56.44c-31.17,0-56.44,25.27-56.44,56.44v106.63c0,31.17,25.27,56.44,56.44,56.44h56.44c31.17,0,56.44-25.27,56.44-56.44v-25.09h-56.44v4c0,11.65-9.44,21.09-21.09,21.09h-14.26c-11.65,0-21.09-9.44-21.09-21.09v-64.45c0-11.65,9.44-21.09,21.09-21.09h14.26c11.65,0,21.09,9.44,21.09,21.09v4h56.44v-25.09h0V94.78h-56.44Z" /></svg>

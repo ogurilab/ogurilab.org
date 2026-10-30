@@ -1,0 +1,169 @@
+---
+// First-visit loading screen built from the lab logo. The "d" mark draws
+// itself as an outline, fills in, the lab name rises beside it while a thin
+// cyan line runs underneath, then the whole panel lifts away like the header.
+//
+// Shown once per browser session (sessionStorage), never on in-site
+// navigations after that, and skipped entirely with reduced motion. The inline
+// script runs before the page paints; if anything goes wrong, a hard timeout
+// still removes the panel, and without JS it never shows at all.
+import options from "virtual:cosense-theme-lab/options";
+import site from "virtual:cosense-site-kit/site";
+
+const name = options.siteTitle ?? site?.title ?? "";
+const sub = "Digital Culture Lab.";
+---
+<script is:inline>
+  (function () {
+    try {
+      if (sessionStorage.getItem("dclab-intro")) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      sessionStorage.setItem("dclab-intro", "1");
+    } catch (e) {
+      return;
+    }
+    document.documentElement.classList.add("is-intro");
+  })();
+</script>
+<div class="intro" aria-hidden="true" data-pagefind-ignore>
+  <div class="intro__inner">
+    <svg class="intro__mark" viewBox="70 90 180 320">
+      <path class="intro__mark-line" pathLength="1" d="M188.51,94.78v90.92h-56.44c-31.17,0-56.44,25.27-56.44,56.44v106.63c0,31.17,25.27,56.44,56.44,56.44h56.44c31.17,0,56.44-25.27,56.44-56.44v-25.09h-56.44v4c0,11.65-9.44,21.09-21.09,21.09h-14.26c-11.65,0-21.09-9.44-21.09-21.09v-64.45c0-11.65,9.44-21.09,21.09-21.09h14.26c11.65,0,21.09,9.44,21.09,21.09v4h56.44v-25.09h0V94.78h-56.44Z" />
+      <path class="intro__mark-fill" d="M188.51,94.78v90.92h-56.44c-31.17,0-56.44,25.27-56.44,56.44v106.63c0,31.17,25.27,56.44,56.44,56.44h56.44c31.17,0,56.44-25.27,56.44-56.44v-25.09h-56.44v4c0,11.65-9.44,21.09-21.09,21.09h-14.26c-11.65,0-21.09-9.44-21.09-21.09v-64.45c0-11.65,9.44-21.09,21.09-21.09h14.26c11.65,0,21.09,9.44,21.09,21.09v4h56.44v-25.09h0V94.78h-56.44Z" />
+    </svg>
+    <div class="intro__text">
+      <span class="intro__mask"><span class="intro__name">{name}</span></span>
+      <span class="intro__mask"><span class="intro__sub">{sub}</span></span>
+    </div>
+  </div>
+  <span class="intro__bar"></span>
+</div>
+<script is:inline>
+  (function () {
+    var root = document.documentElement;
+    if (!root.classList.contains("is-intro")) return;
+    var MIN = 1500; // let the draw finish even on a fast load
+    var MAX = 3200; // never hold the page longer than this
+    var start = Date.now();
+    var done = false;
+    function leave() {
+      if (done) return;
+      done = true;
+      root.classList.add("is-intro-out");
+      setTimeout(function () {
+        root.classList.remove("is-intro", "is-intro-out");
+      }, 700);
+    }
+    function onReady() {
+      setTimeout(leave, Math.max(0, MIN - (Date.now() - start)));
+    }
+    if (document.readyState === "complete") onReady();
+    else window.addEventListener("load", onReady, { once: true });
+    setTimeout(leave, MAX);
+  })();
+</script>
+
+<style is:global>
+  .intro { display: none; }
+  html.is-intro { overflow: hidden; }
+  html.is-intro .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background-color: var(--color-ground);
+    background-image: radial-gradient(var(--color-ground-dot) 1px, transparent 1.2px);
+    background-size: 22px 22px;
+    border-bottom: var(--bar) solid var(--color-text);
+    transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  html.is-intro-out .intro { transform: translateY(-100%); }
+
+  .intro__inner {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.875rem, 2.5vw, 1.375rem);
+    padding: 0 1.5rem;
+  }
+  html.is-intro-out .intro__inner {
+    opacity: 0;
+    transform: translateY(-1.5rem);
+    transition: opacity 0.35s var(--ease), transform 0.5s var(--ease);
+  }
+
+  .intro__mark {
+    flex: 0 0 auto;
+    height: clamp(3.5rem, 11vw, 5.5rem);
+    width: auto;
+    overflow: visible;
+  }
+  /* 1) the outline draws itself… */
+  .intro__mark-line {
+    fill: none;
+    stroke: var(--color-text);
+    stroke-width: 6;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: intro-draw 0.75s cubic-bezier(0.65, 0, 0.35, 1) 0.1s forwards;
+  }
+  /* 2) …then the mark fills in solid. */
+  .intro__mark-fill {
+    fill: var(--color-text);
+    opacity: 0;
+    animation: intro-fill 0.35s var(--ease) 0.75s forwards;
+  }
+
+  /* 3) The name rises out from behind a mask beside the mark. */
+  .intro__text {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Each line rises inside its own mask, so it's hidden until it emerges. */
+  .intro__mask {
+    display: block;
+    overflow: hidden;
+  }
+  .intro__name,
+  .intro__sub {
+    display: block;
+    transform: translateY(110%);
+    animation: intro-rise 0.6s var(--ease) forwards;
+  }
+  .intro__name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.25rem, 4.2vw, 2rem);
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    color: var(--color-text);
+    animation-delay: 0.85s;
+  }
+  .intro__sub {
+    margin-top: 0.15rem;
+    font-family: var(--font-mono);
+    font-size: clamp(0.6875rem, 1.8vw, 0.8125rem);
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    animation-delay: 1s;
+  }
+
+  /* 4) A thin cyan line runs across the bottom edge while the page loads. */
+  .intro__bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: 100%;
+    background: var(--color-accent-bright);
+    transform-origin: left;
+    transform: scaleX(0);
+    animation: intro-bar 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.1s forwards;
+  }
+
+  @keyframes intro-draw { to { stroke-dashoffset: 0; } }
+  @keyframes intro-fill { to { opacity: 1; } }
+  @keyframes intro-rise { to { transform: none; } }
+  @keyframes intro-bar { to { transform: scaleX(1); } }
+</style>
