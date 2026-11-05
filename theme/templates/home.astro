@@ -378,11 +378,9 @@ const about = (() => {
 
 <script>
   // ----- Hero -----
-  // On a session's first home visit the header starts parked (inline script
-  // in Header.astro) so the first screen is just the lab; it drops in once
-  // the reader scrolls down past the first third of the screen, and from
-  // then on behaves as on every other page. The "d" mark on the right draws
-  // itself once — after the loading screen, if that's showing.
+  // The header is shown from the start, as on every other page. The "d"
+  // mark on the right draws itself once — after the loading screen, if
+  // that's showing.
   (() => {
     const hero = document.querySelector<HTMLElement>(".hero");
     const header = document.querySelector<HTMLElement>(".site-header");
@@ -398,16 +396,6 @@ const about = (() => {
         /* storage blocked: the header just parks again next visit */
       }
     };
-    if (header?.classList.contains("is-parked")) {
-      const onScroll = () => {
-        if (window.scrollY > window.innerHeight * 0.33) {
-          unpark();
-          window.removeEventListener("scroll", onScroll);
-        }
-      };
-      window.addEventListener("scroll", onScroll, { passive: true });
-      onScroll();
-    }
 
     // Glide from the first screen down to the content (the news).
     const goMain = () => {
