@@ -311,10 +311,11 @@ const filtersFor = (section: (typeof sections)[number]): string[] => {
                                     {awardOf(item)} 受賞
                                   </p>
                                 )}
-                                {(splitSource(item.source).detail || item.tags.length > 0) && (
+                                {(item.source || item.tags.length > 0) && (
                                   <p class="c-source">
                                     {item.tags.map((tg) => <span class="c-badge">{tagLabel(tg)}</span>)}
-                                    {splitSource(item.source).detail}
+                                    {/* the full source as written (event name included), even though the event is also the heading above */}
+                                    {item.source}
                                   </p>
                                 )}
                               </div>

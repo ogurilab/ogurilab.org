@@ -104,23 +104,6 @@ const isActive = (href: string): boolean => {
     {options.search && <Search />}
   </div>
 </header>
-{isHome && (
-  <script is:inline>
-    // Park the bar before first paint on the session's first home visit, so
-    // the hero opens with just the lab overview and "Scroll".
-    (function () {
-      var h = document.querySelector(".site-header--overlay");
-      if (!h) return;
-      try {
-        if (sessionStorage.getItem("dclab-entered")) return;
-      } catch (e) {
-        return;
-      }
-      if (window.scrollY > 40) return; // restored mid-page: already inside
-      h.classList.add("is-parked");
-    })();
-  </script>
-)}
 
 <script>
   // Header behaviour, progressively enhanced. `has-js` gates the collapsed

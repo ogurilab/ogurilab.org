@@ -24,7 +24,7 @@ const { options, sections, label = "年から探す", class: cls } = Astro.props
 ---
 <nav class:list={["yj", cls]} aria-label={label} data-yj data-sections={sections}>
   <button type="button" class="yj__trigger" aria-expanded="false">
-    <svg class="yj__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M6 20h12" /></svg>
+    <svg class="yj__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
     <span class="yj__cap">{label}</span>
     <span class="yj__current"></span>
   </button>
