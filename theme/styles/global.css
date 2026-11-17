@@ -330,7 +330,7 @@ h1, h2, h3, h4, h5, h6 {
 .site-brand:active .site-logo { transform: translateY(1px) scale(0.98); }
 
 /* Logo image (theme option `logo`). Replaces the title text; the text returns
-   as a fallback if the image 404s (`.logo-failed`, set by the img's onerror). */
+   as a fallback if the image 404s (`.logo-failed`, set by public/scripts/img-fallback.js). */
 .site-logo {
   display: block;
   height: 56px;

@@ -201,9 +201,11 @@ const about = (() => {
   }
   return { statement, lead, pillars, href: aboutEntry ? path(aboutEntry.data.slug) : undefined };
 })();
+// public/scripts/ を外部ファイルとして読む (dist/_headers の CSP が script-src 'self' でインラインを止めるため)。
+const scriptBase = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <Layout title={siteTitle} description={siteDescription} bare hideToc>
-  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
+  <script is:inline src={`${scriptBase}/scripts/js-reveal.js`}></script>
 
   <section class="hero" data-pagefind-body>
     <div class="hero__inner">
