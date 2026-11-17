@@ -2,7 +2,7 @@
 
 ## 状態
 
-有効 ([0004](./0004-frequent-cron-with-change-check.md) の間隔の部分を置き換える)
+置換 (→ [0006](./0006-cron-every-10-minutes.md))
 
 ## 文脈
 

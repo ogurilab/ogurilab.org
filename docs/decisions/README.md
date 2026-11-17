@@ -14,4 +14,5 @@
 | [0002](./0002-doctor-as-deploy-gate.md) | doctor を CI でなく公開前ゲートに置く | 有効 |
 | [0003](./0003-heartbeat-commit-keeps-cron-alive.md) | 稼働記録コミットでスケジュール実行を維持する | 有効 |
 | [0004](./0004-frequent-cron-with-change-check.md) | cron を 15 分間隔にし、変更検知でビルドを省く | 間隔のみ置換 (→ 0005) |
-| [0005](./0005-cron-every-3-hours.md) | cron の間隔を 3 時間に広げる | 有効 |
+| [0005](./0005-cron-every-3-hours.md) | cron の間隔を 3 時間に広げる | 置換 (→ 0006) |
+| [0006](./0006-cron-every-10-minutes.md) | cron の間隔を 10 分に詰める | 有効 |
