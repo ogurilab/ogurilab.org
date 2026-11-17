@@ -42,7 +42,6 @@ const isActive = (href: string): boolean => {
           alt={siteTitle}
           height={logo.height ?? 28}
           decoding="async"
-          onerror="this.closest('.site-brand')?.classList.add('logo-failed')"
         />
       )}
       {/* Text fallback: hidden when a logo image is present, shown again if that

@@ -6,10 +6,18 @@
 // <img> is swapped for a placeholder that keeps its classes (so sized
 // slots — avatars, thumbnails, gallery tiles — keep their shape) and
 // shows the mark from <template id="img-fallback-tpl"> at the end of
-// <body>. Skipped: the header logo (own fallback), inline icons, and
-// /gallery photos (that page drops a broken photo and recounts).
+// <body>. Skipped: inline icons and /gallery photos (that page drops a
+// broken photo and recounts). The header logo has its own fallback: its
+// .site-brand gets .logo-failed, which swaps in the text title (global.css).
+// That used to be an onerror attribute, which the CSP blocks as inline script.
 (function () {
   var SKIP = ".site-logo, .icon, .inline-image, .pin__cell img";
+  function logoFailed(img) {
+    if (!img.matches(".site-logo")) return false;
+    var brand = img.closest(".site-brand");
+    if (brand) brand.classList.add("logo-failed");
+    return true;
+  }
   function swap(img) {
     if (!img.isConnected || img.dataset.fallback) return;
     img.dataset.fallback = "1";
@@ -34,6 +42,7 @@
     function (e) {
       var t = e.target;
       if (t && t.tagName === "IMG") {
+        if (logoFailed(t)) return;
         t.removeAttribute("data-fallback");
         check(t);
       }
@@ -46,7 +55,7 @@
         img.removeAttribute("data-fallback");
         check(img);
       } else if (img.complete && img.naturalWidth === 0 && img.getAttribute("src")) {
-        check(img);
+        if (!logoFailed(img)) check(img);
       }
     });
   });
