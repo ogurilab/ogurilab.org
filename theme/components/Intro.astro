@@ -4,27 +4,19 @@
 // cyan line runs underneath, then the whole panel lifts away like the header.
 //
 // Shown once per browser session (sessionStorage), never on in-site
-// navigations after that, and skipped entirely with reduced motion. The inline
-// script runs before the page paints; if anything goes wrong, a hard timeout
+// navigations after that, and skipped entirely with reduced motion. The first
+// script (public/scripts/intro-start.js, a blocking classic script) runs before
+// the page paints; if anything goes wrong, a hard timeout
 // still removes the panel, and without JS it never shows at all.
 import options from "virtual:cosense-theme-lab/options";
 import site from "virtual:cosense-site-kit/site";
 
 const name = options.siteTitle ?? site?.title ?? "";
 const sub = "Digital Culture Lab.";
+// public/scripts/ を外部ファイルとして読む (dist/_headers の CSP が script-src 'self' でインラインを止めるため)。
+const scriptBase = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
-<script is:inline>
-  (function () {
-    try {
-      if (sessionStorage.getItem("dclab-intro")) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      sessionStorage.setItem("dclab-intro", "1");
-    } catch (e) {
-      return;
-    }
-    document.documentElement.classList.add("is-intro");
-  })();
-</script>
+<script is:inline src={`${scriptBase}/scripts/intro-start.js`}></script>
 <div class="intro" aria-hidden="true" data-pagefind-ignore>
   <div class="intro__inner">
     <svg class="intro__mark" viewBox="70 90 180 320">
@@ -38,30 +30,7 @@ const sub = "Digital Culture Lab.";
   </div>
   <span class="intro__bar"></span>
 </div>
-<script is:inline>
-  (function () {
-    var root = document.documentElement;
-    if (!root.classList.contains("is-intro")) return;
-    var MIN = 1500; // let the draw finish even on a fast load
-    var MAX = 3200; // never hold the page longer than this
-    var start = Date.now();
-    var done = false;
-    function leave() {
-      if (done) return;
-      done = true;
-      root.classList.add("is-intro-out");
-      setTimeout(function () {
-        root.classList.remove("is-intro", "is-intro-out");
-      }, 700);
-    }
-    function onReady() {
-      setTimeout(leave, Math.max(0, MIN - (Date.now() - start)));
-    }
-    if (document.readyState === "complete") onReady();
-    else window.addEventListener("load", onReady, { once: true });
-    setTimeout(leave, MAX);
-  })();
-</script>
+<script is:inline src={`${scriptBase}/scripts/intro-leave.js`}></script>
 
 <style is:global>
   .intro { display: none; }

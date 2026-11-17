@@ -84,9 +84,11 @@ const small = (p: Photo): Photo => {
 };
 const tileOf = new Map<Photo, Photo>(flat.map((p) => [p, small(p)]));
 let eager = 8;
+// public/scripts/ を外部ファイルとして読む (dist/_headers の CSP が script-src 'self' でインラインを止めるため)。
+const scriptBase = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 <Layout title="Gallery" description="研究室の活動・発表で使われた画像のアーカイブ" bare hideToc>
-  <script is:inline>document.documentElement.classList.add("js-reveal");</script>
+  <script is:inline src={`${scriptBase}/scripts/js-reveal.js`}></script>
 
   <div class="gallery-page">
     <header class="gallery-page__head">
